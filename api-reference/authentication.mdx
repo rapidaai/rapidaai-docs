@@ -1,7 +1,6 @@
 ---
 title: "Authentication"
 description: "Authentication and connection to use SDK"
-icon: "lock"
 ---
 
 Use `ConnectionConfig` to configure authentication and endpoints for all SDK clients.
@@ -9,21 +8,19 @@ Use `ConnectionConfig` to configure authentication and endpoints for all SDK cli
 <CodeGroup>
 
 ```ts TypeScript / Node.js
-import { ConnectionConfig } from 'rapida-nodejs';
+import { ConnectionConfig } from "rapida-nodejs";
 
 const connection = ConnectionConfig.DefaultConnectionConfig(
-   ConnectionConfig.WithSDK({ ApiKey: process.env.RAPIDA_API_KEY })
-)
-
+  ConnectionConfig.WithSDK({ ApiKey: process.env.RAPIDA_API_KEY })
+);
 ```
 
 ```javascript React
-import { ConnectionConfig } from 'rapida-react';
+import { ConnectionConfig } from "rapida-react";
 
 const connection = ConnectionConfig.DefaultConnectionConfig(
-   ConnectionConfig.WithSDK({ ApiKey: process.env.RAPIDA_API_KEY })
-)
-
+  ConnectionConfig.WithSDK({ ApiKey: process.env.RAPIDA_API_KEY })
+);
 ```
 
 ```go Go
@@ -50,8 +47,8 @@ connection_config.with_auth(WithSDK(api_key=os.getenv("RAPIDA_API_KEY")))
 
 </CodeGroup>
 
+#### PersonalToken
 
-####  PersonalToken
 - Use for backend-only or administrative operations where a human- or service-owned token is appropriate (e.g., CI/CD, provisioning, migrations).
 - Best when you need elevated privileges across projects or organization-level APIs.
 - Never embed in client-side code. Store securely (vault/secret manager) and rotate regularly.
@@ -66,34 +63,28 @@ connection_config.with_auth(WithSDK(api_key=os.getenv("RAPIDA_API_KEY")))
     Rapida project ID for scoping requests.
   </ResponseField>
 
-
-
 <CodeGroup>
 
 ```ts TypeScript / Node.js
-import { ConnectionConfig } from 'rapida-nodejs';
+import { ConnectionConfig } from "rapida-nodejs";
 const connection = ConnectionConfig.DefaultConnectionConfig(
-    ConnectionConfig.WithPersonalToken({
-    Authorization:
-        RAPIDA_AUTHORIZATION_TOKEN,
-    AuthId:  RAPIDA_AUTH_ID,
-    ProjectId:  RAPIDA_PROJECT_ID,
-    })
-)
-
+  ConnectionConfig.WithPersonalToken({
+    Authorization: RAPIDA_AUTHORIZATION_TOKEN,
+    AuthId: RAPIDA_AUTH_ID,
+    ProjectId: RAPIDA_PROJECT_ID,
+  })
+);
 ```
 
 ```javascript React
-import { ConnectionConfig } from 'rapida-react';
+import { ConnectionConfig } from "rapida-react";
 const connection = ConnectionConfig.DefaultConnectionConfig(
-    ConnectionConfig.WithPersonalToken({
-    Authorization:
-        RAPIDA_AUTHORIZATION_TOKEN,
-    AuthId:  RAPIDA_AUTH_ID,
-    ProjectId:  RAPIDA_PROJECT_ID,
-    })
-)
-
+  ConnectionConfig.WithPersonalToken({
+    Authorization: RAPIDA_AUTHORIZATION_TOKEN,
+    AuthId: RAPIDA_AUTH_ID,
+    ProjectId: RAPIDA_PROJECT_ID,
+  })
+);
 ```
 
 ```go Go
@@ -125,13 +116,14 @@ connectionConfig = ConnectionConfig.default_connection_config(
     )
 )
 ```
+
 </CodeGroup>
 
 #### WithSDK
+
 - Use for typical application integrations (server-side web apps, backend services) using a project-scoped API key.
 - Safer to use in application servers than personal tokens; permissions are limited to the project.
 - Do not ship in public client apps without a proxy; prefer server-to-server.
-
 
   <ResponseField name="ApiKey" type="string">
     Project API key used for typical app integrations.
@@ -140,23 +132,20 @@ connectionConfig = ConnectionConfig.default_connection_config(
     Optional user identifier to propagate in requests.
   </ResponseField>
 
-
-
 <CodeGroup>
 
 ```ts TypeScript / Node.js
-import { ConnectionConfig } from 'rapida-nodejs';
+import { ConnectionConfig } from "rapida-nodejs";
 const connection = ConnectionConfig.DefaultConnectionConfig(
-   ConnectionConfig.WithSDK({ ApiKey: process.env.RAPIDA_API_KEY })
-)
-
+  ConnectionConfig.WithSDK({ ApiKey: process.env.RAPIDA_API_KEY })
+);
 ```
 
 ```javascript React
-import { ConnectionConfig } from 'rapida-react';
+import { ConnectionConfig } from "rapida-react";
 const connection = ConnectionConfig.DefaultConnectionConfig(
-   ConnectionConfig.WithSDK({ ApiKey: process.env.RAPIDA_API_KEY })
-)
+  ConnectionConfig.WithSDK({ ApiKey: process.env.RAPIDA_API_KEY })
+);
 ```
 
 ```go Go
@@ -185,4 +174,5 @@ connectionConfig = ConnectionConfig.default_connection_config(
     )
 )
 ```
+
 </CodeGroup>

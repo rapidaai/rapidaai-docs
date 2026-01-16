@@ -12,11 +12,20 @@ This guide explains how to configure knowledge sources for your assistant, enabl
 Before you begin, ensure you have:
 
 <CardGroup cols={2}>
-  <Card title="Created a Knowledge Source" icon="book" href="/knowledge/create-knowledge">
+  <Card
+    title="Created a Knowledge Source"
+    icon="book"
+    href="/knowledge/create-knowledge"
+  >
     Learn how to create a knowledge source in our guide.
   </Card>
-  <Card title="Created an Assistant" icon="bot" href="/assistants/create-assistant">
-    If you haven't created an assistant yet, follow our creating an assistant guide.
+  <Card
+    title="Created an Assistant"
+    icon="bot"
+    href="/assistants/create-assistant"
+  >
+    If you haven't created an assistant yet, follow our creating an assistant
+    guide.
   </Card>
 </CardGroup>
 
@@ -26,39 +35,41 @@ Before you begin, ensure you have:
 </Step>
 
 <Step title="Create or Select Knowledge Source">
-  ![Configure Retrieval Settings](/images/assistant/configure-knowledge.png)
-  In the "Knowledge" field, you can:
-  - Type to search for an existing knowledge source
-  - Select from the dropdown list of available knowledge sources
-  - Create a new knowledge source if needed
+  ![Configure Retrieval Settings](/images/assistant/configure-knowledge.png) In
+  the "Knowledge" field, you can: - Type to search for an existing knowledge
+  source - Select from the dropdown list of available knowledge sources - Create
+  a new knowledge source if needed
 </Step>
 
 <Step title="Configure Retrieval Settings">
   ![Configure Retrieval Settings](/images/assistant/configure_knowledge_retrieval.png)
 
-  1. **Choose the search method:**
-     - **Hybrid Search (recommended)**: Combines full-text search and vector search for optimal results.
-     - **Semantic Search**: Uses query embeddings to find semantically similar content.
-     - **Full Text Search**: Indexes and searches all terms in the document.
+1. **Choose the search method:**
 
-  2. **Adjust the "Top K" value**: This determines the number of most relevant results to retrieve. A higher value may provide more comprehensive results but could include less relevant information.
+   - **Hybrid Search (recommended)**: Combines full-text search and vector search for optimal results.
+   - **Semantic Search**: Uses query embeddings to find semantically similar content.
+   - **Full Text Search**: Indexes and searches all terms in the document.
 
-  3. **Set the "Score Threshold"**: This filters results based on their relevance score. A higher threshold will only return more closely matched results.
+2. **Adjust the "Top K" value**: This determines the number of most relevant results to retrieve. A higher value may provide more comprehensive results but could include less relevant information.
 
-  4. **Enable "Reranking" (Optional)**:
-     
-     Reranking improves the relevance of retrieved information by:
-     - Re-evaluating the initial search results
-     - Considering additional context and nuances
-     - Potentially reordering the results for better relevance
+3. **Set the "Score Threshold"**: This filters results based on their relevance score. A higher threshold will only return more closely matched results.
 
-  5. **Select the reranking model**: If reranking is enabled, choose an appropriate model. The default "Rerank English v2.0" works well for English content.
-</Step>
+4. **Enable "Reranking" (Optional)**:
+
+   Reranking improves the relevance of retrieved information by:
+
+   - Re-evaluating the initial search results
+   - Considering additional context and nuances
+   - Potentially reordering the results for better relevance
+
+5. **Select the reranking model**: If reranking is enabled, choose an appropriate model. The default "Rerank English v2.0" works well for English content.
+   </Step>
 
 <Step title="Confirm Knowledge Configuration">
   After configuring the knowledge settings, click "Connect knowledge" to add it to your assistant.
 
-  You can add multiple knowledge sources by repeating this process, allowing your assistant to access a diverse range of information.
+You can add multiple knowledge sources by repeating this process, allowing your assistant to access a diverse range of information.
+
 </Step>
 </Steps>
 
