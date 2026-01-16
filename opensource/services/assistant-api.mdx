@@ -1,0 +1,245 @@
+---
+title: "Assistant Service"
+description: "Voice agent and real-time conversation management"
+sidebarTitle: "Assistant Service"
+---
+
+**Service Name**: assistant-api  
+**Port**: 9007  
+**Technology**: Go + gRPC  
+**Language**: Go 1.25+  
+**Primary Database**: PostgreSQL (assistant_db)  
+**Search Engine**: OpenSearch
+
+## Purpose
+
+The Assistant API handles:
+
+- Voice assistant creation and management
+- Real-time conversation streaming and management
+- Audio processing (VAD, encoding/decoding)
+- LLM integration and inference
+- Speech-to-Text (STT) orchestration
+- Text-to-Speech (TTS) orchestration
+- Conversation persistence and searching
+- Real-time WebSocket communication
+
+## Key Features
+
+### Assistant Management
+
+- Create and configure voice assistants
+- Version control for assistant configurations
+- Tool and knowledge base integration
+- Provider credential selection
+- Testing and validation
+
+### Real-time Conversations
+
+- WebSocket-based audio streaming
+- Low-latency bidirectional communication
+- Voice activity detection (silence handling)
+- Concurrent conversation handling (1000+ concurrent)
+- Session management and recovery
+
+### Audio Processing
+
+- Audio encoding/decoding (PCM, WAV, MP3)
+- Sample rate conversion (8kHz, 16kHz, 48kHz)
+- Voice activity detection (VAD)
+- Noise filtering and normalization
+- Audio quality metrics
+
+### LLM Integration
+
+- Support for multiple LLM providers
+- Token counting and cost estimation
+- Response streaming
+- Tool/function calling
+- Context window management
+
+### STT/TTS Orchestration
+
+- Support for multiple STT providers
+- Support for multiple TTS providers
+- Provider fallback mechanisms
+- Latency optimization
+- Language and dialect support
+
+## Configuration
+
+### Environment Variables
+
+```env
+# Service
+SERVICE_NAME=assistant-api
+PORT=9007
+HOST=0.0.0.0
+ENV=production
+LOG_LEVEL=info
+
+# Database
+POSTGRES__HOST=postgres
+POSTGRES__PORT=5432
+POSTGRES__DB_NAME=assistant_db
+POSTGRES__AUTH__USER=rapida_user
+POSTGRES__AUTH__PASSWORD=rapida_db_password
+POSTGRES__MAX_OPEN_CONNECTION=25
+POSTGRES__MAX_IDEAL_CONNECTION=15
+POSTGRES__SSL_MODE=disable
+
+# Redis
+REDIS__HOST=redis
+REDIS__PORT=6379
+REDIS__DB=0
+REDIS__MAX_CONNECTION=20
+
+# OpenSearch
+OPENSEARCH__SCHEMA=http
+OPENSEARCH__HOST=opensearch
+OPENSEARCH__PORT=9200
+OPENSEARCH__USER=admin
+OPENSEARCH__PASSWORD=admin
+
+# Integration API
+INTEGRATION_API_URL=http://integration-api:9004
+
+# STT/TTS Providers
+STT_PROVIDER=google
+TTS_PROVIDER=google
+
+# Audio Processing
+AUDIO_SAMPLE_RATE=16000
+AUDIO_CHANNELS=1
+VAD_ENABLED=true
+VAD_THRESHOLD=0.5
+MAX_AUDIO_LENGTH=3600  # 1 hour in seconds
+
+# WebSocket
+WEBSOCKET_TIMEOUT=300  # seconds
+MAX_CONCURRENT_CONVERSATIONS=1000
+```
+
+## Source Code Structure
+
+```
+api/assistant-api/
+├── api/                    # gRPC and REST handlers
+│   ├── assistant.go        # Assistant management
+│   ├── conversation.go     # Conversation handling
+│   ├── invoke.go           # Inference handling
+│   └── health/             # Health checks
+│
+├── internal/
+│   ├── entity/             # Data models
+│   │   ├── assistant.go
+│   │   ├── conversation.go
+│   │   ├── message.go
+│   │   └── audio.go
+│   │
+│   ├── service/            # Business logic
+│   │   ├── assistant.service.go
+│   │   ├── conversation.service.go
+│   │   ├── invoke.service.go
+│   │   └── {service}/
+│   │
+│   ├── streamer/           # Audio streaming
+│   │   ├── audio.go
+│   │   └── websocket.go
+│   │
+│   └── processors/         # Audio processing
+│       ├── vad.go
+│       ├── encoder.go
+│       └── decoder.go
+│
+├── migrations/             # Database migrations
+├── router/                 # Route definitions
+├── config/
+└── main.go
+```
+
+## Performance Optimization
+
+### Concurrency Handling
+
+- Supports 1000+ concurrent conversations
+- Non-blocking I/O with Go goroutines
+- Connection pooling for database
+- Message queue for heavy operations
+
+### Latency Optimization
+
+- Streaming responses from LLM
+- Parallel STT/TTS processing
+- Local caching of provider responses
+- Audio buffer optimization
+
+### Resource Management
+
+- Memory pooling for buffers
+- Garbage collection tuning
+- Database connection limits
+- Redis connection pooling
+
+## Monitoring and Observability
+
+### Metrics
+
+Track per conversation:
+
+- Duration
+- Token usage
+- LLM latency
+- STT/TTS latency
+- Error rates
+- Audio quality
+
+### Logging
+
+Structured logs with:
+
+- Conversation ID
+- Message ID
+- Provider latencies
+- Error details
+- Audio metrics
+
+### Health Checks
+
+```bash
+curl http://localhost:9007/health
+curl http://localhost:9007/health/db
+curl http://localhost:9007/health/opensearch
+```
+
+## Troubleshooting
+
+### WebSocket Connection Refused
+
+```bash
+# Check if service is running
+docker ps | grep assistant-api
+
+# Check port binding
+netstat -tlnp | grep 9007
+```
+
+### LLM Provider Timeout
+
+- Check integration-api is accessible
+- Verify API keys are stored correctly
+- Increase timeout in configuration
+- Check network latency to provider
+
+### Audio Quality Issues
+
+- Verify sample rate matches expected
+- Check VAD threshold settings
+- Monitor CPU usage for encoding
+- Verify audio buffer sizes
+
+## Next Steps
+
+- [Integration API](/opensource/services/integration-api)
+- [Document API](/opensource/services/document-api)
+- [Architecture Overview](/opensource/architecture)

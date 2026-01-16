@@ -1,0 +1,169 @@
+---
+title: "Integration Service"
+description: "Third-party service integrations and credential management"
+sidebarTitle: "Integration Service"
+---
+
+**Service Name**: integration-api  
+**Port**: 9004  
+**Technology**: Go + Gin Framework  
+**Language**: Go 1.25+  
+**Primary Database**: PostgreSQL (integration_db)
+
+## Purpose
+
+The Integration API handles:
+
+- LLM provider integration (OpenAI, Anthropic, etc.)
+- STT provider integration (Google, Deepgram, etc.)
+- TTS provider integration (ElevenLabs, Azure, etc.)
+- Credential encryption and secure storage
+- Provider health monitoring
+- OAuth 2.0 authentication flows
+- Provider model listing and validation
+- API rate limiting and cost tracking
+
+## Key Features
+
+### Provider Management
+
+- 20+ pre-configured providers
+- Custom provider support
+- Provider-specific configuration
+- Model listing and caching
+- Provider health monitoring
+
+### Credential Security
+
+- AES-256-GCM encryption
+- Secure key management
+- Per-credential encryption
+- Audit logging of access
+- Credential rotation support
+
+### OAuth Integration
+
+- Multiple OAuth providers (Google, GitHub, Slack, etc.)
+- Token refresh handling
+- Scope management
+- Secure token storage
+- Revocation support
+
+### API Validation
+
+- Test API credentials before storage
+- Provider-specific validation
+- Rate limit tracking
+- Cost estimation
+- Usage monitoring
+
+## Configuration
+
+### Environment Variables
+
+```env
+# Service
+SERVICE_NAME=integration-api
+PORT=9004
+HOST=0.0.0.0
+ENV=production
+LOG_LEVEL=info
+
+# Database
+POSTGRES__HOST=postgres
+POSTGRES__PORT=5432
+POSTGRES__DB_NAME=integration_db
+POSTGRES__AUTH__USER=rapida_user
+POSTGRES__AUTH__PASSWORD=rapida_db_password
+POSTGRES__MAX_OPEN_CONNECTION=15
+POSTGRES__MAX_IDEAL_CONNECTION=8
+POSTGRES__SSL_MODE=disable
+
+# Encryption
+INTEGRATION_CRYPTO_KEY=base64-encoded-256-bit-key
+CRYPTO_ALGORITHM=AES-256-GCM
+
+# Redis (caching)
+REDIS__HOST=redis
+REDIS__PORT=6379
+REDIS__DB=1
+REDIS__MAX_CONNECTION=10
+
+# OAuth Configuration
+OAUTH_CALLBACK_URL=http://localhost:8080/oauth/callback
+GOOGLE_OAUTH_CLIENT_ID=
+GOOGLE_OAUTH_CLIENT_SECRET=
+GITHUB_OAUTH_CLIENT_ID=
+GITHUB_OAUTH_CLIENT_SECRET=
+
+# Provider-specific (optional defaults)
+DEFAULT_OPENAI_MODEL=gpt-4
+DEFAULT_STT_PROVIDER=google
+DEFAULT_TTS_PROVIDER=google
+```
+
+## Source Code Structure
+
+```
+api/integration-api/
+├── api/                    # REST handlers
+│   ├── integration.go      # Integration endpoints
+│   ├── openai.go           # Provider-specific handlers
+│   ├── anthropic.go
+│   ├── cohere.go
+│   ├── azure.go
+│   ├── gemini.go
+│   ├── embedding.go        # Embedding models
+│   ├── reranking.go        # Reranking models
+│   └── health/
+│
+├── internal/
+│   ├── entity/             # Data models
+│   │   └── external_audit.go
+│   │
+│   ├── service/            # Business logic
+│   │   ├── audit.service.go
+│   │   └── audit/
+│   │
+│   ├── caller/             # Provider API callers
+│   │   ├── callers.go
+│   │   ├── anthropic/
+│   │   │   ├── anthropic.go
+│   │   │   ├── llm.go
+│   │   │   └── verify-credential.go
+│   │   ├── openai/
+│   │   │   ├── openai.go
+│   │   │   ├── llm.go
+│   │   │   ├── embedding.go
+│   │   │   └── verify-credential.go
+│   │   ├── azure/
+│   │   ├── cohere/
+│   │   ├── gemini/
+│   │   ├── mistral/
+│   │   ├── huggingface/
+│   │   ├── vertexai/
+│   │   ├── replicate/
+│   │   ├── voyageai/
+│   │   └── metrics/
+│   │       └── metrics_builder.go
+│   │
+│   └── store/              # Database access
+│
+├── migrations/             # Database migrations
+├── router/                 # Route definitions
+├── config/
+└── main.go
+```
+
+### Credential Test Fails
+
+- Verify API key is correct
+- Check provider status page
+- Verify API key has required permissions
+- Check rate limiting hasn't kicked in
+
+## Next Steps
+
+- [Endpoint API](/opensource/services/endpoint-api)
+- [Document API](/opensource/services/document-api)
+- [Web API](/opensource/services/web-api)

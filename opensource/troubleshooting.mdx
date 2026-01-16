@@ -1,0 +1,787 @@
+---
+title: "Troubleshooting Guide"
+description: "Solutions for common Rapida setup and runtime issues"
+---
+
+### Installation Failed
+
+**Problem**: Installation script or make command fails
+
+**Solutions**:
+
+1. **Check prerequisites are installed**:
+
+   ```bash
+   go version
+   docker --version
+   docker compose version
+   psql --version
+   redis-cli --version
+   ```
+
+2. **Ensure proper permissions**:
+
+   ```bash
+   # macOS/Linux
+   mkdir -p ~/rapida-data/assets
+   chmod -R 755 ~/rapida-data
+
+   # Linux with Docker group
+   sudo usermod -aG docker $USER
+   newgrp docker
+   ```
+
+3. **Run setup command**:
+   ```bash
+   make setup-local
+   ```
+
+### Database Connection Failed
+
+**Problem**: Services can't connect to PostgreSQL
+
+**Symptoms**:
+
+- Error messages mentioning `connection refused`
+- Services failing to start
+- Logs showing database errors
+
+**Solutions**:
+
+1. **Verify PostgreSQL is running**:
+
+   ```bash
+   # macOS
+   brew services list | grep postgres
+
+   # Linux
+   sudo systemctl status postgresql
+
+   # Or check directly
+   psql -h localhost -U rapida_user -d web_db -c "SELECT 1;"
+   ```
+
+2. **Check database credentials**:
+
+   ```bash
+   # Verify user exists
+   psql postgres -c "\du"
+
+   # Verify databases exist
+   psql postgres -c "\l"
+   ```
+
+3. **Check connection settings in .env**:
+
+   ```bash
+   # Docker
+   grep POSTGRES docker/web-api/.web.env
+
+   # Manual setup
+   grep POSTGRES env/.web.env
+   ```
+
+4. **Restart PostgreSQL**:
+
+   ```bash
+   # macOS
+   brew services restart postgresql
+
+   # Linux
+   sudo systemctl restart postgresql
+
+   # Docker
+   make down-db
+   make up-db
+   ```
+
+5. **Check PostgreSQL logs**:
+
+   ```bash
+   # Docker
+   docker logs postgres
+
+   # macOS
+   tail -f /usr/local/var/log/postgres.log
+
+   # Linux
+   sudo tail -f /var/log/postgresql/postgresql.log
+   ```
+
+### Redis Connection Issues
+
+**Problem**: Redis connection timeout or refused
+
+**Symptoms**:
+
+- Cache operations failing
+- Session errors
+- Redis connection refused messages
+
+**Solutions**:
+
+1. **Verify Redis is running**:
+
+   ```bash
+   redis-cli ping
+   # Should return: PONG
+   ```
+
+2. **Start Redis**:
+
+   ```bash
+   # macOS
+   brew services start redis
+
+   # Linux
+   sudo systemctl start redis-server
+
+   # Docker
+   make up-redis
+   ```
+
+3. **Check Redis logs**:
+
+   ```bash
+   # Docker
+   docker logs redis
+
+   # Linux
+   sudo tail -f /var/log/redis/redis-server.log
+   ```
+
+4. **Test Redis connection**:
+   ```bash
+   redis-cli -h localhost -p 6379
+   > ping
+   PONG
+   > exit
+   ```
+
+### OpenSearch Won't Start
+
+**Problem**: OpenSearch container crashes or won't connect
+
+**Symptoms**:
+
+- Container immediately exits
+- `curl: (7) Failed to connect to localhost port 9200`
+- Out of memory errors
+
+**Solutions**:
+
+1. **Check resource limits**:
+
+   ```bash
+   # OpenSearch requires 512MB minimum
+   # Increase Docker memory allocation
+   # Docker Desktop -> Preferences -> Resources -> Memory: 8GB
+
+   # Or reduce allocation in docker-compose.yml:
+   OPENSEARCH_JAVA_OPTS: "-Xms256m -Xmx256m"
+   ```
+
+2. **Check logs**:
+
+   ```bash
+   docker logs opensearch
+   ```
+
+3. **Reset OpenSearch**:
+
+   ```bash
+   # Docker
+   make down-opensearch
+   docker volume rm $(docker volume ls | grep opensearch | awk '{print $2}')
+   make up-opensearch
+
+   # Or manually
+   rm -rf ~/rapida-data/assets/opensearch/*
+   make up-opensearch
+   ```
+
+4. **Verify health**:
+
+   ```bash
+   # Check cluster health
+   curl -s http://localhost:9200/_cluster/health | jq .
+
+   # Expected: "status": "green" or "yellow"
+   ```
+
+## Service Issues
+
+### Service Won't Start
+
+**Problem**: Service container exits immediately with error
+
+**Symptoms**:
+
+- Container exits after a few seconds
+- Status shows "Exited (1)"
+- Error logs in docker logs
+
+**Solutions**:
+
+1. **Check service logs**:
+
+   ```bash
+   # Docker
+   docker logs web-api
+
+   # Manual setup
+   # Check terminal where service was running
+   ```
+
+2. **Check port availability**:
+
+   ```bash
+   # Find process using port
+   lsof -i :9001
+
+   # Kill process or change port
+   kill -9 <PID>
+   # Or edit docker-compose.yml/config
+   ```
+
+3. **Verify database is ready**:
+
+   ```bash
+   # PostgreSQL must be running first
+   psql -h localhost -U rapida_user -d web_db -c "SELECT 1;"
+
+   # If not ready, wait and retry
+   make down-web
+   sleep 10
+   make up-web
+   ```
+
+4. **Check configuration**:
+
+   ```bash
+   # Verify environment variables
+   docker exec web-api env | grep POSTGRES
+
+   # Check config syntax
+   cat docker/web-api/.web.env
+   ```
+
+### Services Crashing After Startup
+
+**Problem**: Services start but crash after a few minutes
+
+**Symptoms**:
+
+- Services in "Exited" state
+- Intermittent crashes
+- Error logs showing timeouts or connection issues
+
+**Solutions**:
+
+1. **Check resource constraints**:
+
+   ```bash
+   # Monitor resource usage
+   docker stats
+
+   # If 100% CPU or memory, increase limits or optimize queries
+   ```
+
+2. **Check database connections**:
+
+   ```bash
+   # Too many connections?
+   psql -h localhost -U rapida_user -d web_db
+   SELECT count(*) FROM pg_stat_activity;
+
+   # Increase max connections
+   ALTER SYSTEM SET max_connections = 200;
+   ```
+
+3. **Review logs for patterns**:
+
+   ```bash
+   docker logs web-api --tail=100 -f
+
+   # Look for patterns in error messages
+   ```
+
+### High Memory Usage
+
+**Problem**: Services consuming excessive memory
+
+**Solutions**:
+
+1. **Check which service is consuming memory**:
+
+   ```bash
+   docker stats
+   ```
+
+2. **For OpenSearch** (common culprit):
+
+   ```bash
+   # Reduce memory allocation
+   # Edit docker-compose.yml
+   OPENSEARCH_JAVA_OPTS: "-Xms256m -Xmx256m"
+
+   # Restart
+   docker compose restart opensearch
+   ```
+
+3. **For PostgreSQL**:
+
+   ```bash
+   # Check for slow queries
+   psql -h localhost -U rapida_user -d web_db
+   SELECT query, calls, total_time FROM pg_stat_statements
+   ORDER BY total_time DESC LIMIT 10;
+   ```
+
+4. **General troubleshooting**:
+
+   ```bash
+   # Restart affected service
+   docker compose restart web-api
+
+   # Clean up unused data
+   docker system prune -a
+   ```
+
+## Network Issues
+
+### Cannot Access Services
+
+**Problem**: Services are running but not responding to requests
+
+**Symptoms**:
+
+- `curl: (7) Failed to connect`
+- `Connection refused`
+- Services ping but don't respond
+
+**Solutions**:
+
+1. **Verify services are running**:
+
+   ```bash
+   docker ps | grep rapida
+   # All services should show "Up"
+   ```
+
+2. **Check port bindings**:
+
+   ```bash
+   # Verify ports are mapped
+   docker port web-api
+   # Should show: 9001/tcp -> 0.0.0.0:9001
+   ```
+
+3. **Test network connectivity**:
+
+   ```bash
+   # From host
+   curl http://localhost:9001/health
+
+   # If fails, check if service is responsive
+   docker exec web-api curl http://localhost:9001/health
+   ```
+
+4. **Check firewall**:
+
+   ```bash
+   # macOS
+   sudo lsof -i :9001
+
+   # Linux
+   sudo netstat -tlnp | grep 9001
+   ```
+
+5. **Verify DNS resolution**:
+   ```bash
+   # Check service name resolution in Docker
+   docker exec web-api ping postgres
+   docker exec web-api ping redis
+   docker exec web-api ping opensearch
+   ```
+
+### Services Can't Communicate
+
+**Problem**: Services running but can't reach each other
+
+**Symptoms**:
+
+- Service logs showing "host not found"
+- Connection timeouts between services
+- Integration failures
+
+**Solutions**:
+
+1. **Verify network**:
+
+   ```bash
+   # Check if services on same network
+   docker network ls
+   docker network inspect api-network
+   ```
+
+2. **Test service-to-service connectivity**:
+
+   ```bash
+   # From web-api container
+   docker exec web-api curl http://assistant-api:9007/health
+
+   # Check DNS resolution
+   docker exec web-api nslookup assistant-api
+   ```
+
+3. **Check Docker Compose**:
+
+   ```bash
+   # Ensure services are on api-network
+   grep "networks:" docker-compose.yml
+   grep "api-network" docker-compose.yml
+   ```
+
+4. **Recreate network**:
+   ```bash
+   docker compose down
+   docker network rm api-network
+   docker compose up -d
+   ```
+
+## Data Issues
+
+### Lost Data After Restart
+
+**Problem**: Data disappeared after stopping/restarting containers
+
+**Solutions**:
+
+1. **Verify volumes are properly mounted**:
+
+   ```bash
+   # Check volume mounts
+   docker inspect postgres | grep -A 5 Mounts
+
+   # Should show volume mount to ~/rapida-data/assets/db
+   ```
+
+2. **Check Docker Compose volume configuration**:
+
+   ```bash
+   # Verify volumes section
+   grep -A 20 "volumes:" docker-compose.yml | head -20
+   ```
+
+3. **Ensure data directory exists**:
+
+   ```bash
+   ls -la ~/rapida-data/assets/
+   # Should show: db/, redis/, opensearch/ directories
+   ```
+
+4. **Backup and restore data**:
+
+   ```bash
+   # Backup PostgreSQL
+   docker compose exec postgres pg_dump -U rapida_user web_db > backup.sql
+
+   # Restore
+   docker compose exec -T postgres psql -U rapida_user web_db < backup.sql
+   ```
+
+### Database Corruption
+
+**Problem**: Database reports corruption or inconsistency
+
+**Symptoms**:
+
+- Strange SQL errors
+- Data appearing corrupted
+- Ability to read but not write
+
+**Solutions**:
+
+1. **Check database integrity**:
+
+   ```bash
+   psql -h localhost -U rapida_user -d web_db
+   SELECT pg_database.datname, pg_database_size(pg_database.datname)
+   FROM pg_database;
+   ```
+
+2. **VACUUM and ANALYZE**:
+
+   ```bash
+   psql -h localhost -U rapida_user -d web_db
+   VACUUM FULL;
+   ANALYZE;
+   ```
+
+3. **Rebuild indexes**:
+
+   ```bash
+   psql -h localhost -U rapida_user -d web_db
+   REINDEX DATABASE web_db;
+   ```
+
+4. **Full restoration**:
+
+   ```bash
+   # Stop services
+   make down-all
+
+   # Backup current data
+   cp -r ~/rapida-data/assets/db ~/rapida-data/assets/db.backup
+
+   # Reset database
+   rm -rf ~/rapida-data/assets/db/*
+
+   # Start and restore
+   make up-db
+   # Wait for initialization
+   docker compose exec -T postgres psql -U rapida_user web_db < backup.sql
+   ```
+
+## Performance Issues
+
+### Slow API Responses
+
+**Problem**: API endpoints responding slowly
+
+**Solutions**:
+
+1. **Check database performance**:
+
+   ```bash
+   psql -h localhost -U rapida_user -d web_db
+   SELECT query, calls, total_time FROM pg_stat_statements
+   ORDER BY total_time DESC LIMIT 10;
+   ```
+
+2. **Monitor resource usage**:
+
+   ```bash
+   docker stats
+
+   # If CPU/memory at limit, need to optimize or increase
+   ```
+
+3. **Check query plans**:
+
+   ```bash
+   psql -h localhost -U rapida_user -d web_db
+   EXPLAIN ANALYZE SELECT * FROM conversations WHERE id = '123';
+   ```
+
+4. **Create missing indexes**:
+
+   ```bash
+   # Common queries to index:
+   CREATE INDEX idx_conversations_user_id ON conversations(user_id);
+   CREATE INDEX idx_messages_conversation_id ON messages(conversation_id);
+   ```
+
+5. **Reduce logging verbosity**:
+   ```bash
+   # Change LOG_LEVEL from debug to info
+   docker compose restart web-api
+   ```
+
+### High Database Connection Usage
+
+**Problem**: Too many database connections consuming resources
+
+**Solutions**:
+
+1. **Monitor connections**:
+
+   ```bash
+   psql -h localhost -U rapida_user -d web_db
+   SELECT datname, count(*) FROM pg_stat_activity GROUP BY datname;
+   ```
+
+2. **Increase connection limit**:
+
+   ```env
+   POSTGRES__MAX_OPEN_CONNECTION=20
+   POSTGRES__MAX_IDEAL_CONNECTION=10
+   ```
+
+3. **Kill idle connections**:
+   ```bash
+   psql -h localhost -U rapida_user -d web_db
+   SELECT pg_terminate_backend(pid) FROM pg_stat_activity
+   WHERE state = 'idle' AND query_start < now() - interval '1 hour';
+   ```
+
+### Slow Search/Analytics
+
+**Problem**: OpenSearch searches timing out or slow
+
+**Solutions**:
+
+1. **Check OpenSearch status**:
+
+   ```bash
+   curl http://localhost:9200/_cluster/health
+   ```
+
+2. **Monitor task queue**:
+
+   ```bash
+   curl http://localhost:9200/_tasks?detailed
+   ```
+
+3. **Optimize index settings**:
+
+   ```bash
+   # Reduce refresh frequency
+   curl -X PUT "localhost:9200/assistant-conversations/_settings" \
+     -H 'Content-Type: application/json' \
+     -d '{"settings": {"refresh_interval": "30s"}}'
+   ```
+
+4. **Delete old indices**:
+   ```bash
+   # Remove indices older than 30 days
+   curl -X DELETE "localhost:9200/logs-2024-01-*"
+   ```
+
+## Debugging
+
+### Enable Debug Logging
+
+```bash
+# Update .env file
+LOG_LEVEL=debug
+
+# Restart service
+docker compose restart web-api
+
+# Monitor logs
+docker logs -f web-api
+```
+
+### Check Service Configuration
+
+```bash
+# Verify service has correct config
+docker exec web-api env | grep POSTGRES
+docker exec web-api env | grep REDIS
+
+# Check if service can reach dependencies
+docker exec web-api curl http://postgres:5432 2>&1
+docker exec web-api curl http://redis:6379 2>&1
+```
+
+### View Network Details
+
+```bash
+# List all networks
+docker network ls
+
+# Inspect api-network
+docker network inspect api-network
+
+# View network traffic (if netcat installed)
+docker exec web-api netcat -zv redis 6379
+```
+
+### Health Checks
+
+```bash
+# API health
+curl -s http://localhost:9001/health | jq .
+
+# Database health
+curl -s http://localhost:9001/health/db | jq .
+
+# Cache health
+curl -s http://localhost:9001/health/redis | jq .
+
+# Search health
+curl -s http://localhost:9001/health/opensearch | jq .
+```
+
+## Getting Help
+
+### Collect Debug Information
+
+```bash
+# System info
+uname -a
+docker --version
+docker compose version
+
+# Service status
+docker ps -a
+docker network ls
+
+# Recent logs
+docker logs web-api --tail=50 > web-api.log
+docker logs postgres --tail=50 > postgres.log
+docker logs redis --tail=50 > redis.log
+
+# Resource usage
+docker stats --no-stream > stats.log
+
+# Configuration
+cat env/.web.env > config-web.log
+```
+
+### Report Issues
+
+When reporting an issue, include:
+
+1. Steps to reproduce
+2. Error message/logs
+3. System information
+4. What you tried to fix it
+5. Output of debug commands above
+
+### Contact Support
+
+- **GitHub Issues**: https://github.com/rapidaai/voice-ai/issues
+- **Documentation**: https://rapida.ai/docs
+- **Community**: https://github.com/rapidaai/voice-ai/discussions
+- **Email**: prashant@rapida.ai
+
+## Quick Reference
+
+### Common Commands
+
+```bash
+# Status
+make ps-all
+docker ps
+
+# Logs
+make logs-all -f
+docker logs -f web-api
+
+# Restart services
+make restart-all
+docker compose restart
+
+# Clean up
+make clean
+docker compose down -v
+
+# Database
+make db-shell
+psql -h localhost -U rapida_user -d web_db
+
+# Redis
+redis-cli -h localhost -p 6379
+
+# Verify services
+curl http://localhost:9001/health
+```
+
+## Next Steps
+
+1. [Docker Setup](/opensource/docker-setup) - Docker troubleshooting
+2. [Manual Setup](/opensource/manual-setup) - Manual installation issues
+3. [Configuration](/opensource/configuration) - Config-related issues

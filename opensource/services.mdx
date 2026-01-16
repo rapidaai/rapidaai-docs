@@ -1,0 +1,856 @@
+---
+title: "Services Overview"
+description: "Detailed guide to all Rapida services and their functions"
+sidebarTitle: "Services"
+---
+
+# Services Overview
+
+Rapida consists of multiple microservices, each with specific responsibilities. This guide explains each service in detail.
+
+## Architecture at a Glance
+
+| Service             | Port | Purpose                          | Database       | Language |
+| ------------------- | ---- | -------------------------------- | -------------- | -------- |
+| **web-api**         | 9001 | Core platform, dashboard backend | web_db         | Go       |
+| **assistant-api**   | 9007 | Voice agents, conversations      | assistant_db   | Go       |
+| **integration-api** | 9004 | Third-party integrations         | integration_db | Go       |
+| **endpoint-api**    | 9005 | Webhooks, callbacks              | endpoint_db    | Go       |
+| **document-api**    | 9010 | Knowledge base, RAG              | document_db    | Python   |
+| **ui**              | 3000 | Web dashboard                    | N/A            | React    |
+| **nginx**           | 8080 | API gateway, reverse proxy       | N/A            | N/A      |
+
+## Infrastructure Services
+
+| Service        | Port | Purpose                           |
+| -------------- | ---- | --------------------------------- |
+| **PostgreSQL** | 5432 | Relational database (4 instances) |
+| **Redis**      | 6379 | Cache, queues, sessions           |
+| **OpenSearch** | 9200 | Full-text search, analytics       |
+
+---
+
+## Core Services
+
+### web-api (Port 9001)
+
+**Purpose**: Core platform orchestration and management backend
+
+**Responsibilities**:
+
+- User authentication and authorization
+- Organization and workspace management
+- Project management
+- Credential management
+- API rate limiting
+- Dashboard API endpoints
+- Configuration management
+
+**Key Features**:
+
+- JWT-based authentication
+- Role-based access control (RBAC)
+- Workspace isolation
+- Multi-tenancy support
+
+**Database**: `web_db` in PostgreSQL
+
+**Key Tables**:
+
+- `users` - User accounts
+- `organizations` - Organization data
+- `workspaces` - Workspace boundaries
+- `projects` - Voice AI projects
+- `credentials` - Stored API keys (encrypted)
+- `api_keys` - Service-to-service authentication
+
+**Environment Variables**:
+
+```env
+SERVICE_NAME=web-api
+PORT=9001
+HOST=0.0.0.0
+LOG_LEVEL=info
+ENV=production
+SECRET=your-secret-key
+
+# Database
+POSTGRES__HOST=postgres
+POSTGRES__PORT=5432
+POSTGRES__DB_NAME=web_db
+POSTGRES__AUTH__USER=rapida_user
+POSTGRES__AUTH__PASSWORD=rapida_db_password
+POSTGRES__MAX_OPEN_CONNECTION=20
+POSTGRES__MAX_IDEAL_CONNECTION=10
+
+# Redis
+REDIS__HOST=redis
+REDIS__PORT=6379
+REDIS__DB=0
+REDIS__MAX_CONNECTION=10
+
+# Security
+JWT_SECRET=your-jwt-secret
+ENCRYPTION_KEY=your-encryption-key
+CORS_ORIGINS=http://localhost:3000
+
+# External Services
+SENDGRID_API_KEY=optional-for-emails
+```
+
+**Health Check**:
+
+```bash
+curl http://localhost:9001/health
+```
+
+**Common Operations**:
+
+- User management
+- Organization settings
+- API key generation
+- Credential storage (encrypted)
+
+---
+
+### assistant-api (Port 9007)
+
+**Purpose**: Voice agent and real-time conversation management
+
+**Responsibilities**:
+
+- Create and manage voice assistants
+- Handle real-time voice conversations
+- Audio streaming and processing
+- LLM integration and inference
+- Speech-to-Text (STT) orchestration
+- Text-to-Speech (TTS) orchestration
+- Voice activity detection (VAD)
+- Conversation persistence and search
+
+**Key Features**:
+
+- Real-time WebSocket communication
+- Low-latency audio streaming
+- Voice activity detection (stops listening for silence)
+- Multiple LLM provider support
+- Conversation analytics
+- Full conversation history with search
+
+**Database**: `assistant_db` in PostgreSQL
+
+**Search Engine**: OpenSearch (for conversation search and analytics)
+
+**Key Tables**:
+
+- `assistants` - Assistant configurations
+- `assistant_versions` - Version management
+- `conversations` - Conversation metadata
+- `messages` - Individual messages in conversations
+- `audio_files` - Stored audio recordings
+- `conversation_analysis` - Call analytics data
+
+**OpenSearch Indices**:
+
+- `assistant-conversations` - Searchable conversation content
+- `conversation-metrics` - Call duration, quality metrics
+- `assistant-analytics` - Agent performance data
+
+**Environment Variables**:
+
+```env
+SERVICE_NAME=assistant-api
+PORT=9007
+HOST=0.0.0.0
+LOG_LEVEL=info
+ENV=production
+
+# Database
+POSTGRES__HOST=postgres
+POSTGRES__PORT=5432
+POSTGRES__DB_NAME=assistant_db
+POSTGRES__AUTH__USER=rapida_user
+POSTGRES__AUTH__PASSWORD=rapida_db_password
+POSTGRES__MAX_OPEN_CONNECTION=25
+POSTGRES__MAX_IDEAL_CONNECTION=15
+
+# Redis
+REDIS__HOST=redis
+REDIS__PORT=6379
+REDIS__DB=0
+REDIS__MAX_CONNECTION=20
+
+# OpenSearch
+OPENSEARCH__SCHEMA=http
+OPENSEARCH__HOST=opensearch
+OPENSEARCH__PORT=9200
+OPENSEARCH__USER=admin
+OPENSEARCH__PASSWORD=admin
+
+# LLM Integration (get from integration-api)
+INTEGRATION_API_URL=http://integration-api:9004
+
+# STT/TTS
+STT_PROVIDER=google  # or azure, deepgram, etc.
+TTS_PROVIDER=google  # or azure, elevenlabs, etc.
+
+# Audio Processing
+AUDIO_SAMPLE_RATE=16000
+AUDIO_CHANNELS=1
+VAD_ENABLED=true
+VAD_THRESHOLD=0.5
+
+# WebSocket
+WEBSOCKET_TIMEOUT=300
+MAX_CONCURRENT_CONVERSATIONS=1000
+```
+
+**Supported LLMs**:
+
+- OpenAI (GPT-4, GPT-3.5)
+- Anthropic Claude
+- Google Gemini, Vertex AI
+- Cohere
+- Azure OpenAI
+- AWS Bedrock
+- Mistral
+- HuggingFace
+
+**Supported STT Providers**:
+
+- Google Cloud Speech-to-Text
+- Azure Cognitive Services
+- Deepgram
+- AssemblyAI
+- Cartesia
+- Sarvam AI
+
+**Supported TTS Providers**:
+
+- Google Cloud Text-to-Speech
+- Azure Cognitive Services
+- ElevenLabs
+- Deepgram
+- Cartesia
+- Sarvam AI
+
+**Health Check**:
+
+```bash
+curl http://localhost:9007/health
+```
+
+**Common Operations**:
+
+- Create voice assistants
+- Start/manage conversations
+- Query conversation history
+- Update assistant configuration
+
+---
+
+### integration-api (Port 9004)
+
+**Purpose**: Third-party service integration and credential management
+
+**Responsibilities**:
+
+- Store and manage API credentials securely
+- Handle OAuth authentication flows
+- Integration configuration
+- Provider validation and health checks
+- Encryption/decryption of sensitive data
+- Integration marketplace
+
+**Key Features**:
+
+- End-to-end credential encryption
+- OAuth 2.0 support
+- Provider health monitoring
+- Integration templates
+- Credential rotation support
+
+**Database**: `integration_db` in PostgreSQL
+
+**Key Tables**:
+
+- `integrations` - Integration configurations
+- `providers` - Provider definitions
+- `credentials` - Encrypted API keys and tokens
+- `oauth_tokens` - OAuth session tokens
+- `oauth_providers` - OAuth configuration
+
+**Environment Variables**:
+
+```env
+SERVICE_NAME=integration-api
+PORT=9004
+HOST=0.0.0.0
+LOG_LEVEL=info
+ENV=production
+
+# Database
+POSTGRES__HOST=postgres
+POSTGRES__PORT=5432
+POSTGRES__DB_NAME=integration_db
+POSTGRES__AUTH__USER=rapida_user
+POSTGRES__AUTH__PASSWORD=rapida_db_password
+
+# Encryption
+INTEGRATION_CRYPTO_KEY=your-256-bit-key-base64-encoded
+CRYPTO_ALGORITHM=AES-256-GCM
+
+# Redis
+REDIS__HOST=redis
+REDIS__PORT=6379
+REDIS__DB=1
+
+# OAuth
+OAUTH_CALLBACK_URL=http://localhost:8080/oauth/callback
+```
+
+**Supported Integrations**:
+
+| Category      | Providers                                                                   |
+| ------------- | --------------------------------------------------------------------------- |
+| **LLM**       | OpenAI, Anthropic, Cohere, Google, Azure, AWS Bedrock, Mistral, HuggingFace |
+| **STT**       | Google, Azure, Deepgram, AssemblyAI, Cartesia, Sarvam                       |
+| **TTS**       | Google, Azure, ElevenLabs, Deepgram, Cartesia, Sarvam                       |
+| **Telephony** | Twilio, Vonage, Exotel                                                      |
+| **Email**     | SendGrid                                                                    |
+| **Webhooks**  | Any HTTP endpoint                                                           |
+
+**Health Check**:
+
+```bash
+curl http://localhost:9004/health
+```
+
+**Common Operations**:
+
+- Store API credentials
+- Test provider connections
+- List available providers
+- Update credential permissions
+
+---
+
+### endpoint-api (Port 9005)
+
+**Purpose**: Webhook and callback management
+
+**Responsibilities**:
+
+- Webhook configuration and delivery
+- Callback handling for external events
+- Event routing and filtering
+- Retry logic and failure handling
+- Webhook signature verification
+- Event logging
+
+**Key Features**:
+
+- Multiple webhook events
+- Automatic retry with exponential backoff
+- Event filtering by type
+- Webhook testing
+- Event history and replay
+
+**Database**: `endpoint_db` in PostgreSQL
+
+**Key Tables**:
+
+- `webhooks` - Webhook configurations
+- `webhook_events` - Event definitions
+- `webhook_deliveries` - Delivery history
+- `webhook_logs` - Detailed delivery logs
+
+**Environment Variables**:
+
+```env
+SERVICE_NAME=endpoint-api
+PORT=9005
+HOST=0.0.0.0
+LOG_LEVEL=info
+ENV=production
+
+# Database
+POSTGRES__HOST=postgres
+POSTGRES__PORT=5432
+POSTGRES__DB_NAME=endpoint_db
+POSTGRES__AUTH__USER=rapida_user
+POSTGRES__AUTH__PASSWORD=rapida_db_password
+
+# Redis
+REDIS__HOST=redis
+REDIS__PORT=6379
+REDIS__DB=2
+
+# Webhook Configuration
+WEBHOOK_MAX_RETRIES=5
+WEBHOOK_RETRY_DELAY=5000  # milliseconds
+WEBHOOK_TIMEOUT=30000     # milliseconds
+WEBHOOK_SECRET_KEY=your-webhook-secret
+
+# Rate Limiting
+MAX_WEBHOOKS_PER_USER=100
+MAX_EVENTS_PER_SECOND=1000
+```
+
+**Webhook Events**:
+
+- `conversation.started` - New conversation initiated
+- `conversation.ended` - Conversation completed
+- `message.sent` - Message sent by assistant
+- `message.received` - Message received from user
+- `assistant.updated` - Assistant configuration changed
+- `assistant.deleted` - Assistant removed
+- `error.occurred` - Error in conversation
+
+**Health Check**:
+
+```bash
+curl http://localhost:9005/health
+```
+
+**Common Operations**:
+
+- Register webhooks
+- Test webhook deliveries
+- View delivery history
+- Replay failed events
+
+---
+
+### document-api (Port 9010)
+
+**Purpose**: Knowledge base management and RAG (Retrieval Augmented Generation)
+
+**Responsibilities**:
+
+- Document upload and processing
+- Text extraction and chunking
+- Semantic embeddings generation
+- Vector search
+- Knowledge base organization
+- Audio noise reduction (RNNoise)
+- Entity extraction and tagging
+
+**Key Features**:
+
+- Multiple file format support (PDF, DOCX, XLSX, CSV, MD, HTML)
+- Automatic text chunking with overlap
+- Semantic search via embeddings
+- Knowledge organization by collections
+- Audio processing with noise reduction
+- Metadata extraction
+
+**Technology**: Python, FastAPI, Celery, SQLAlchemy
+
+**Database**: PostgreSQL + OpenSearch
+
+**Key Tables**:
+
+- `documents` - Document metadata
+- `chunks` - Text chunks from documents
+- `embeddings` - Vector embeddings for search
+- `knowledge_bases` - Knowledge collections
+- `document_processing_jobs` - Background job tracking
+
+**OpenSearch Indices**:
+
+- `documents-*` - Full-text searchable documents
+- `embeddings-*` - Vector embeddings for similarity search
+
+**Environment Variables**:
+
+```env
+SERVICE_NAME=document-api
+PORT=9010
+HOST=0.0.0.0
+LOG_LEVEL=info
+ENV=production
+
+# Database
+DATABASE_URL=postgresql://rapida_user:rapida_db_password@postgres:5432/document_db
+SQLALCHEMY_POOL_SIZE=20
+SQLALCHEMY_MAX_OVERFLOW=10
+
+# Redis
+REDIS_URL=redis://redis:6379/0
+CELERY_BROKER_URL=redis://redis:6379/0
+CELERY_RESULT_BACKEND=redis://redis:6379/1
+
+# OpenSearch
+OPENSEARCH_HOST=opensearch
+OPENSEARCH_PORT=9200
+OPENSEARCH_USER=admin
+OPENSEARCH_PASSWORD=admin
+
+# Document Processing
+CHUNK_SIZE=1000        # Characters per chunk
+CHUNK_OVERLAP=100      # Overlap between chunks
+MAX_FILE_SIZE=52428800 # 50MB in bytes
+
+# Embeddings
+EMBEDDINGS_MODEL=all-MiniLM-L6-v2  # Sentence Transformers model
+EMBEDDINGS_DIMENSION=384
+
+# Audio Processing (RNNoise)
+AUDIO_PROCESSING_ENABLED=true
+RNNOISE_ENABLED=true
+RNNOISE_LEVEL=0.5  # 0.0 (off) to 1.0 (max noise reduction)
+
+# Celery
+CELERY_WORKERS=4
+CELERY_CONCURRENCY=4
+CELERY_TASK_TIMEOUT=3600
+
+# File Storage
+STORAGE_TYPE=local  # or s3, azure
+UPLOAD_DIRECTORY=/uploads
+```
+
+**Supported File Types**:
+
+| Format            | Supported |
+| ----------------- | --------- |
+| PDF               | ✓         |
+| Word (.docx)      | ✓         |
+| Excel (.xlsx)     | ✓         |
+| CSV               | ✓         |
+| Markdown          | ✓         |
+| HTML              | ✓         |
+| Plain Text        | ✓         |
+| Images (with OCR) | Planned   |
+
+**Audio Processing**:
+
+RNNoise (Recurrent Neural Network Noise Suppression) is included for noise reduction in audio documents.
+
+```python
+# Enable RNNoise
+RNNOISE_ENABLED=true
+
+# Noise reduction level (0.0 = off, 1.0 = maximum)
+RNNOISE_LEVEL=0.5
+```
+
+**Health Check**:
+
+```bash
+curl http://localhost:9010/health
+```
+
+**Common Operations**:
+
+- Upload documents
+- Organize knowledge bases
+- Search documents
+- Process audio files
+- Extract entities
+
+---
+
+## Frontend Service
+
+### ui (Port 3000)
+
+**Purpose**: Web dashboard for managing Rapida platform
+
+**Technology**: React, TypeScript, Tailwind CSS
+
+**Key Features**:
+
+- Responsive design
+- Real-time updates via WebSocket
+- Dark/light theme support
+- Mobile-friendly
+- Offline support
+
+**Responsibilities**:
+
+- Assistant management interface
+- Conversation viewing and analysis
+- Knowledge base management
+- Credential configuration
+- Analytics and reporting
+- User settings and preferences
+- Webhook configuration
+
+**Environment Variables** (in `.env`):
+
+```env
+REACT_APP_API_URL=http://localhost:8080
+REACT_APP_WS_URL=ws://localhost:8080
+REACT_APP_ENV=development
+```
+
+**Build Commands**:
+
+```bash
+# Install dependencies
+yarn install
+
+# Start development server
+yarn start:dev
+
+# Build for production
+yarn build
+
+# Run linting
+yarn lint:fix
+```
+
+---
+
+## API Gateway
+
+### nginx (Port 8080)
+
+**Purpose**: Reverse proxy, load balancing, and request routing
+
+**Responsibilities**:
+
+- Route requests to appropriate services
+- Load balancing across services
+- SSL/TLS termination (when configured)
+- Request/response compression
+- Static file serving (UI)
+- Rate limiting
+- CORS handling
+
+**Configuration**: `/nginx/nginx.conf`
+
+**Default Routes**:
+
+| Path                    | Service         | Port |
+| ----------------------- | --------------- | ---- |
+| `/api/v1/web/*`         | web-api         | 9001 |
+| `/api/v1/assistant/*`   | assistant-api   | 9007 |
+| `/api/v1/integration/*` | integration-api | 9004 |
+| `/api/v1/endpoint/*`    | endpoint-api    | 9005 |
+| `/api/v1/document/*`    | document-api    | 9010 |
+| `/`                     | ui              | 3000 |
+
+**Health Check**:
+
+```bash
+curl http://localhost:8080/health
+```
+
+---
+
+## Infrastructure Services
+
+### PostgreSQL (Port 5432)
+
+**Purpose**: Primary relational database for all services
+
+**Databases**:
+
+| Database         | Service         | Purpose                              |
+| ---------------- | --------------- | ------------------------------------ |
+| `web_db`         | web-api         | Users, organizations, credentials    |
+| `assistant_db`   | assistant-api   | Assistants, conversations, messages  |
+| `integration_db` | integration-api | Integrations, providers, credentials |
+| `endpoint_db`    | endpoint-api    | Webhooks, callbacks, events          |
+| `document_db`    | document-api    | Documents, chunks, embeddings        |
+
+**Connection Details**:
+
+```
+Host: localhost or postgres (in Docker)
+Port: 5432
+Username: rapida_user
+Password: rapida_db_password
+```
+
+**Connection Command**:
+
+```bash
+psql -h localhost -U rapida_user -d web_db
+```
+
+---
+
+### Redis (Port 6379)
+
+**Purpose**: In-memory cache and message queue
+
+**Uses**:
+
+- Session caching
+- Rate limiting
+- API response caching
+- Job queue for background tasks
+- Real-time data caching
+- Pub/Sub for real-time updates
+
+**Database Slots**:
+
+| DB  | Purpose               |
+| --- | --------------------- |
+| 0   | General cache         |
+| 1   | Integration API cache |
+| 2   | Endpoint API jobs     |
+| 3+  | Reserved              |
+
+**Connection Command**:
+
+```bash
+redis-cli -h localhost -p 6379
+```
+
+**Common Commands**:
+
+```bash
+# Check memory usage
+redis-cli info memory
+
+# Flush cache (development only)
+redis-cli flushdb
+
+# Monitor commands
+redis-cli monitor
+```
+
+---
+
+### OpenSearch (Port 9200)
+
+**Purpose**: Full-text search and analytics engine
+
+**Indices**:
+
+| Index                     | Purpose               | Retention |
+| ------------------------- | --------------------- | --------- |
+| `assistant-conversations` | Conversation search   | 90 days   |
+| `conversation-metrics`    | Call metrics          | 30 days   |
+| `assistant-analytics`     | Agent performance     | 30 days   |
+| `documents-*`             | Knowledge base search | Unlimited |
+| `logs-*`                  | Application logs      | 7 days    |
+
+**Health Check**:
+
+```bash
+curl http://localhost:9200/_cluster/health
+```
+
+**Common Operations**:
+
+```bash
+# Check cluster status
+curl http://localhost:9200/_cluster/health | jq .
+
+# List indices
+curl http://localhost:9200/_cat/indices
+
+# Search conversations
+curl -X GET "localhost:9200/assistant-conversations/_search" \
+  -H 'Content-Type: application/json' \
+  -d '{"query": {"match": {"content": "search term"}}}'
+```
+
+---
+
+## Service Dependencies
+
+```
+┌─────────────┐
+│   Browser   │
+└──────┬──────┘
+       │
+   ┌───▼────┐
+   │ Nginx   │ (Port 8080)
+   └──┬──┬───┘
+      │  │
+      ├─────────────────┬──────────────┬──────────────┬──────────────┐
+      │                 │              │              │              │
+   ┌──▼──┐        ┌─────▼──┐     ┌────▼───┐     ┌───▼────┐     ┌───▼──────┐
+   │ UI  │        │ web-api│     │asst-api│     │integ-  │     │endpoint- │
+   │3000 │        │ 9001   │     │ 9007   │     │api 9004│     │api 9005  │
+   └─────┘        └───┬────┘     └───┬────┘     └────┬───┘     └──────────┘
+                      │              │              │
+                      │              │    ┌─────────┘
+                      │              │    │
+                  ┌───▼──────────────▼────▼────┐
+                  │   PostgreSQL (5432)        │
+                  │ web_db                     │
+                  │ assistant_db               │
+                  │ integration_db             │
+                  │ endpoint_db                │
+                  └────────────────────────────┘
+
+                  ┌────────────────────────────┐
+                  │   Redis (6379)             │
+                  │ Cache & Message Queue      │
+                  └────────────────────────────┘
+
+                  ┌────────────────────────────┐
+                  │ OpenSearch (9200)          │
+                  │ Full-text Search           │
+                  └────────────────────────────┘
+
+   ┌──────────────────────────────────────────┐
+   │    Document API (9010)                   │
+   │ Python + RNNoise + Embeddings            │
+   │ PostgreSQL (document_db)                 │
+   │ Redis (queues)                           │
+   │ OpenSearch (document search)             │
+   └──────────────────────────────────────────┘
+```
+
+## Service Interaction Flow
+
+### 1. User Authentication Flow
+
+```
+Browser → Nginx → web-api → PostgreSQL (web_db)
+                          → Redis (session cache)
+```
+
+### 2. Create Voice Agent Flow
+
+```
+Dashboard (ui) → web-api → PostgreSQL
+              → nginx
+              → assistant-api → PostgreSQL (assistant_db)
+                             → OpenSearch
+```
+
+### 3. Start Conversation Flow
+
+```
+Voice Call → assistant-api → LLM Provider (via integration-api)
+                          → PostgreSQL
+                          → OpenSearch
+                          → endpoint-api (webhooks)
+                          → Redis (real-time updates)
+```
+
+### 4. Upload Document Flow
+
+```
+Dashboard → web-api → document-api → PostgreSQL
+                                   → OpenSearch
+                                   → Redis (job queue)
+                                   → RNNoise (audio processing)
+```
+
+## Scaling & Load Balancing
+
+Each service can be scaled independently:
+
+```bash
+# Scale up web-api to 3 replicas
+docker compose up -d --scale web-api=3
+
+# Nginx automatically load balances across replicas
+```
+
+## Next Steps
+
+1. **[Configuration](/opensource/configuration)** - Configure each service
+2. **[Installation](/opensource/installation)** - Deploy Rapida
+3. **[Troubleshooting](/opensource/troubleshooting)** - Fix common issues

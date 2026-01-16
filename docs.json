@@ -162,11 +162,22 @@
                 "tab": "Open Source",
                 "groups": [
                     {
-                        "group": "API Documentation",
-                        "icon": "file-code",
+                        "group": "Getting Started",
                         "pages": [
-                            "api-reference/installation",
-                            "api-reference/authentication"
+                            "opensource/installation",
+                            "opensource/architecture",
+                            "opensource/configuration",
+                            "opensource/troubleshooting"
+                        ]
+                    },
+                    {
+                        "group": "Services",
+                        "pages": [
+                            "opensource/services/web-console",
+                            "opensource/services/web-api",
+                            "opensource/services/assistant-api",
+                            "opensource/services/document-api",
+                            "opensource/services/integration-api"
                         ]
                     }
                 ]

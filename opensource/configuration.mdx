@@ -1,0 +1,712 @@
+---
+title: "Configuration Reference"
+description: "Complete configuration options for Rapida services"
+---
+
+### Global Configuration
+
+These variables apply to all services:
+
+| Variable       | Type   | Default      | Description                                   |
+| -------------- | ------ | ------------ | --------------------------------------------- |
+| `SERVICE_NAME` | string | service name | Service identifier for logging                |
+| `HOST`         | string | 0.0.0.0      | Bind address (0.0.0.0 = all interfaces)       |
+| `PORT`         | int    | varies       | Service port number                           |
+| `LOG_LEVEL`    | string | info         | Logging level: debug, info, warn, error       |
+| `ENV`          | string | development  | Environment: development, staging, production |
+| `SECRET`       | string | rpd_pks      | Encryption secret key                         |
+
+### Example Global Config
+
+```env
+SERVICE_NAME=web-api
+HOST=0.0.0.0
+PORT=9001
+LOG_LEVEL=debug
+ENV=development
+SECRET=your_encryption_secret_here
+```
+
+## Database Configuration
+
+### PostgreSQL
+
+All services connect to PostgreSQL with similar configuration:
+
+```env
+# Connection settings
+POSTGRES__HOST=localhost          # Database host
+POSTGRES__PORT=5432               # PostgreSQL port
+POSTGRES__DB_NAME=web_db          # Database name
+POSTGRES__AUTH__USER=rapida_user  # Database user
+POSTGRES__AUTH__PASSWORD=rapida_db_password  # Database password
+POSTGRES__SSL_MODE=disable        # SSL mode: disable, require, prefer
+
+# Connection pooling
+POSTGRES__MAX_OPEN_CONNECTION=10     # Max open connections
+POSTGRES__MAX_IDEAL_CONNECTION=5     # Ideal idle connections
+
+# Query timeouts
+POSTGRES__STATEMENT_TIMEOUT=0     # Query timeout (0 = no limit)
+POSTGRES__IDLE_TIMEOUT=600        # Connection idle timeout (seconds)
+```
+
+### Connection String Format
+
+Manual connection string:
+
+```
+postgresql://rapida_user:rapida_db_password@localhost:5432/web_db?sslmode=disable
+```
+
+### Database Selection
+
+| Service         | Database       | Purpose                                     |
+| --------------- | -------------- | ------------------------------------------- |
+| web-api         | web_db         | Users, organizations, projects, credentials |
+| assistant-api   | assistant_db   | Assistants, conversations, deployments      |
+| integration-api | integration_db | Provider credentials, configurations        |
+| endpoint-api    | endpoint_db    | Webhooks, endpoints, callbacks              |
+| document-api    | assistant_db   | Documents, embeddings, knowledge base       |
+
+### Connection Pooling for Performance
+
+```env
+# Development
+POSTGRES__MAX_OPEN_CONNECTION=5
+POSTGRES__MAX_IDEAL_CONNECTION=2
+
+# Production
+POSTGRES__MAX_OPEN_CONNECTION=20
+POSTGRES__MAX_IDEAL_CONNECTION=10
+```
+
+## Redis Configuration
+
+```env
+# Connection settings
+REDIS__HOST=localhost           # Redis host
+REDIS__PORT=6379                # Redis port
+REDIS__AUTH__USER=               # Redis username (if auth enabled)
+REDIS__AUTH__PASSWORD=           # Redis password (if auth enabled)
+REDIS__DB=0                      # Redis database number (0-15)
+
+# Connection pooling
+REDIS__MAX_CONNECTION=10         # Maximum connections in pool
+
+# Timeout settings
+REDIS__DIAL_TIMEOUT=5            # Connection timeout (seconds)
+REDIS__READ_TIMEOUT=3            # Read timeout (seconds)
+REDIS__WRITE_TIMEOUT=3           # Write timeout (seconds)
+
+# TLS (if enabled)
+REDIS__TLS__ENABLED=false        # Enable TLS
+REDIS__TLS__INSECURE=false       # Skip cert validation
+```
+
+### Redis Database Usage
+
+| DB  | Purpose                 |
+| --- | ----------------------- |
+| 0   | General cache           |
+| 1   | Session cache           |
+| 2   | Rate limiting           |
+| 3+  | Reserved for extensions |
+
+### Redis Performance Tuning
+
+```env
+# For high traffic
+REDIS__MAX_CONNECTION=30
+REDIS__DIAL_TIMEOUT=10
+```
+
+## OpenSearch Configuration
+
+```env
+# Connection settings
+OPENSEARCH__SCHEMA=http          # http or https
+OPENSEARCH__HOST=localhost       # OpenSearch host
+OPENSEARCH__PORT=9200            # OpenSearch port
+OPENSEARCH__USERNAME=            # Username (if auth enabled)
+OPENSEARCH__PASSWORD=            # Password (if auth enabled)
+
+# Performance
+OPENSEARCH__MAX_RETRIES=3        # Max retry attempts
+OPENSEARCH__MAX_CONNECTION=10    # Max connections
+OPENSEARCH__TIMEOUT=30           # Request timeout (seconds)
+
+# Batch settings
+OPENSEARCH__BATCH_SIZE=1000      # Documents per batch
+OPENSEARCH__FLUSH_INTERVAL=5     # Batch flush interval (seconds)
+```
+
+### OpenSearch Indices
+
+| Index Name              | Purpose                      |
+| ----------------------- | ---------------------------- |
+| assistant-conversations | Conversation transcripts     |
+| logs-\*                 | Service and application logs |
+| documents-\*            | Knowledge base documents     |
+
+### OpenSearch Index Configuration
+
+```yaml
+# Index settings for assistant-conversations
+{
+  "settings":
+    {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "refresh_interval": "30s",
+    },
+  "mappings":
+    {
+      "properties":
+        {
+          "conversation_id": { "type": "keyword" },
+          "content": { "type": "text" },
+          "timestamp": { "type": "date" },
+        },
+    },
+}
+```
+
+## Service-Specific Configuration
+
+### Web API (.web.env)
+
+```env
+SERVICE_NAME=web-api
+HOST=0.0.0.0
+PORT=9001
+LOG_LEVEL=debug
+SECRET=rpd_pks
+ENV=development
+
+# Database
+POSTGRES__HOST=postgres
+POSTGRES__DB_NAME=web_db
+POSTGRES__AUTH__USER=rapida_user
+POSTGRES__AUTH__PASSWORD=rapida_db_password
+POSTGRES__PORT=5432
+POSTGRES__MAX_OPEN_CONNECTION=10
+POSTGRES__MAX_IDEAL_CONNECTION=10
+POSTGRES__SSL_MODE=disable
+
+# Cache
+POSTGRES__SLC_CACHE__HOST=redis
+POSTGRES__SLC_CACHE__PORT=6379
+POSTGRES__SLC_CACHE__AUTH__PASSWORD=
+POSTGRES__SLC_CACHE__AUTH__USER=
+POSTGRES__SLC_CACHE__MAX_CONNECTION=10
+POSTGRES__SLC_CACHE__DB=1
+
+# Redis
+REDIS__HOST=redis
+REDIS__PORT=6379
+REDIS__MAX_CONNECTION=5
+
+# Asset storage
+ASSET_STORE__STORAGE_TYPE=local
+ASSET_STORE__STORAGE_PATH_PREFIX=/app/rapida-data/assets/web
+
+# Internal services
+INTEGRATION_HOST=integration-api:9004
+ENDPOINT_HOST=endpoint-api:9005
+ASSISTANT_HOST=assistant-api:9007
+WEB_HOST=web-api:9001
+DOCUMENT_HOST=http://document-api:9010
+UI_HOST=https://localhost:3000
+```
+
+### Assistant API (.assistant.env)
+
+```env
+SERVICE_NAME=workflow-api
+HOST=0.0.0.0
+PORT=9007
+LOG_LEVEL=debug
+SECRET=rpd_pks
+ENV=development
+
+# Asset storage
+ASSET_STORE__STORAGE_TYPE=local
+ASSET_STORE__STORAGE_PATH_PREFIX=/app/rapida-data/assets/workflow
+
+# PostgreSQL
+POSTGRES__HOST=postgres
+POSTGRES__DB_NAME=assistant_db
+POSTGRES__AUTH__USER=rapida_user
+POSTGRES__AUTH__PASSWORD=rapida_db_password
+POSTGRES__PORT=5432
+POSTGRES__MAX_OPEN_CONNECTION=50
+POSTGRES__MAX_IDEAL_CONNECTION=25
+POSTGRES__SSL_MODE=disable
+
+# Redis cache
+POSTGRES__SLC_CACHE__HOST=redis
+POSTGRES__SLC_CACHE__PORT=6379
+POSTGRES__SLC_CACHE__AUTH__PASSWORD=
+POSTGRES__SLC_CACHE__AUTH__USER=
+POSTGRES__SLC_CACHE__MAX_CONNECTION=10
+POSTGRES__SLC_CACHE__DB=1
+
+# Redis
+REDIS__HOST=redis
+REDIS__PORT=6379
+REDIS__AUTH__PASSWORD=
+REDIS__AUTH__USER=
+REDIS__MAX_CONNECTION=10
+REDIS__MAX_DB=0
+
+# OpenSearch
+OPENSEARCH__SCHEMA=http
+OPENSEARCH__HOST=opensearch
+OPENSEARCH__PORT=9200
+OPENSEARCH__MAX_RETRIES=3
+OPENSEARCH__MAX_CONNECTION=10
+
+# Internal services
+INTEGRATION_HOST=integration-api:9004
+ENDPOINT_HOST=endpoint-api:9005
+ASSISTANT_HOST=assistant-api:9007
+WEB_HOST=web-api:9001
+```
+
+### Integration API (.integration.env)
+
+```env
+SERVICE_NAME=integration-api
+HOST=0.0.0.0
+PORT=9004
+LOG_LEVEL=debug
+SECRET=rpd_pks
+ENV=development
+
+# Database
+POSTGRES__HOST=integration-api
+POSTGRES__DB_NAME=integration_db
+POSTGRES__AUTH__USER=rapida_user
+POSTGRES__AUTH__PASSWORD=rapida_db_password
+POSTGRES__PORT=5432
+POSTGRES__MAX_OPEN_CONNECTION=10
+
+# Redis
+REDIS__HOST=redis
+REDIS__PORT=6379
+
+# Encryption for stored credentials
+INTEGRATION_CRYPTO_KEY=your_encryption_key_here
+
+# Internal services
+WEB_HOST=web-api:9001
+```
+
+### Endpoint API (.endpoint.env)
+
+```env
+SERVICE_NAME=endpoint-api
+HOST=0.0.0.0
+PORT=9005
+LOG_LEVEL=debug
+SECRET=rpd_pks
+ENV=development
+
+# Database
+POSTGRES__HOST=postgres
+POSTGRES__DB_NAME=endpoint_db
+POSTGRES__AUTH__USER=rapida_user
+POSTGRES__AUTH__PASSWORD=rapida_db_password
+POSTGRES__PORT=5432
+
+# Webhook configuration
+WEBHOOK__TIMEOUT=30              # Webhook call timeout (seconds)
+WEBHOOK__MAX_RETRIES=3           # Max webhook retries
+WEBHOOK__RETRY_DELAY=5           # Retry delay (seconds)
+```
+
+### Document API (config.yaml)
+
+```yaml
+service_name: "Document API"
+host: "0.0.0.0"
+port: 9010
+
+authentication_config:
+  strict: false
+  type: "jwt"
+  config:
+    secret_key: "rpd_pks"
+
+# Elasticsearch/OpenSearch
+elastic_search:
+  host: "localhost"
+  port: 9200
+  scheme: "http"
+  max_connection: 5
+
+# PostgreSQL
+postgres:
+  host: "localhost"
+  port: 5432
+  auth:
+    password: "rapida_db_password"
+    user: "rapida_user"
+  db: "assistant_db"
+  max_connection: 10
+  ideal_connection: 5
+
+# Internal services
+internal_service:
+  web_host: "localhost:9001"
+  integration_host: "localhost:9004"
+  endpoint_host: "localhost:9005"
+  assistant_host: "localhost:9006"
+
+# File storage
+storage:
+  storage_type: "local"
+  storage_path_prefix: ~/rapida-data/assets/workflow
+
+# Message queue for background jobs
+celery:
+  broker: "redis://localhost:6379/0"
+  backend: "redis://localhost:6379/0"
+
+# Knowledge extraction configuration
+knowledge_extractor_config:
+  chunking_technique:
+    chunker: "app.core.chunkers.statistical_chunker.StatisticalChunker"
+    options:
+      encoder: "app.core.encoders.openai_encoder.OpenaiEncoder"
+      options:
+        model_name: "text-embedding-3-large"
+        api_key: "your_openai_api_key"
+```
+
+## Logging Configuration
+
+### Log Levels
+
+| Level   | Use Case                        |
+| ------- | ------------------------------- |
+| `debug` | Development - very verbose      |
+| `info`  | Production - standard info logs |
+| `warn`  | Production - warnings only      |
+| `error` | Production - errors only        |
+
+### Changing Log Level
+
+```env
+# In environment file
+LOG_LEVEL=info
+
+# At runtime (some services support this)
+curl -X POST http://localhost:9001/api/v1/config/loglevel \
+  -H "Content-Type: application/json" \
+  -d '{"level":"debug"}'
+```
+
+## Storage Configuration
+
+### Local Storage
+
+```env
+ASSET_STORE__STORAGE_TYPE=local
+ASSET_STORE__STORAGE_PATH_PREFIX=/app/rapida-data/assets/web
+```
+
+**Requires**:
+
+- Writable directory at path
+- Sufficient disk space
+- Proper permissions
+
+### S3 Storage (AWS)
+
+```env
+ASSET_STORE__STORAGE_TYPE=s3
+ASSET_STORE__S3__BUCKET=rapida-assets
+ASSET_STORE__S3__REGION=us-east-1
+ASSET_STORE__S3__ACCESS_KEY_ID=your_access_key
+ASSET_STORE__S3__SECRET_ACCESS_KEY=your_secret_key
+ASSET_STORE__S3__ENDPOINT=https://s3.amazonaws.com
+```
+
+### Azure Blob Storage
+
+```env
+ASSET_STORE__STORAGE_TYPE=azure
+ASSET_STORE__AZURE__CONTAINER=rapida-assets
+ASSET_STORE__AZURE__ACCOUNT_NAME=your_account
+ASSET_STORE__AZURE__ACCOUNT_KEY=your_key
+```
+
+## Security Configuration
+
+### JWT Authentication
+
+```env
+# Shared across services
+SECRET=your_jwt_secret_key_here
+
+# Recommended: Use strong 32+ character keys
+# Generate: openssl rand -hex 32
+```
+
+### Credential Encryption
+
+```env
+# For Integration API
+INTEGRATION_CRYPTO_KEY=your_encryption_key_here
+```
+
+### TLS/SSL
+
+```env
+# For HTTPS
+TLS__ENABLED=true
+TLS__CERT_PATH=/path/to/cert.pem
+TLS__KEY_PATH=/path/to/key.pem
+```
+
+### CORS Configuration
+
+```env
+CORS__ALLOWED_ORIGINS=http://localhost:3000,https://yourdomain.com
+CORS__ALLOWED_METHODS=GET,POST,PUT,DELETE,OPTIONS
+CORS__ALLOWED_HEADERS=Content-Type,Authorization
+CORS__ALLOW_CREDENTIALS=true
+```
+
+## Performance Tuning
+
+### High-Traffic Configuration
+
+```env
+# Database
+POSTGRES__MAX_OPEN_CONNECTION=50
+POSTGRES__MAX_IDEAL_CONNECTION=25
+
+# Redis
+REDIS__MAX_CONNECTION=30
+
+# OpenSearch
+OPENSEARCH__MAX_CONNECTION=20
+OPENSEARCH__BATCH_SIZE=5000
+OPENSEARCH__FLUSH_INTERVAL=10
+
+# Caching
+CACHE__DEFAULT_TTL=300
+CACHE__LONG_TTL=3600
+```
+
+### Low-Resource Configuration
+
+```env
+# Database
+POSTGRES__MAX_OPEN_CONNECTION=5
+POSTGRES__MAX_IDEAL_CONNECTION=2
+
+# Redis
+REDIS__MAX_CONNECTION=5
+
+# OpenSearch
+OPENSEARCH__MAX_CONNECTION=5
+OPENSEARCH__BATCH_SIZE=100
+OPENSEARCH__FLUSH_INTERVAL=5
+
+# Logging
+LOG_LEVEL=warn
+```
+
+## Multi-Environment Setup
+
+### Development
+
+```env
+ENV=development
+LOG_LEVEL=debug
+POSTGRES__SSL_MODE=disable
+```
+
+### Staging
+
+```env
+ENV=staging
+LOG_LEVEL=info
+POSTGRES__SSL_MODE=prefer
+POSTGRES__MAX_OPEN_CONNECTION=20
+```
+
+### Production
+
+```env
+ENV=production
+LOG_LEVEL=warn
+POSTGRES__SSL_MODE=require
+POSTGRES__MAX_OPEN_CONNECTION=50
+TLS__ENABLED=true
+CACHE__DEFAULT_TTL=600
+```
+
+## Feature Flags
+
+Some services support feature flags:
+
+```env
+FEATURE_FLAGS__ADVANCED_ANALYTICS=true
+FEATURE_FLAGS__WEBHOOKS=true
+FEATURE_FLAGS__RAG=true
+FEATURE_FLAGS__CUSTOM_MODELS=false
+```
+
+## Configuration Validation
+
+### Checking Configuration
+
+```bash
+# Export and verify environment variables
+export $(cat env/.web.env | xargs)
+env | grep POSTGRES
+env | grep REDIS
+
+# Test database connection
+psql $POSTGRES__HOST ...
+```
+
+### Health Checks
+
+```bash
+# API health
+curl http://localhost:9001/health
+
+# Database
+curl http://localhost:9001/health/db
+
+# Cache
+curl http://localhost:9001/health/redis
+
+# Search
+curl http://localhost:9001/health/opensearch
+```
+
+## Configuration Best Practices
+
+1. **Never commit secrets** - Use `.env.example` templates
+2. **Environment parity** - Keep dev/staging/prod similar
+3. **Document changes** - Keep track of configuration changes
+4. **Use strong secrets** - Min 32 characters for encryption keys
+5. **Monitor configuration** - Log configuration changes
+6. **Regular rotation** - Rotate secrets periodically
+7. **Principle of least privilege** - Only grant needed permissions
+8. **Infrastructure as Code** - Store configs in version control (without secrets)
+
+## Updating Configuration
+
+### With Docker
+
+```bash
+# Edit environment file
+nano docker/web-api/.web.env
+
+# Restart service
+docker compose restart web-api
+```
+
+### Without Docker
+
+```bash
+# Edit environment file
+nano env/.web.env
+
+# Source environment
+export $(cat env/.web.env | xargs)
+
+# Restart service (kill and restart process)
+```
+
+## Configuration Secrets Management
+
+### Using Environment Variables
+
+```bash
+# Export from shell
+export POSTGRES__AUTH__PASSWORD="your_password"
+
+# Or from file
+export $(cat .env.production | xargs)
+```
+
+### Using Secret Management Tools
+
+**AWS Secrets Manager**:
+
+```bash
+aws secretsmanager get-secret-value --secret-id rapida/db-password
+```
+
+**HashiCorp Vault**:
+
+```bash
+vault kv get secret/rapida/db-password
+```
+
+**Kubernetes Secrets**:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rapida-secrets
+type: Opaque
+stringData:
+  postgres-password: "your_password"
+  redis-password: "your_password"
+```
+
+## Troubleshooting Configuration
+
+### Service Won't Connect to Database
+
+```bash
+# Check variables
+echo $POSTGRES__HOST
+echo $POSTGRES__PORT
+
+# Test connection
+psql -h $POSTGRES__HOST -U $POSTGRES__AUTH__USER -d $POSTGRES__DB_NAME
+
+# Verify in env file
+cat env/.web.env | grep POSTGRES
+```
+
+### Cache Not Working
+
+```bash
+# Check Redis connection
+redis-cli -h $REDIS__HOST -p $REDIS__PORT ping
+
+# Verify configuration
+echo $REDIS__HOST $REDIS__PORT
+
+# Check logs for connection errors
+tail -f service.log | grep redis
+```
+
+### Search Not Working
+
+```bash
+# Check OpenSearch connection
+curl http://$OPENSEARCH__HOST:$OPENSEARCH__PORT/_cluster/health
+
+# Verify indices exist
+curl http://$OPENSEARCH__HOST:$OPENSEARCH__PORT/_cat/indices
+```
+
+## Next Steps
+
+1. [Getting Started](/introduction/overview) - Build your first assistant
+2. [Docker Setup](/opensource/docker-setup) - Using Docker
+3. [Manual Setup](/opensource/manual-setup) - Without Docker

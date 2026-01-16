@@ -1,0 +1,407 @@
+---
+title: "Architecture Overview"
+description: "Understanding Rapida's system architecture and microservices"
+sidebarTitle: "Architecture"
+---
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                                                                      │
+│                   Users & Web Clients                               │
+│              (Browser, Mobile, Web Applications)                    │
+│                                                                      │
+└────────────────────────────────┬─────────────────────────────────────┘
+                                 │
+                    ┌────────────▼────────────┐
+                    │  Nginx API Gateway      │
+                    │  Port: 8080             │
+                    │  (SSL/TLS, Load Balance)│
+                    └────────┬───────┬────────┘
+                             │       │
+          ┌──────────────────┼───────┼──────────────────┐
+          │                  │       │                  │
+     ┌────▼────┐    ┌────────▼──┐ ┌─▼────────┐    ┌───▼────┐
+     │   UI    │    │ web-api   │ │ integ-api│    │endpoint │
+     │ :3000   │    │ :9001     │ │ :9004    │    │ :9005   │
+     │ React   │    │ Dashboard │ │Providers │    │Webhooks │
+     └─────────┘    └─────┬──────┘ └──────────┘    └─────────┘
+                           │
+          ┌────────────────┼────────────────┐
+          │                │                │
+     ┌────▼──────┐  ┌──────▼──────┐  ┌────▼────────┐
+     │document-api│  │assistant-api │  │integration- │
+     │ :9010      │  │    :9007     │  │api (lookup) │
+     │Knowledge   │  │Voice Agents  │  │             │
+     │Base        │  │              │  └─────────────┘
+     └────────────┘  └──────┬───────┘
+                            │
+                ┌───────────┴──────────────────┐
+                │   Telephony Gateway          │
+                │(Twilio, Vonage, etc.)        │
+                │(Direct WebSocket/SIP)        │
+                └──────────────────────────────┘
+
+```
+
+## Persistent Data Layer
+
+### Storage Infrastructure
+
+| Service        | Port | Type               | Purpose                       | Components                                                     |
+| -------------- | ---- | ------------------ | ----------------------------- | -------------------------------------------------------------- |
+| **PostgreSQL** | 5432 | Relational DB      | Persistent data storage       | web_db, assistant_db, integration_db, endpoint_db, document_db |
+| **Redis**      | 6379 | In-Memory Cache    | Sessions, caching, job queues | DB:0 (Cache), DB:1 (Sessions), DB:2 (Jobs & Queues)            |
+| **OpenSearch** | 9200 | Search & Analytics | Full-text search, indexing    | Conversations, Metrics, Documents, Audit Logs                  |
+
+### PostgreSQL Databases
+
+| Database Name      | Purpose                      | Key Tables                                       |
+| ------------------ | ---------------------------- | ------------------------------------------------ |
+| **web_db**         | User & org management        | users, organizations, projects, credentials      |
+| **assistant_db**   | Voice agents & conversations | assistants, conversations, messages, audio_files |
+| **integration_db** | Provider integrations        | integrations, credentials, oauth_tokens          |
+| **endpoint_db**    | Webhooks & events            | webhooks, webhook_events, webhook_deliveries     |
+| **document_db**    | Knowledge base & embeddings  | documents, chunks, embeddings, knowledge_bases   |
+
+### Redis Data Structure
+
+| DB Number | Purpose        | Usage                                   |
+| --------- | -------------- | --------------------------------------- |
+| **DB 0**  | Cache & Config | Application cache, configuration values |
+| **DB 1**  | Session Store  | User sessions, auth tokens              |
+| **DB 2**  | Job Queues     | Background job queue, Celery tasks      |
+| **DB 3+** | Reserved       | Future use, custom applications         |
+
+### OpenSearch Indices
+
+| Index Name        | Data Type            | Purpose                                    |
+| ----------------- | -------------------- | ------------------------------------------ |
+| **conversations** | Conversation records | Full-text search, conversation transcripts |
+| **metrics**       | Performance data     | Call metrics, performance analytics        |
+| **documents**     | Knowledge content    | Knowledge base search, embeddings          |
+| **audit-logs**    | System events        | Audit trail, event tracking                |
+
+## Core Components
+
+### API Services (Microservices)
+
+| Service             | Port | Purpose                                           | Built With       |
+| ------------------- | ---- | ------------------------------------------------- | ---------------- |
+| **web-api**         | 9001 | Dashboard backend, user management, orchestration | Go + Gin         |
+| **assistant-api**   | 9007 | Voice agents, conversations, real-time audio      | Go + gRPC        |
+| **integration-api** | 9004 | Third-party integrations, credential management   | Go + Gin         |
+| **endpoint-api**    | 9005 | Webhooks, callbacks, external events              | Go + Gin         |
+| **document-api**    | 9010 | Knowledge base, RAG, embeddings                   | Python + FastAPI |
+
+### Frontend
+
+| Service | Port | Purpose       | Built With         |
+| ------- | ---- | ------------- | ------------------ |
+| **ui**  | 3000 | Web dashboard | React + TypeScript |
+
+### API Gateway
+
+| Service   | Port | Purpose                                |
+| --------- | ---- | -------------------------------------- |
+| **nginx** | 8080 | Reverse proxy, load balancing, SSL/TLS |
+
+### Infrastructure Services
+
+| Service        | Port | Purpose                     | Data                            |
+| -------------- | ---- | --------------------------- | ------------------------------- |
+| **PostgreSQL** | 5432 | Relational database         | 4 separate databases            |
+| **Redis**      | 6379 | Cache, queues, sessions     | In-memory store                 |
+| **OpenSearch** | 9200 | Full-text search, analytics | Indices for conversations, logs |
+
+## Data Flow
+
+### 1. User Authentication
+
+```
+Dashboard (UI)
+  → nginx (8080)
+  → web-api (9001)
+  → PostgreSQL (web_db)
+  → Redis (session cache)
+```
+
+### 2. Create Voice Agent
+
+```
+Dashboard (UI)
+  → nginx (8080)
+  → web-api (9001) [stores metadata]
+  → PostgreSQL (web_db)
+  → assistant-api (9007) [creates agent]
+  → PostgreSQL (assistant_db)
+  → OpenSearch [index agent]
+```
+
+### 3. Start Voice Conversation
+
+```
+Voice Device (Phone/Browser)
+  → nginx (8080) [WebSocket]
+  → assistant-api (9007) [streams audio]
+  → Redis [store session state]
+  → integration-api (9004) [get LLM provider]
+  → PostgreSQL (assistant_db) [store conversation]
+  → OpenSearch [index messages]
+  → endpoint-api (9005) [trigger webhooks]
+```
+
+### 4. Upload Knowledge Document
+
+```
+Dashboard (UI)
+  → nginx (8080)
+  → web-api (9001) [validates]
+  → document-api (9010) [processes]
+  → PostgreSQL (document_db) [stores metadata]
+  → Redis [job queue]
+  → OpenSearch [indexes chunks]
+```
+
+## Service Communication
+
+### Synchronous Communication
+
+- **REST APIs**: Services expose HTTP/REST endpoints
+- **gRPC**: Internal service-to-service communication (assistant-api)
+- **WebSocket**: Real-time bidirectional communication for voice streams
+
+### Asynchronous Communication
+
+- **Redis Pub/Sub**: Real-time notifications, session updates
+- **Redis Queues**: Background job processing (document processing, embeddings)
+- **Webhooks**: External event notifications via HTTP callbacks
+
+## Database Strategy
+
+### PostgreSQL Databases
+
+```
+┌─────────────────────────────────────────────────────┐
+│          PostgreSQL Server (5432)                   │
+├──────────────┬──────────────┬──────────────┬────────┤
+│  web_db      │ assistant_db │integration_db│endpoint│
+├──────────────┼──────────────┼──────────────┼────────┤
+│ Users        │ Assistants   │ Integrations │ Webhooks│
+│ Orgs         │ Conversations│ Providers    │ Events  │
+│ Projects     │ Messages     │ Credentials  │ Logs    │
+│ Credentials  │ Audio Files  │              │         │
+│ API Keys     │ Analysis     │              │         │
+└──────────────┴──────────────┴──────────────┴────────┘
+```
+
+### Redis Databases
+
+```
+┌──────────────────────────────────────┐
+│    Redis Server (6379)               │
+├────────┬────────┬────────┬───────────┤
+│ DB 0   │ DB 1   │ DB 2   │ DB 3+     │
+├────────┼────────┼────────┼───────────┤
+│ Cache  │ Sessions│ Jobs   │ Reserved  │
+│ Config │ Auth   │ Queues │           │
+└────────┴────────┴────────┴───────────┘
+```
+
+### OpenSearch Indices
+
+```
+┌─────────────────────────────────────────────────────┐
+│        OpenSearch Cluster (9200)                    │
+├──────────────┬─────────────┬──────────────┬────────┤
+│ Conversations│ Metrics     │ Documents    │ Logs   │
+├──────────────┼─────────────┼──────────────┼────────┤
+│ Transcripts  │ Call Metrics│ Knowledge    │ Events │
+│ Messages     │ Performance │ Chunks       │ Traces │
+│ Metadata     │ Aggregation │ Embeddings   │        │
+└──────────────┴─────────────┴──────────────┴────────┘
+```
+
+## Deployment Models
+
+### Docker Compose (Development/Single Server)
+
+All services run as containers on a single server:
+
+```yaml
+Services:
+  - PostgreSQL container
+  - Redis container
+  - OpenSearch container
+  - web-api container
+  - assistant-api container
+  - integration-api container
+  - endpoint-api container
+  - document-api container
+  - ui container
+  - nginx container
+
+Network: api-network (shared bridge network)
+Storage: Volumes for data persistence
+```
+
+### Kubernetes (Production)
+
+Services can be deployed to Kubernetes clusters:
+
+```
+┌──────────────────────────────────────────┐
+│         Kubernetes Cluster               │
+├──────────────────────────────────────────┤
+│ API Services (Deployments)               │
+│  ├─ web-api (3+ replicas)               │
+│  ├─ assistant-api (3+ replicas)         │
+│  ├─ integration-api (2+ replicas)       │
+│  ├─ endpoint-api (2+ replicas)          │
+│  └─ document-api (2+ replicas)          │
+├──────────────────────────────────────────┤
+│ Stateful Services (StatefulSets)        │
+│  ├─ PostgreSQL                          │
+│  ├─ Redis                               │
+│  └─ OpenSearch                          │
+├──────────────────────────────────────────┤
+│ Ingress → Nginx Service                  │
+└──────────────────────────────────────────┘
+```
+
+### AWS Deployment
+
+Services deployed with AWS CodeDeploy:
+
+```
+├─ EC2 Instances (application servers)
+│  ├─ web-api
+│  ├─ assistant-api
+│  ├─ integration-api
+│  ├─ endpoint-api
+│  └─ document-api
+├─ RDS PostgreSQL (managed database)
+├─ ElastiCache Redis (managed cache)
+├─ OpenSearch Domain (managed search)
+└─ ALB (Application Load Balancer)
+```
+
+## Security Architecture
+
+### Authentication & Authorization
+
+```
+┌─────────────┐
+│   User      │
+└──────┬──────┘
+       │
+  ┌────▼─────────────────────┐
+  │ web-api Authentication   │
+  │ - JWT Token Generation   │
+  │ - OAuth 2.0 Integration  │
+  │ - Service Credentials    │
+  └────┬─────────────────────┘
+       │
+  ┌────▼──────────────────────┐
+  │ All API Services          │
+  │ - Verify JWT Token        │
+  │ - Check Organization      │
+  │ - Check Project Scope     │
+  └───────────────────────────┘
+```
+
+### Credential Management
+
+```
+User Credentials
+  → Encrypted at rest (AES-256)
+  → Stored in PostgreSQL (integration_db)
+  → Retrieved only when needed
+  → Never exposed in logs
+  → Rotation support available
+```
+
+### Network Security
+
+```
+┌─────────────┐
+│ Internet    │
+└──────┬──────┘
+       │
+  ┌────▼──────┐
+  │   Nginx    │ (SSL/TLS termination)
+  │ Port 8080  │
+  └────┬───────┘
+       │
+  ┌────▼──────────────────────────────────┐
+  │   Internal API Network (api-network)   │
+  │   Services communicate within network  │
+  │   PostgreSQL (internal only)           │
+  │   Redis (internal only)                │
+  │   OpenSearch (internal only)           │
+  └────────────────────────────────────────┘
+```
+
+## Scaling Considerations
+
+### Horizontal Scaling
+
+Services that can scale independently:
+
+```
+web-api:          Stateless (scale 1-N replicas)
+assistant-api:    Mostly stateless (scale 1-N)
+integration-api:  Stateless (scale 1-N)
+endpoint-api:     Stateless (scale 1-N)
+document-api:     Stateless (scale 1-N)
+
+PostgreSQL:       Vertical scaling / Read replicas
+Redis:            Vertical scaling / Cluster mode
+OpenSearch:       Horizontal (node count) + sharding
+```
+
+### Load Distribution
+
+```
+Incoming Traffic
+  ↓
+Nginx Load Balancer
+  ├→ web-api-1, web-api-2, web-api-3
+  ├→ assistant-api-1, assistant-api-2, assistant-api-3
+  ├→ integration-api-1, integration-api-2
+  ├→ endpoint-api-1, endpoint-api-2
+  └→ document-api-1, document-api-2
+```
+
+## Development vs Production
+
+### Development (Docker Compose)
+
+- Single PostgreSQL instance
+- Single Redis instance
+- Single OpenSearch node
+- All services on one network
+- Local volume storage
+- No SSL/TLS
+- No authentication for internal services
+
+### Production (Kubernetes/AWS)
+
+- PostgreSQL with replication and backups
+- Redis with high availability
+- OpenSearch with multiple nodes and sharding
+- Services with health checks and auto-recovery
+- Persistent block storage or managed services
+- SSL/TLS everywhere
+- Authentication for all internal communication
+- Monitoring, logging, and alerting
+
+## Next Steps
+
+Learn about individual services:
+
+- [Web Console & API](/opensource/services/web-console)
+- [Web API](/opensource/services/web-api)
+- [Assistant API](/opensource/services/assistant-api)
+- [Integration API](/opensource/services/integration-api)
+- [Endpoint API](/opensource/services/endpoint-api)
+- [Document API](/opensource/services/document-api)

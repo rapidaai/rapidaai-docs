@@ -1,0 +1,492 @@
+---
+title: "Document Service"
+description: "Knowledge base management, document processing, and embeddings"
+sidebarTitle: "Document Service"
+---
+
+**Service Name**: document-api  
+**Port**: 9010  
+**Technology**: Python + FastAPI  
+**Language**: Python 3.11+  
+**Primary Database**: PostgreSQL (document_db)  
+**Search Engine**: OpenSearch  
+**Background Jobs**: Celery + Redis
+
+## Purpose
+
+The Document API handles:
+
+- Document upload and processing
+- Text extraction from multiple formats
+- Text chunking and segmentation
+- Semantic embeddings generation
+- Vector similarity search
+- Knowledge base organization
+- Audio noise reduction (RNNoise)
+- Entity extraction and tagging
+- Full-text search indexing
+- RAG query processing
+
+## Key Features
+
+### Document Processing
+
+- Support for 8+ file formats (PDF, DOCX, XLSX, CSV, MD, HTML, TXT, images)
+- Automatic text extraction
+- Metadata preservation
+- OCR for image documents (planned)
+- Language detection
+- Character encoding handling
+
+### Text Chunking
+
+- Configurable chunk size (default: 1000 chars)
+- Overlap between chunks (default: 100 chars)
+- Semantic-aware chunking
+- Chunk metadata preservation
+- Token counting
+
+### Embeddings
+
+- Semantic embeddings using sentence transformers
+- Vector similarity search
+- Cosine distance calculations
+- Batch embedding processing
+- Embedding caching
+
+### Audio Processing
+
+- RNNoise integration for noise reduction
+- Audio format conversion
+- Sample rate normalization
+- Voice isolation
+- Quality metrics
+
+### Knowledge Organization
+
+- Knowledge base grouping
+- Document categorization
+- Tag-based organization
+- Collection management
+- Version control
+
+## Configuration
+
+### Environment Variables
+
+```env
+# Service
+SERVICE_NAME=document-api
+PORT=9010
+HOST=0.0.0.0
+ENV=production
+LOG_LEVEL=info
+
+# Database
+DATABASE_URL=postgresql://rapida_user:rapida_db_password@postgres:5432/document_db
+SQLALCHEMY_POOL_SIZE=20
+SQLALCHEMY_MAX_OVERFLOW=10
+SQLALCHEMY_POOL_PRE_PING=true
+
+# Redis
+REDIS_URL=redis://redis:6379/0
+CELERY_BROKER_URL=redis://redis:6379/0
+CELERY_RESULT_BACKEND=redis://redis:6379/1
+
+# OpenSearch
+OPENSEARCH_HOST=opensearch
+OPENSEARCH_PORT=9200
+OPENSEARCH_USER=admin
+OPENSEARCH_PASSWORD=admin
+OPENSEARCH_VERIFY_CERTS=false
+
+# Document Processing
+CHUNK_SIZE=1000              # Characters per chunk
+CHUNK_OVERLAP=100            # Character overlap
+MAX_FILE_SIZE=52428800       # 50MB in bytes
+ALLOWED_FILE_TYPES=pdf,docx,xlsx,csv,md,html,txt
+
+# Embeddings
+EMBEDDINGS_MODEL=all-MiniLM-L6-v2  # Sentence Transformers model
+EMBEDDINGS_DIMENSION=384
+EMBEDDINGS_BATCH_SIZE=32
+EMBEDDINGS_CACHE_ENABLED=true
+
+# Audio Processing (RNNoise)
+AUDIO_PROCESSING_ENABLED=true
+RNNOISE_ENABLED=true
+RNNOISE_LEVEL=0.5           # 0.0 (off) to 1.0 (max)
+MAX_AUDIO_LENGTH=3600       # 1 hour in seconds
+
+# Celery Background Jobs
+CELERY_WORKERS=4
+CELERY_CONCURRENCY=4
+CELERY_TASK_TIMEOUT=3600    # 1 hour
+
+# File Storage
+STORAGE_TYPE=local           # or s3, azure
+UPLOAD_DIRECTORY=/uploads
+S3_BUCKET=                   # If using S3
+AZURE_CONTAINER=             # If using Azure
+```
+
+## Source Code Structure
+
+```
+api/document-api/
+├── main.py                 # FastAPI app entry point
+├── requirements.txt        # Python dependencies
+├── api/                    # API route handlers
+│   ├── documents.py
+│   ├── chunks.py
+│   ├── search.py
+│   ├── audio.py
+│   └── health.py
+├── services/               # Business logic
+│   ├── document_service.py
+│   ├── chunk_service.py
+│   ├── embedding_service.py
+│   ├── audio_service.py
+│   └── search_service.py
+├── models/                 # Database models
+│   ├── document.py
+│   ├── chunk.py
+│   ├── embedding.py
+│   └── knowledge_base.py
+├── tasks/                  # Celery background jobs
+│   ├── process_document.py
+│   ├── generate_embeddings.py
+│   └── process_audio.py
+├── utils/                  # Helper functions
+│   ├── file_handler.py
+│   ├── text_processor.py
+│   ├── embedding_generator.py
+│   └── audio_processor.py
+├── config/                 # Configuration
+│   └── settings.py
+├── migrations/             # Alembic database migrations
+├── docker/
+│   └── entrypoint.sh       # Docker entry script
+└── venv/                   # Virtual environment
+```
+
+## Supported File Formats
+
+| Format | Handler            | Extraction               |
+| ------ | ------------------ | ------------------------ |
+| PDF    | PyPDF2, pdfplumber | Text + metadata          |
+| DOCX   | python-docx        | Text + formatting        |
+| XLSX   | openpyxl, pandas   | Cells as text            |
+| CSV    | pandas             | Rows as text             |
+| MD     | markdown           | Text structure preserved |
+| HTML   | BeautifulSoup      | HTML to text             |
+| TXT    | built-in           | Direct read              |
+| Images | pytesseract (OCR)  | OCR to text              |
+
+## Building and Running
+
+### Development Setup
+
+```bash
+# Create virtual environment
+cd api/document-api
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run database migrations
+alembic upgrade head
+
+# Start development server
+uvicorn main:app --reload --port 9010
+
+# In separate terminal, start Celery worker
+celery -A tasks worker -l info
+```
+
+### Production with Docker
+
+```bash
+# Build image
+docker build -f docker/document-api/Dockerfile -t rapida-document-api:latest .
+
+# Run with Docker Compose
+docker compose up document-api
+
+# Or manually
+docker run \
+  --env-file docker/document-api/.document.env \
+  --network api-network \
+  rapida-document-api:latest
+```
+
+## Document Processing Flow
+
+### Upload Document
+
+```
+1. File Upload
+   → Validate file type and size
+   → Store file in storage backend
+
+2. Extract Text
+   → Extract text based on file type
+   → Preserve metadata
+   → Clean and normalize
+
+3. Chunk Text
+   → Split into overlapping chunks
+   → Count tokens per chunk
+   → Store chunks in database
+
+4. Generate Embeddings
+   → Use sentence-transformers model
+   → Batch processing with Celery
+   → Store 384-dim vectors
+
+5. Index in OpenSearch
+   → Create or update index
+   → Index chunks with metadata
+   → Enable full-text search
+
+6. Return to User
+   → Document created
+   → Processing status: "completed"
+```
+
+### Processing Status
+
+```
+{
+  "document_id": "doc_123",
+  "status": "processing",  # or "completed", "failed"
+  "progress": 75,          # percentage
+  "chunks_created": 45,
+  "embeddings_generated": 45,
+  "indexed_chunks": 45,
+  "error": null
+}
+```
+
+## Semantic Search
+
+### Vector Search Example
+
+```python
+# Search by embedding
+POST /api/v1/document/search
+{
+  "query": "customer billing issue",
+  "knowledge_base_id": "kb_123",
+  "top_k": 5,
+  "threshold": 0.5
+}
+
+# Response
+{
+  "results": [
+    {
+      "chunk_id": "chunk_123",
+      "document_id": "doc_456",
+      "content": "...",
+      "similarity_score": 0.87,
+      "metadata": {
+        "page_no": 5,
+        "section": "Billing"
+      }
+    },
+    ...
+  ]
+}
+```
+
+## Full-Text Search
+
+### Text Search Example
+
+```python
+POST /api/v1/document/search/text
+{
+  "query": "billing",
+  "knowledge_base_id": "kb_123",
+  "limit": 20
+}
+```
+
+## Audio Processing with RNNoise
+
+### RNNoise Noise Reduction
+
+RNNoise is included for audio noise reduction in document processing:
+
+```python
+# Enable RNNoise
+RNNOISE_ENABLED=true
+RNNOISE_LEVEL=0.5  # 0.0 (off) to 1.0 (max)
+
+# Process audio
+POST /api/v1/document/process/audio
+{
+  "file_path": "recording.wav",
+  "enable_noise_reduction": true,
+  "noise_reduction_level": 0.5
+}
+```
+
+### Audio Processing Output
+
+```json
+{
+  "document_id": "doc_123",
+  "audio_file_id": "af_456",
+  "original_size_mb": 5.2,
+  "processed_size_mb": 3.1,
+  "duration_ms": 125000,
+  "sample_rate": 16000,
+  "noise_reduction_applied": true,
+  "quality_score": 0.87,
+  "transcript": "..."
+}
+```
+
+## Embeddings Model
+
+### Current Model: all-MiniLM-L6-v2
+
+- **Dimensions**: 384
+- **Speed**: Fast (real-time)
+- **Quality**: Good for semantic search
+- **Size**: ~80MB
+- **License**: Apache 2.0
+
+### Alternative Models
+
+```python
+# Larger, higher quality
+EMBEDDINGS_MODEL=all-mpnet-base-v2  # 768-dim, slower
+
+# Lightweight
+EMBEDDINGS_MODEL=all-MiniLM-L12-v2  # 384-dim, faster
+
+# Multilingual
+EMBEDDINGS_MODEL=multilingual-e5-base  # Supports 100+ languages
+```
+
+## Celery Background Jobs
+
+### Job Types
+
+1. **process_document**
+
+   - Extract text
+   - Create chunks
+   - Generate embeddings
+   - Index in OpenSearch
+
+2. **generate_embeddings**
+
+   - Generate embeddings for chunks
+   - Batch processing
+
+3. **process_audio**
+   - Audio noise reduction
+   - Transcription
+   - Speaker diarization (planned)
+
+### Job Status
+
+```bash
+# Check job status
+celery -A tasks inspect active
+celery -A tasks inspect scheduled
+
+# View job result
+celery -A tasks result <task_id>
+```
+
+## Monitoring
+
+### Health Check
+
+```bash
+curl http://localhost:9010/health
+```
+
+### Metrics
+
+- Documents processed per day
+- Average processing time
+- Embedding generation latency
+- Search query latency
+- Storage usage
+- Queue depth (Celery jobs)
+
+### Logging
+
+Structured logs with:
+
+- Document ID
+- Processing stage
+- Duration
+- Chunk count
+- Error details (if any)
+
+## Troubleshooting
+
+### Celery Workers Not Processing
+
+```bash
+# Check worker status
+celery -A tasks inspect active
+
+# Start worker in foreground
+celery -A tasks worker -l info --without-gossip
+
+# Check Redis connection
+redis-cli -h redis -p 6379 ping
+```
+
+### Embedding Generation Slow
+
+```bash
+# Increase batch size
+EMBEDDINGS_BATCH_SIZE=64
+
+# Use GPU (if available)
+# Install torch with CUDA support
+pip install torch --index-url https://download.pytorch.org/whl/cu118
+```
+
+### OpenSearch Index Issues
+
+```bash
+# List indices
+curl http://opensearch:9200/_cat/indices
+
+# Delete index to rebuild
+curl -X DELETE http://opensearch:9200/documents
+
+# Reindex documents
+# Trigger document processing again
+```
+
+### Memory Usage High
+
+```bash
+# Reduce batch size
+EMBEDDINGS_BATCH_SIZE=8
+
+# Reduce Celery concurrency
+CELERY_CONCURRENCY=2
+
+# Monitor memory
+docker stats document-api
+```
+
+## Next Steps
+
+- [Architecture Overview](/opensource/architecture)
+- [Installation Guide](/opensource/installation)
+- [Integration API](/opensource/services/integration-api)

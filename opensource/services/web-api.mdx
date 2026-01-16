@@ -1,0 +1,208 @@
+---
+title: "Web Service"
+description: "Core platform orchestration and dashboard backend"
+sidebarTitle: "Web Service"
+---
+
+**Service Name**: web-api  
+**Port**: 9001  
+**Technology**: Go + Gin Framework  
+**Language**: Go 1.25+  
+**Database**: PostgreSQL (web_db)
+
+## Purpose
+
+The Web API is responsible for:
+
+- User authentication and authorization
+- Organization and workspace management
+- Project management
+- Credential storage and encryption
+- API key generation and validation
+- Dashboard API endpoints
+- Configuration management
+- Audit logging
+
+## Key Features
+
+### User Management
+
+- User registration and login
+- JWT-based authentication
+- OAuth 2.0 integration (Google, GitHub, etc.)
+- Session management
+- Password reset and recovery
+- Multi-factor authentication support
+
+### Organization & Workspace
+
+- Create and manage organizations
+- Multi-tenancy with organization isolation
+- Workspace boundaries for projects
+- Project grouping and organization
+- Role-based access control (RBAC)
+
+### Credential Management
+
+- Secure storage of API keys (encrypted with AES-256)
+- Provider credential validation
+- Credential rotation support
+- Audit trail for credential access
+- Permission-based credential access
+
+### API Key Management
+
+- Generate API keys for service authentication
+- Revoke keys on demand
+- Track key usage and rotation
+- IP-based restrictions
+- Rate limiting per key
+
+## Configuration
+
+### Environment Variables
+
+```env
+# Service
+SERVICE_NAME=web-api
+PORT=9001
+HOST=0.0.0.0
+ENV=development|production
+LOG_LEVEL=debug|info|warn|error
+SECRET=your-secret-key-32-chars
+
+# Database
+POSTGRES__HOST=postgres
+POSTGRES__PORT=5432
+POSTGRES__DB_NAME=web_db
+POSTGRES__AUTH__USER=rapida_user
+POSTGRES__AUTH__PASSWORD=rapida_db_password
+POSTGRES__MAX_OPEN_CONNECTION=20
+POSTGRES__MAX_IDEAL_CONNECTION=10
+POSTGRES__SSL_MODE=disable|require
+
+# Redis
+REDIS__HOST=redis
+REDIS__PORT=6379
+REDIS__DB=0
+REDIS__MAX_CONNECTION=10
+REDIS__PASSWORD=
+
+# Security
+JWT_SECRET=your-jwt-secret-key
+JWT_EXPIRY=24h
+ENCRYPTION_KEY=base64-encoded-256-bit-key
+CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+
+# OAuth (optional)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+
+# Email (optional)
+SENDGRID_API_KEY=
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASSWORD=
+```
+
+## Source Code Structure
+
+```
+api/web-api/
+├── api/                    # HTTP handlers
+│   ├── auth.go            # Authentication endpoints
+│   ├── organization.go     # Organization endpoints
+│   ├── project.go          # Project endpoints
+│   ├── user.go             # User endpoints
+│   ├── vault.go            # Credential management
+│   ├── notification.go     # Notification endpoints
+│   └── health/            # Health check handlers
+│
+├── authenticator/         # Authentication middleware
+│   └── authenticator.go
+│
+├── internal/
+│   ├── entity/            # Data models
+│   │   ├── user.go
+│   │   ├── organization.go
+│   │   ├── provider.go
+│   │   └── notification.go
+│   │
+│   ├── service/           # Business logic
+│   │   ├── user.service.go
+│   │   ├── organization.service.go
+│   │   ├── project.service.go
+│   │   ├── vault.service.go
+│   │   ├── notification.service.go
+│   │   └── {service}/     # Service implementations
+│   │
+│   ├── connect/           # OAuth providers
+│   │   ├── google.go
+│   │   ├── github.go
+│   │   ├── microsoft.go
+│   │   └── ...
+│   │
+│   └── store/             # Database access
+│
+├── migrations/            # Database migrations
+│   ├── 000001_initial_schema.up.sql
+│   └── 000001_initial_schema.down.sql
+│
+├── router/                # Route definitions
+│   └── web.go
+│
+├── config/
+│   └── config.go
+│
+├── main.go               # Entry point
+└── README.md
+```
+
+## Building and Running
+
+### From Source
+
+```bash
+# Build binary
+go build -o web-api ./cmd/web/main.go
+
+# Run
+./web-api
+
+# With environment file
+export $(cat env/.web.env | xargs)
+./web-api
+```
+
+### With Docker
+
+```bash
+# Build image
+docker build -f docker/web-api/Dockerfile -t rapida-web-api:latest .
+
+# Run container
+docker run \
+  -p 9001:9001 \
+  --env-file docker/web-api/.web.env \
+  --network api-network \
+  rapida-web-api:latest
+```
+
+### With Docker Compose
+
+```bash
+# Start only web-api
+docker compose up web-api
+
+# Or with all services
+docker compose up -d
+```
+
+## Next Steps
+
+- [Assistant API](/opensource/services/assistant-api)
+- [Installation Guide](/opensource/installation)
+- [Architecture Overview](/opensource/architecture)

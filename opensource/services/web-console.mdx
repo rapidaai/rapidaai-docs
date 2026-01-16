@@ -1,0 +1,342 @@
+---
+title: "Web Console & UI"
+description: "Web dashboard and user interface for Rapida"
+sidebarTitle: "Console"
+---
+
+**Service**: ui  
+**Port**: 3000  
+**Technology**: React + TypeScript + Tailwind CSS  
+**Container**: Included in docker-compose.yml
+
+## Purpose
+
+The web console is the primary interface for:
+
+- Creating and managing voice assistants
+- Viewing and analyzing conversations
+- Managing knowledge bases and documents
+- Configuring credentials and integrations
+- Monitoring performance and analytics
+- Team collaboration and workspace management
+
+## Key Features
+
+### Assistant Management
+
+- Create new voice assistants with flexible configuration
+- Version control for assistant configurations
+- Real-time testing and debugging
+- Performance analytics and call metrics
+
+### Conversation Viewer
+
+- Search and filter conversations by date, agent, or keywords
+- View complete conversation transcripts
+- Listen to audio recordings
+- Analyze conversation quality and metrics
+- Export conversation data
+
+### Knowledge Base Management
+
+- Upload documents (PDF, DOCX, XLSX, CSV, MD, HTML)
+- Manage document chunks and embeddings
+- Full-text search across knowledge base
+- Semantic search with similarity scores
+- Document versioning and organization
+
+### Integration Configuration
+
+- Connect external AI providers (OpenAI, Anthropic, etc.)
+- Configure STT/TTS services
+- Manage telephony integrations (Twilio, Vonage, etc.)
+- Secure credential storage with encryption
+- Provider health monitoring
+
+### Analytics & Monitoring
+
+- Call duration and quality metrics
+- LLM token usage and costs
+- Response time analysis
+- Error tracking and debugging
+- Real-time conversation monitoring
+
+### Team Management
+
+- Multi-user workspace support
+- Role-based access control
+- Team member invitation
+- Activity logging and audit trails
+
+## Accessing the Dashboard
+
+### Local Development
+
+```bash
+# After starting services with Docker
+open http://localhost:3000
+
+# Or with manual setup
+yarn start:dev
+# Then navigate to http://localhost:3000
+```
+
+### Production Deployment
+
+```
+https://your-domain.com
+# Through Nginx reverse proxy on port 8080
+```
+
+## Technology Stack
+
+| Component       | Purpose             |
+| --------------- | ------------------- |
+| React 18+       | UI framework        |
+| TypeScript      | Type safety         |
+| Tailwind CSS    | Styling and theming |
+| React Router    | Navigation          |
+| Hooks & Context | State management    |
+| WebSocket       | Real-time updates   |
+| Axios           | API communication   |
+| Material-UI     | Component library   |
+
+## Environment Configuration
+
+**File**: `.env.production` or `.env.development`
+
+```env
+REACT_APP_API_URL=http://localhost:8080
+REACT_APP_WS_URL=ws://localhost:8080
+REACT_APP_ENV=development|production
+```
+
+## Build and Deployment
+
+### Development Server
+
+```bash
+cd ui
+yarn install
+yarn start:dev
+```
+
+Starts on `http://localhost:3000` with hot-reload.
+
+### Production Build
+
+```bash
+cd ui
+yarn install
+yarn build
+```
+
+Generates optimized build in `ui/build/`.
+
+### Docker Deployment
+
+```dockerfile
+# See docker/ui/Dockerfile
+# Builds React app and serves via Nginx
+```
+
+```bash
+# Run with Docker
+docker compose up ui
+
+# Or build manually
+docker build -f docker/ui/Dockerfile -t rapida-ui:latest .
+docker run -p 3000:3000 rapida-ui:latest
+```
+
+## Frontend Architecture
+
+### Directory Structure
+
+```
+ui/src/
+├── index.tsx              # Entry point
+├── app/
+│   ├── index.tsx          # Root App component
+│   ├── components/        # Reusable UI components
+│   ├── pages/             # Page components
+│   └── routes/            # Route definitions
+├── configs/               # Configuration files
+├── context/               # React Context providers
+├── hooks/                 # Custom React hooks
+├── icons/                 # Icon components
+├── models/                # Type definitions
+├── styles/                # Global styles
+├── types/                 # TypeScript types
+├── utils/                 # Helper functions
+└── workspace/             # Workspace-specific features
+```
+
+### Key Components
+
+**Authentication**
+
+- Login/signup forms
+- JWT token management
+- OAuth integrations (Google, GitHub, etc.)
+- Session management
+
+**Assistant Management**
+
+- Create assistant wizard
+- Assistant list and detail views
+- Version management
+- Testing interface
+
+**Conversation Viewer**
+
+- Conversation list with filtering/search
+- Message timeline with audio playback
+- Transcript display with highlighting
+- Metrics and analytics
+
+**Knowledge Base**
+
+- Document upload interface
+- Knowledge base browser
+- Chunk viewer and editor
+- Search interface
+
+**Integration Settings**
+
+- Credential input forms
+- Provider configuration
+- API key management
+- Connection testing
+
+## Performance Optimization
+
+### Code Splitting
+
+- Lazy loading of route components
+- Dynamic imports for heavy modules
+
+### Caching
+
+- Browser cache for static assets
+- Redis caching on backend for API responses
+
+### Bundling
+
+- Minification and compression
+- Tree shaking for unused code
+- Asset optimization
+
+## Development Workflow
+
+### Setup Local Development
+
+```bash
+cd ui
+
+# Install dependencies
+yarn install
+
+# Start development server
+yarn start:dev
+
+# Run linting
+yarn lint
+yarn lint:fix
+
+# Run tests
+yarn test
+
+# Build for production
+yarn build
+
+# Build Tailwind CSS
+yarn build:css
+```
+
+### Debugging
+
+```bash
+# Chrome DevTools
+# F12 or Right-click → Inspect
+
+# Source Maps
+# Enabled in development, disabled in production
+
+# Network Tab
+# View API requests and responses
+
+# React DevTools
+# Browser extension for React debugging
+```
+
+## Styling
+
+### Tailwind CSS
+
+The UI uses Tailwind CSS for styling:
+
+```bash
+# Watch mode (development)
+yarn build:css
+
+# One-time build (production)
+yarn build:css
+```
+
+### Custom Styles
+
+Global styles in:
+
+- `src/styles/index.css`
+- `src/styles/globals.css`
+
+Component-specific styles in:
+
+- `src/components/{Component}/{Component}.module.css`
+
+## Troubleshooting
+
+### Port 3000 Already in Use
+
+```bash
+# Find process using port 3000
+lsof -i :3000
+
+# Kill process
+kill -9 <PID>
+
+# Or use different port
+PORT=3001 yarn start:dev
+```
+
+### Blank Page After Login
+
+```bash
+# Clear browser cache
+# Ctrl+Shift+Delete (Windows) or Cmd+Shift+Delete (Mac)
+
+# Check browser console for errors
+# F12 → Console tab
+
+# Check Network tab for failed requests
+```
+
+### API Connection Issues
+
+```bash
+# Verify API is running
+curl http://localhost:8080/health
+
+# Check CORS headers
+# Network tab → API request → Response Headers
+
+# Verify REACT_APP_API_URL is correct
+echo $REACT_APP_API_URL
+```
+
+## Next Steps
+
+- [Web API Backend](/opensource/services/web-api)
+- [Installation Guide](/opensource/installation)
+- [Configuration](/opensource/configuration)
