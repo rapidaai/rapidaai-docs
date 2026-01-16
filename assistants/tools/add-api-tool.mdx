@@ -52,10 +52,7 @@ Before adding the API Call Tool, ensure that you have:
        }
        ```
        
-       This schema follows the OpenAI Function Tool Call format where:
-       - `additionalProperties: false` ensures only defined properties are allowed
-       - `properties` defines the parameters the tool accepts. Each property has a description and data type
-       - `required` specifies which parameters must be included
+       This schema follows the OpenAI Function Tool Call format where `additionalProperties: false` ensures only defined properties are allowed, `properties` defines the parameters the tool accepts with descriptions and data types for each, and `required` specifies which parameters must be included.
     
     4. **Expected Action**: Select "API Request" from the dropdown.
 

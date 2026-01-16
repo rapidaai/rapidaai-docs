@@ -48,11 +48,7 @@ Before adding the Knowledge Retrieval Tool, ensure that you have:
        }
        ```
        
-       This schema follows the OpenAI Function Tool Call format where:
-       - `additionalProperties: false` ensures only defined properties are allowed
-       - `properties` defines the parameters the tool accepts
-       - Each property (like `query`) has a description and data type
-       - This schema will be used to validate inputs when the tool is called
+       This schema follows the OpenAI Function Tool Call format where `additionalProperties: false` ensures only defined properties are allowed, `properties` defines the parameters the tool accepts with descriptions and data types for each (like `query`), and the schema validates inputs when the tool is called.
     
     4. **Expected Action**: From the list select "Knowledge Retrieval".
     
