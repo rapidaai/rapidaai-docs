@@ -18,7 +18,8 @@ sidebarTitle: "Installation"
 
     ### Installation Steps
 
-    #### Step 1: Install Docker
+<Steps>
+<Step title="Install Docker and Docker Compose">
 
     <CodeGroup>
       ```bash macOS
@@ -55,8 +56,9 @@ sidebarTitle: "Installation"
       # Ensure WSL2 is enabled in Docker Desktop settings.
       ```
     </CodeGroup>
+    </Step>
 
-    #### Step 2: Verify Installation
+    <Step title="Verify Installation">
 
     ```bash
     # Check Docker
@@ -71,14 +73,16 @@ sidebarTitle: "Installation"
     docker run hello-world
     ```
 
-    #### Step 3: Clone Repository
+</Step>
+    <Step title="Clone Repository">
 
     ```bash
     git clone https://github.com/rapidaai/voice-ai.git
     cd voice-ai
     ```
 
-    #### Step 4: Run Setup
+</Step>
+    <Step title="Run Setup">
 
     ```bash
     # Create data directories and set permissions
@@ -90,17 +94,21 @@ sidebarTitle: "Installation"
     - `~/rapida-data/assets/redis` - Redis
     - `~/rapida-data/assets/opensearch` - OpenSearch
 
-    #### Step 5: Start Rapida
+</Step>
+    <Step title="Start Rapida">
 
     ```bash
     make up-all
     ```
-
-    Access Dashboard
+</Step>
+    
+     <Step title="Access Dashboard">
 
     Open your browser:
     - **Dashboard**: http://localhost:3000
     - **API Gateway**: http://localhost:8080
+</Step>
+</Steps>
 
     ### Verify Services Are Running
 
