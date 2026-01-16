@@ -18,6 +18,147 @@
     "navigation": {
         "tabs": [
             {
+                "tab": "Documentation",
+                "groups": [
+                    {
+                        "group": "Introduction",
+                        "icon": "book-open",
+                        "pages": [
+                            "introduction/overview"
+                        ]
+                    },
+                    {
+                        "group": "Assistants",
+                        "icon": "bot",
+                        "pages": [
+                            "assistants/overview",
+                            "assistants/create-assistant",
+                            "assistants/create-new-version",
+                            {
+                                "group": "Tool",
+                                "pages": [
+                                    "assistants/tools/add-knowledge-tool",
+                                    "assistants/tools/add-endpoint-tool",
+                                    "assistants/tools/add-api-tool",
+                                    "assistants/tools/add-put-on-hold-tool",
+                                    "assistants/tools/add-end-of-conversation-tool"
+                                ]
+                            },
+                            {
+                                "group": "Analysis",
+                                "pages": [
+                                    "assistants/analysis/overview",
+                                    "assistants/analysis/create-analysis",
+                                    "assistants/analysis/update-analysis"
+                                ]
+                            },
+                            {
+                                "group": "Webhooks",
+                                "pages": [
+                                    "assistants/webhook/overview",
+                                    "assistants/webhook/create-webhook",
+                                    "assistants/webhook/update-webhook"
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "group": "Knowledge",
+                        "icon": "database",
+                        "pages": [
+                            "knowledge/overview",
+                            "knowledge/create-knowledge",
+                            "knowledge/add-new-document",
+                            "knowledge/manage-document-chunk"
+                        ]
+                    },
+                    {
+                        "group": "LLM Endpoint",
+                        "icon": "server",
+                        "pages": [
+                            "endpoint/overview",
+                            "endpoint/create-endpoint",
+                            "endpoint/create-new-version",
+                            "endpoint/monitor-endpoint-performance"
+                        ]
+                    },
+                    {
+                        "group": "Activity and logs",
+                        "icon": "activity",
+                        "pages": [
+                            "activity/llm-logs",
+                            "activity/webhook-logs",
+                            "activity/conversation-logs"
+                        ]
+                    },
+                    {
+                        "group": "External Integrations",
+                        "icon": "plug",
+                        "pages": [
+                            {
+                                "group": "LLM Integrations",
+                                "pages": [
+                                    "integrations/llm/openai",
+                                    "integrations/llm/anthropic",
+                                    "integrations/llm/cohere",
+                                    "integrations/llm/google-ai",
+                                    "integrations/llm/azure-openai",
+                                    "integrations/llm/gemini",
+                                    "integrations/llm/google-vertex-ai"
+                                ]
+                            },
+                            {
+                                "group": "Speech to Text",
+                                "pages": [
+                                    "integrations/stt/google-speech-service",
+                                    "integrations/stt/deepgram",
+                                    "integrations/stt/cartesia",
+                                    "integrations/stt/assemblyai",
+                                    "integrations/stt/sarvam"
+                                ]
+                            },
+                            {
+                                "group": "Text to Speech",
+                                "pages": [
+                                    "integrations/tts/azure-speech-service",
+                                    "integrations/tts/google-speech-service",
+                                    "integrations/tts/deepgram",
+                                    "integrations/tts/cartesia",
+                                    "integrations/tts/elevenlabs",
+                                    "integrations/tts/sarvam"
+                                ]
+                            },
+                            {
+                                "group": "Telephony Integrations",
+                                "pages": [
+                                    "integrations/telephony/twilio",
+                                    "integrations/telephony/vonage",
+                                    "integrations/telephony/exotel"
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "group": "Credentials",
+                        "icon": "key",
+                        "pages": [
+                            "credential/rapida-credentials"
+                        ]
+                    },
+                    {
+                        "group": "Workspace",
+                        "icon": "briefcase",
+                        "pages": [
+                            "workspace/overview",
+                            "workspace/project-management",
+                            "workspace/create-new-project",
+                            "workspace/user-management",
+                            "workspace/invite-a-user"
+                        ]
+                    }
+                ]
+            },
+            {
                 "tab": "Open Source",
                 "groups": [
                     {
