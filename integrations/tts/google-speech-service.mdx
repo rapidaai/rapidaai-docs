@@ -1,0 +1,108 @@
+---
+title: "Google Text-to-Speech"
+description: "Google Cloud Text-to-Speech provides natural-sounding voice synthesis powered by advanced neural networks."
+---
+
+## Getting Started
+
+To integrate Google Cloud Text-to-Speech with your Rapida application for text-to-speech (TTS) capabilities, follow these steps:
+
+## Supported Models
+
+### Text-to-Speech Voices
+
+Google Cloud provides neural voices with natural, expressive speech synthesis:
+
+#### English Voices
+
+| Voice Name      | Gender | Regional Accent | Description                   |
+| --------------- | ------ | --------------- | ----------------------------- |
+| en-US-Neural2-A | Female | US              | Natural US English female     |
+| en-US-Neural2-C | Female | US              | Alternative US English female |
+| en-US-Neural2-E | Male   | US              | Natural US English male       |
+| en-GB-Neural2-A | Female | UK              | British English female        |
+| en-GB-Neural2-B | Male   | UK              | British English male          |
+| en-AU-Neural2-A | Female | Australian      | Australian English female     |
+| en-AU-Neural2-B | Male   | Australian      | Australian English male       |
+| en-IN-Neural2-A | Female | Indian          | Indian English female         |
+| en-IN-Neural2-B | Male   | Indian          | Indian English male           |
+
+### Supported Languages
+
+Google Cloud Text-to-Speech supports 30+ languages including:
+
+- English (US, UK, Australian, Indian, South African variants)
+- Spanish, French, German, Italian, Dutch
+- Mandarin, Cantonese, Japanese, Korean
+- Hindi, Bengali, Tamil, Telugu, Marathi
+- Portuguese, Russian, Arabic, Polish, Turkish
+- Thai, Vietnamese, Filipino, and more
+
+### Features
+
+- **Neural Voices**: Advanced neural network-based voice synthesis
+- **Multiple Accents**: Native speaker accents for various regions
+- **Speaking Rate**: Adjust speech speed from 0.25x to 4.0x
+- **Pitch Control**: Fine-tune voice pitch
+- **Audio Formats**: Multiple audio formats and sample rates
+- **SSML Support**: Full SSML markup support
+
+## Prerequisites
+
+- Have a Google Cloud account
+- Create a new Google Cloud Project or use an existing one
+- Enable the Text-to-Speech API
+- Create a service account with Text-to-Speech permissions
+- Download the service account key (JSON file)
+
+# Setting Up Provider Credentials
+
+<Steps>
+<Step title="Access the Integrations Page">
+![Integrations Page](/images/integration/providers/providers-and-models.png)
+
+Navigate to the "Integration > Models" page to access TTS providers.
+
+</Step>
+
+<Step title="Select Google Speech Service">
+On the Integrations page, find the Google Speech Service provider card.
+
+Click the "Setup Credential" button for Google Speech Service (for TTS).
+
+</Step>
+
+<Step title="Create Provider Credential">
+A modal window will appear titled "Create provider credential". Follow these steps:
+
+1. Select "Google Speech Service" from the dropdown (if not already selected)
+2. Enter a Key Name: Assign a unique name to this provider key for easy identification
+3. Enter Project ID: Input your Google Cloud Project ID
+4. Enter Service Account Key: Paste the entire JSON content of your service account key
+5. Click "Configure" to save the credential
+
+</Step>
+
+<Step title="Verify Credential Setup">
+After setting up the credential, you can verify it's been added:
+
+1. The Google Speech Service provider card should now show "Connected"
+2. If you click on the provider, you'll see a "View provider credential" modal
+3. This modal displays the credential name, when it was last updated, and options to delete or close
+
+</Step>
+</Steps>
+
+Your Google Cloud Text-to-Speech provider credential is now set up for TTS integration.
+
+## Integration Features
+
+- **Natural Neural Voices**: High-quality neural voice synthesis
+- **30+ Languages**: Comprehensive language support
+- **Multiple Accents**: Native speaker accents for various regions
+- **SSML Support**: Advanced markup for precise voice control
+- **Real-time Streaming**: Stream audio as it's being synthesized
+- **Batch Processing**: Process large volumes of text
+- **Affordable**: Cost-effective pay-as-you-go pricing
+
+For more information, visit the [Google Cloud Text-to-Speech documentation](https://cloud.google.com/text-to-speech/docs).

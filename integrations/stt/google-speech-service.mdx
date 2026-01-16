@@ -1,0 +1,89 @@
+---
+title: "Google Speech Service"
+description: "Google Speech Service provides advanced speech-to-text and text-to-speech capabilities powered by Google Cloud."
+---
+
+## Getting Started
+
+To integrate Google Speech Service with your Rapida application for speech-to-text (STT) capabilities, follow these steps:
+
+## Supported Models
+
+Google Speech Service offers various models optimized for different use cases:
+
+### Speech-to-Text Models
+
+| Model Name | Description                                | Best For                           |
+| ---------- | ------------------------------------------ | ---------------------------------- |
+| default    | Google's standard speech recognition model | General purpose speech recognition |
+| enhanced   | Enhanced model with better accuracy        | Noisy environments and accents     |
+| phone_call | Optimized for phone call audio             | Telephony applications             |
+| video      | Optimized for video audio                  | Video content transcription        |
+
+### Languages Supported
+
+Google Speech Service supports 125+ languages. Some popular ones include:
+
+- English (US, UK, Australia, etc.)
+- Spanish, French, German, Italian
+- Mandarin, Cantonese, Japanese, Korean
+- Hindi, Portuguese, Russian, Arabic
+
+## Prerequisites
+
+- Have a Google Cloud account
+- Create a new Google Cloud Project or use an existing one
+- Enable the Speech-to-Text API in your Google Cloud Project
+- Create a service account with Speech-to-Text permissions
+- Download the service account key (JSON file)
+
+# Setting Up Provider Credentials
+
+<Steps>
+<Step title="Access the Integrations Page">
+![Integrations Page](/images/integration/providers/providers-and-models.png)
+
+Navigate to the "Integration > Models" page. Here you'll see a grid of various speech service providers.
+
+</Step>
+
+<Step title="Select Google Speech Service">
+On the Integrations page, find the Google Speech Service provider card.
+
+Click the "Setup Credential" button for Google Speech Service.
+
+</Step>
+
+<Step title="Create Provider Credential">
+A modal window will appear titled "Create provider credential". Follow these steps:
+
+1. Select "Google Speech Service" from the dropdown (if not already selected)
+2. Enter a Key Name: Assign a unique name to this provider key for easy identification
+3. Enter Project ID: Input your Google Cloud Project ID
+4. Enter Service Account Key: Paste the entire JSON content of your service account key
+5. Click "Configure" to save the credential
+
+</Step>
+
+<Step title="Verify Credential Setup">
+After setting up the credential, you can verify it's been added:
+
+1. The Google Speech Service provider card should now show "Connected"
+2. If you click on the provider, you'll see a "View provider credential" modal
+3. This modal displays the credential name, when it was last updated, and options to delete or close
+
+</Step>
+</Steps>
+
+Your Google Speech Service provider credential is now set up for speech-to-text integration.
+
+## Integration Features
+
+- **High Accuracy**: Industry-leading speech recognition accuracy
+- **Multiple Languages**: Support for 125+ languages and variants
+- **Real-time Streaming**: Stream audio for real-time transcription
+- **Speaker Diarization**: Identify different speakers in audio
+- **Word-level Confidence**: Get confidence scores for transcribed words
+- **Custom Vocabularies**: Define custom words and phrases
+
+For more information, visit the [Google Cloud Speech-to-Text documentation](https://cloud.google.com/speech-to-text/docs).

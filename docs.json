@@ -28,16 +28,6 @@
                         ]
                     },
                     {
-                        "group": "Deployments",
-                        "icon": "server",
-                        "tag": "NEW",
-                        "pages": [
-                            "deployments/deployment-options",
-                            "deployments/self-hosted",
-                            "deployments/fully-managed"
-                        ]
-                    },                    
-                    {
                         "group": "Assistants",
                         "icon": "bot",
                         "pages": [
@@ -46,7 +36,6 @@
                             "assistants/create-new-version",
                             {
                                 "group": "Tool",
-                                "icon": "pencil-ruler",
                                 "pages": [
                                     "assistants/tools/add-knowledge-tool",
                                     "assistants/tools/add-endpoint-tool",
@@ -57,18 +46,18 @@
                             },
                             {
                                 "group": "Analysis",
-                                "icon": "chart-area",
                                 "pages": [
                                     "assistants/analysis/overview",
-                                    "assistants/analysis/create-analysis"
+                                    "assistants/analysis/create-analysis",
+                                    "assistants/analysis/update-analysis"
                                 ]
                             },
                             {
                                 "group": "Webhooks",
-                                "icon": "webhook",
                                 "pages": [
                                     "assistants/webhook/overview",
-                                    "assistants/webhook/create-webhook"
+                                    "assistants/webhook/create-webhook",
+                                    "assistants/webhook/update-webhook"
                                 ]
                             }
                         ]
@@ -103,31 +92,57 @@
                         ]
                     },
                     {
-                        "group": "Model Providers",
-                        "icon": "cpu",
-                        "pages": [
-                            "integrations/openai",
-                            "integrations/anthropic",
-                            "integrations/cohere",
-                            "integrations/google-ai",
-                            "integrations/azure-openai",
-                            "integrations/voyageai"
-                        ]
-                    },
-                    {
                         "group": "External Integrations",
                         "icon": "plug",
                         "pages": [
-                            "integrations/external/vonage",
-                            "integrations/external/twilio",
-                            "integrations/external/exotel"
+                            {
+                                "group": "LLM Integrations",
+                                "pages": [
+                                    "integrations/llm/openai",
+                                    "integrations/llm/anthropic",
+                                    "integrations/llm/cohere",
+                                    "integrations/llm/google-ai",
+                                    "integrations/llm/azure-openai",
+                                    "integrations/llm/gemini",
+                                    "integrations/llm/google-vertex-ai"
+                                ]
+                            },
+                            {
+                                "group": "Speech to Text",
+                                "pages": [
+                                    "integrations/stt/google-speech-service",
+                                    "integrations/stt/deepgram",
+                                    "integrations/stt/cartesia",
+                                    "integrations/stt/assemblyai",
+                                    "integrations/stt/sarvam"
+                                ]
+                            },
+                            {
+                                "group": "Text to Speech",
+                                "pages": [
+                                    "integrations/tts/azure-speech-service",
+                                    "integrations/tts/google-speech-service",
+                                    "integrations/tts/deepgram",
+                                    "integrations/tts/cartesia",
+                                    "integrations/tts/elevenlabs",
+                                    "integrations/tts/sarvam"
+                                ]
+                            },
+                            {
+                                "group": "Telephony Integrations",
+                                "pages": [
+                                    "integrations/telephony/twilio",
+                                    "integrations/telephony/vonage",
+                                    "integrations/telephony/exotel"
+                                ]
+                            }
                         ]
                     },
                     {
-                        "group": "Rapida Credentials",
+                        "group": "Credentials",
                         "icon": "key",
                         "pages": [
-                            "integrations/rapida-credentials"
+                            "credential/rapida-credentials"
                         ]
                     },
                     {
@@ -140,14 +155,20 @@
                             "workspace/user-management",
                             "workspace/invite-a-user"
                         ]
-                    },                    
+                    }
+                ]
+            },
+            {
+                "tab": "Open Source",
+                "groups": [
                     {
-                        "group": "Rapida SDK",
-                        "icon": "rocket",
+                        "group": "API Documentation",
+                        "icon": "file-code",
                         "pages": [
-                            "get-started/sdk"
+                            "api-reference/installation",
+                            "api-reference/authentication"
                         ]
-                    }                   
+                    }
                 ]
             },
             {
@@ -203,8 +224,8 @@
         ]
     },
     "logo": {
-        "light": "/logo/light.svg",
-        "dark": "/logo/dark.svg"
+        "light": "/logo/rapida-db.svg",
+        "dark": "/logo/rapida-lb.svg"
     },
     "navbar": {
         "links": [

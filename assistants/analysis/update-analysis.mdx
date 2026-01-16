@@ -1,0 +1,127 @@
+---
+title: "Update analysis for assistant"
+description: "Step-by-step guide to update analysis for your AI assistant"
+sidebarTitle: "Add analysis"
+---
+
+This guide walks you through the process of setting up analysis functionality for your assistant to gain insights from conversations.
+
+<Steps>
+  <Step title="Navigate to Your Assistant">
+    1. Go to the Assistants section in the main navigation menu.
+    2. Select the assistant you want to configure.
+    3. Click "Configure assistant" in the top right corner.
+    4. Select "Analysis" from the left sidebar menu.
+    5. Click on **Create new analysis**.
+  
+    ![Navigate to Analysis](/images/create_assistant/create_analysis_1.png)
+  </Step>
+
+  <Step title="Configure Analysis Details">
+    ![Configure Analysis Details](/images/create_assistant/create_analysis_2.png)
+
+    Enter the basic information for your analysis:
+
+    - **Name**: Provide a descriptive name for this analysis (e.g., "conversation-analysis")
+    - **Description**: Add a brief explanation of what this analysis will do
+
+  </Step>
+
+  <Step title="Select Endpoint">
+    ![Select Endpoint](/images/create_assistant/create_analysis_endpoints.png)
+
+    Choose an endpoint that will process the analysis:
+
+    - Select from existing endpoints in the dropdown
+    - If you haven't created an appropriate endpoint, you'll need to create one first
+
+    **Note**: The endpoint will receive the data specified in the parameters section and should be configured to process this information accordingly.
+
+  </Step>
+
+  <Step title="Configure Parameters">
+    ![Configure Parameters](/images/create_assistant/create_analysis_3.png)
+
+    Set up the parameters that will be passed to your analysis endpoint:
+
+    **Default Parameter**:
+
+    - **Conversation Messages**: By default, the conversation history will be passed to the endpoint
+
+    **Optional Additional Parameters**:
+
+
+      <Step title="Configure Parameters">
+    Add parameters to be sent with your API request:
+
+    1. Click **Add parameters** to include data in your request
+    2. Select the parameter type from the dropdown menu:
+
+    <AccordionGroup>
+      <Accordion title="Assistant">
+        Include assistant-related information in the request:
+        - Name
+        - Prompt
+      </Accordion>
+
+      <Accordion title="Conversation">
+        Include conversation data in the request:
+        - Conversation history
+      </Accordion>
+
+      <Accordion title="Argument">
+        - Include any arguments passed to the assistant. Key is the name passed, value is the new key that will be passed to the api call.
+      </Accordion>
+
+      <Accordion title="Metadata">
+        - Custom metadata that you want to send
+      </Accordion>
+
+      <Accordion title="Option">
+        - Include configuration options passed to the assistant. Key is the name passed, value is the new key that will be passed to the api call.
+      </Accordion>
+
+    </AccordionGroup>
+
+    You can add multiple parameters to construct a complete API request.
+
+  </Step>
+
+    ![Optional Parameters](/images/create_assistant/create_analysis_5.png)
+
+  </Step>
+
+<Step title="Set Execution Priority">
+  Set the execution priority for this analysis. This determines the order in
+  which multiple analyses are processed if you have more than one.
+</Step>
+
+  <Step title="Save Your Configuration">
+    Click "Configure Analysis" to save your configuration.
+
+    Once saved, your analysis will be available and will process conversations according to your settings. The results can be used for insights, improvements, or other downstream processes depending on your endpoint implementation.
+
+    **Note**: Analysis functionality is currently in beta mode. Some features may be experimental or subject to change.
+
+  </Step>
+</Steps>
+
+## Using Analysis Results
+
+The analysis results will be processed by your specified endpoint, which can:
+
+- Generate conversation insights
+- Track user satisfaction
+- Identify common questions or issues
+- Provide metrics for assistant performance
+- Feed data into your business intelligence tools using assistant webhooks.
+
+## How to View Analysis
+
+To view the analysis for a specific conversation:
+
+1. Inside assistants, select the "Sessions" tab
+2. Select the session that you want to view the analysis for
+3. Click on the "Analysis" tab in the left panel.
+
+You can view analysis results according to how your endpoint is configured to store and display this information.

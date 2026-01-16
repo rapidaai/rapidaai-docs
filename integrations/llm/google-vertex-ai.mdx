@@ -1,0 +1,86 @@
+---
+title: "Google Vertex AI"
+description: "Google Vertex AI is a fully-managed, unified AI development platform that provides access to Google's advanced models with enterprise features."
+---
+
+## Getting Started
+
+To integrate Google Vertex AI with your Rapida application, follow these steps:
+
+## Supported Models
+
+Google Vertex AI provides access to multiple advanced models:
+
+| Model Name         | Type      | Description                                        |
+| ------------------ | --------- | -------------------------------------------------- |
+| gemini-2.5-pro     | Text      | Latest Gemini Pro model with advanced capabilities |
+| gemini-2.5-flash   | Text      | Fast Gemini 2.5 model for efficient processing     |
+| gemini-2.0-flash   | Text      | Gemini 2.0 Flash for optimized performance         |
+| claude-3.5-sonnet  | Text      | Anthropic's Claude 3.5 Sonnet via Vertex AI        |
+| llama-2-70b        | Text      | Meta's Llama 2 70B model for open-source users     |
+| mistral-large      | Text      | Mistral's large language model                     |
+| text-embedding-004 | Embedding | Latest Vertex AI embedding model                   |
+
+Note: Available models may vary by region. Check Vertex AI documentation for the complete list.
+
+## Prerequisites
+
+- Have a Google Cloud account
+- Create a new Google Cloud Project or use an existing one
+- Enable the Vertex AI API in your Google Cloud Project
+- Create a service account with Vertex AI permissions
+- Download the service account key (JSON file)
+- Set up your Project ID and Region
+
+# Setting Up Provider Credentials
+
+<Steps>
+<Step title="Access the Integrations Page">
+![Integrations Page](/images/integration/providers/providers-and-models.png)
+
+Navigate to the "Integration > Models" page. Here you'll see a grid of various AI model providers including Google Vertex AI, Azure OpenAI, Anthropic, and more.
+
+</Step>
+
+<Step title="Select Google Vertex AI">
+On the Integrations page, find the Google Vertex AI provider card.
+
+Click the "Setup Credential" button for Google Vertex AI.
+
+</Step>
+
+<Step title="Create Provider Credential">
+![Create Provider Credential](/images/integration/providers/vertexai_key.png)
+
+A modal window will appear titled "Create provider credential". Follow these steps:
+
+1. Select "Google Vertex AI" from the dropdown (if not already selected)
+2. Enter a Key Name: Assign a unique name to this provider key for easy identification
+3. Enter Project ID: Input your Google Cloud Project ID
+4. Enter Region: Specify the region where Vertex AI is available (e.g., us-central1)
+5. Enter Service Account Key: Paste the entire JSON content of your service account key
+6. Click "Configure" to save the credential
+
+</Step>
+
+<Step title="Verify Credential Setup">
+After setting up the credential, you can verify it's been added:
+
+1. The Google Vertex AI provider card should now show "Connected"
+2. If you click on the provider, you'll see a "View provider credential" modal
+3. This modal displays the credential name, when it was last updated, and options to delete or close
+
+</Step>
+</Steps>
+
+Your Google Vertex AI provider credential is now set up and ready to use with the integration system.
+
+## Integration Features
+
+- **Enterprise-Grade**: Full enterprise features and compliance
+- **Multi-Model Support**: Access to Google's latest models and third-party models
+- **Model Garden**: Fine-tune and deploy custom models
+- **Monitoring**: Built-in monitoring and logging for production deployments
+- **Scalability**: Automatic scaling for your AI workloads
+
+For more information, visit the [Google Vertex AI documentation](https://cloud.google.com/vertex-ai/docs).

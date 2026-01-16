@@ -1,7 +1,6 @@
 ---
 title: "End of Conversation Tool"
 description: "Configure and use the End of Conversation Tool to signal the end of a conversation"
-icon: 'grid-2x2-plus'
 ---
 
 The End of Conversation Tool allows your assistant to explicitly signal when a conversation should end. This guide will walk you through the process of adding and configuring this tool for your assistant.
@@ -25,15 +24,15 @@ Before adding the End of Conversation Tool, ensure that you have:
 
     <Step title="Configure the Tool">
     When configuring an End of Conversation tool, you'll need to provide several key elements:
-    
+
     1. **Name**: A unique identifier for your tool
        - Example: "end_conversation"
        - Use descriptive names that indicate the tool's purpose
-    
+
     2. **Description**: Details on when and how to use the function
        - Example: "Ends the conversation after a task is complete or the user says goodbye."
        - This helps the model determine when to invoke the tool
-    
+
     3. **Fields**: Define parameters in JSON format following the OpenAI Function Tool Call schema:
        ```json
        {
@@ -41,10 +40,11 @@ Before adding the End of Conversation Tool, ensure that you have:
          "properties": {}
        }
        ```
-       
+
        This simple schema indicates that the tool doesn't require any specific parameters.
-    
+
     4. **Expected Action**: From the list select "End Of Conversation".
+
   </Step>
 
   <Step title="Save Configuration">
@@ -53,7 +53,6 @@ Before adding the End of Conversation Tool, ensure that you have:
 </Steps>
 
 ![Put on hold](/images/assistant/tools/end-of-conversation-tool.png)
-
 
 ## Using the End of Conversation Tool
 

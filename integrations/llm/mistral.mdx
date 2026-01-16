@@ -1,0 +1,82 @@
+---
+title: "Mistral"
+description: "Mistral specializes in creating fast, secure, open-source large language models with excellent performance-to-cost ratio."
+---
+
+## Getting Started
+
+To integrate Mistral with your Rapida application, follow these steps:
+
+## Supported Models
+
+Mistral offers several high-performance language models:
+
+| Model Name            | Type   | Description                                    |
+| --------------------- | ------ | ---------------------------------------------- |
+| mistral-large-latest  | Large  | Most capable model with advanced reasoning     |
+| mistral-medium-latest | Medium | Balanced performance and speed                 |
+| mistral-small-latest  | Small  | Lightweight model for cost-effective solutions |
+| open-mistral-7b       | Open   | Open-source 7B model                           |
+| open-mixtral-8x7b     | Open   | Open-source mixture of experts model           |
+| open-mixtral-8x22b    | Open   | Large open-source mixture of experts model     |
+
+These models offer various capabilities and performance levels. Choose the appropriate model based on your specific use case and requirements.
+
+## Prerequisites
+
+- Go to the Mistral platform at [https://mistral.ai](https://mistral.ai)
+- Sign up or log in to your Mistral account
+- Navigate to the API section in your account dashboard
+- Generate your API key
+- Copy the API key (make sure to save it securely, as it won't be shown again)
+
+# Setting Up Provider Credentials
+
+<Steps>
+<Step title="Access the Integrations Page">
+![Integrations Page](/images/integration/providers/providers-and-models.png)
+
+Navigate to the "Integration > Models" page. Here you'll see a grid of various AI model providers including Mistral, Azure OpenAI, Anthropic, and more.
+
+</Step>
+
+<Step title="Select Mistral">
+On the Integrations page, find the Mistral provider card.
+
+Click the "Setup Credential" button for Mistral.
+
+</Step>
+
+<Step title="Create Provider Credential">
+![Create Provider Credential](/images/integration/providers/mistral_key.png)
+
+A modal window will appear titled "Create provider credential". Follow these steps:
+
+1. Select "Mistral" from the dropdown (if not already selected)
+2. Enter a Key Name: Assign a unique name to this provider key for easy identification
+3. Enter the API Key: Input your Mistral API key
+4. Click "Configure" to save the credential
+
+</Step>
+
+<Step title="Verify Credential Setup">
+After setting up the credential, you can verify it's been added:
+
+1. The Mistral provider card should now show "Connected"
+2. If you click on the provider, you'll see a "View provider credential" modal
+3. This modal displays the credential name, when it was last updated, and options to delete or close
+
+</Step>
+</Steps>
+
+Your Mistral provider credential is now set up and ready to use with the integration system.
+
+## Integration Features
+
+- **Fast Inference**: Optimized for quick response times
+- **Cost-Effective**: Excellent performance-to-cost ratio
+- **Open-Source Options**: Access to open-source models
+- **Multilingual Support**: Support for multiple languages
+- **Fine-tuning**: Ability to fine-tune models for specific tasks
+
+For more information, visit the [Mistral documentation](https://docs.mistral.ai/).

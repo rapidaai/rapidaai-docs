@@ -1,0 +1,97 @@
+---
+title: "Deepgram"
+description: "Deepgram provides advanced speech-to-text and text-to-speech capabilities powered by AI."
+---
+
+## Getting Started
+
+To integrate Deepgram with your Rapida application for speech-to-text (STT) capabilities, follow these steps:
+
+## Supported Models
+
+Deepgram offers several models optimized for different scenarios:
+
+### Speech-to-Text Models
+
+| Model Name | Description                              | Best For                       |
+| ---------- | ---------------------------------------- | ------------------------------ |
+| nova-2     | Latest Deepgram model with high accuracy | General purpose, high accuracy |
+| nova       | High accuracy speech recognition         | Most use cases                 |
+| enhanced   | Previous generation enhanced model       | Cost-effective option          |
+| base       | Basic speech recognition                 | Development and testing        |
+
+### Languages Supported
+
+Deepgram supports 30+ languages including:
+
+- English (US, UK, Australian, Indian variants)
+- Spanish, French, German, Italian, Dutch
+- Mandarin, Cantonese, Japanese, Korean
+- Hindi, Portuguese, Russian, Arabic
+
+### Features
+
+- **Real-time Streaming**: Process audio as it's being spoken
+- **Batch Processing**: Transcribe pre-recorded audio
+- **Speaker Diarization**: Distinguish between multiple speakers
+- **Sentiment Analysis**: Analyze sentiment in speech
+- **Intent Recognition**: Identify intent from spoken text
+
+## Prerequisites
+
+- Have a Deepgram account (sign up at [https://deepgram.com](https://deepgram.com))
+- Navigate to your account settings
+- Go to the API Keys section
+- Generate a new API key
+- Copy the API key (make sure to save it securely)
+
+# Setting Up Provider Credentials
+
+<Steps>
+<Step title="Access the Integrations Page">
+![Integrations Page](/images/integration/providers/providers-and-models.png)
+
+Navigate to the "Integration > Models" page to access the speech service providers.
+
+</Step>
+
+<Step title="Select Deepgram">
+On the Integrations page, find the Deepgram provider card.
+
+Click the "Setup Credential" button for Deepgram.
+
+</Step>
+
+<Step title="Create Provider Credential">
+A modal window will appear titled "Create provider credential". Follow these steps:
+
+1. Select "Deepgram" from the dropdown (if not already selected)
+2. Enter a Key Name: Assign a unique name to this provider key for easy identification
+3. Enter the API Key: Input your Deepgram API key
+4. Click "Configure" to save the credential
+
+</Step>
+
+<Step title="Verify Credential Setup">
+After setting up the credential, you can verify it's been added:
+
+1. The Deepgram provider card should now show "Connected"
+2. If you click on the provider, you'll see a "View provider credential" modal
+3. This modal displays the credential name, when it was last updated, and options to delete or close
+
+</Step>
+</Steps>
+
+Your Deepgram provider credential is now set up for speech-to-text integration.
+
+## Integration Features
+
+- **Ultra-Fast Processing**: Industry-leading transcription speed
+- **Multiple Languages**: Support for 30+ languages
+- **Real-time and Batch**: Both streaming and batch transcription
+- **Speaker Diarization**: Identify different speakers automatically
+- **Punctuation**: Automatic punctuation restoration
+- **Summaries**: Get summaries of transcribed content
+- **Sentiment & Intent**: Advanced audio intelligence features
+
+For more information, visit the [Deepgram documentation](https://developers.deepgram.com/).

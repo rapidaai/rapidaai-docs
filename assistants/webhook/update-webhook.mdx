@@ -1,0 +1,189 @@
+---
+title: "Update Webhook"
+description: "Configure webhooks to receive assistant data and conversation analysis"
+sidebarTitle: "Update webhooks"
+---
+
+This guide explains how to set up and configure webhooks for your assistants to receive conversation data and analysis results.
+
+Rapida provides webhooks that allow you to receive data generated during the assistant lifecycle. These webhooks can be triggered during key conversation events:
+
+1. Start of conversation
+2. End of conversation
+3. Failure during conversation
+
+Webhooks enable you to integrate assistant data with external systems, analyze conversations, and create custom workflows.
+
+<Steps>
+  <Step title="Access Webhooks Configuration">
+    1. Go to the Assistants section in the main navigation menu.
+    2. Select the assistant you want to configure.
+    3. Click "Configure assistant" in the top right corner.
+    4. Select "Webhooks".
+    5. Click **Create new webhook** to begin configuration.
+
+    ![Access Webhooks](/images/create_assistant/create_webhook_1.png)
+
+  </Step>
+
+  <Step title="Configure Webhook Settings">
+    ![Configure Webhook](/images/create_assistant/create_webhook_2.png)
+
+    Set up the webhook endpoint:
+
+    - **Method**: Select the appropriate HTTP method (typically POST)
+    - **Server URL**: Enter the URL where you want to receive webhook data
+    - **Description**: Add an optional description to identify this webhook's purpose
+
+  </Step>
+
+  <Step title="Add Headers">
+    ![Add Headers](/images/create_assistant/create_webhook_2.png)
+
+    Configure any HTTP headers needed for your webhook:
+
+    - Click **Add header** to include authentication headers or other required metadata
+    - Common examples include Authorization headers for securing webhook communication with external systems
+
+  </Step>
+
+  <Step title="Configure Basic Parameters">
+    ![Configure Parameters](/images/create_assistant/create_webhook_2.png)
+
+    By default, two parameters are included:
+
+    - **Event**: Contains information about the type of event that triggered the webhook
+    - **Data**: Contains all conversation data up to the point the webhook was triggered
+
+    These parameters provide context about when and why the webhook was triggered.
+
+  </Step>
+
+ <Step title="Include Results">
+    ![Include Analysis](/images/create_assistant/create_webhook_3.png)
+
+    <Note>
+      Analysis results are only generated and sent at the end of a conversation.
+    </Note>
+
+    To receive data in your webhook:
+
+    1. Add a new parameter using the **Add parameters** button
+    2. Select the data type from the dropdown menu
+    3. Specify the key for the selected data type using the options below:
+
+      <AccordionGroup>
+        <Accordion title="Assistant">
+          Select one of the following keys:
+          - Name
+          - Prompt
+        </Accordion>
+
+        <Accordion title="Conversation">
+          The only available key is:
+          - Messages
+        </Accordion>
+
+        <Accordion title="Argument">
+          Enter a custom key name for the argument data.
+        </Accordion>
+
+        <Accordion title="Metadata">
+          Enter a custom key name for the metadata.
+        </Accordion>
+
+        <Accordion title="Option">
+          Enter a custom key name for the option data.
+        </Accordion>
+
+        <Accordion title="Analysis">
+          Enter a custom key name for the analysis results.
+        </Accordion>
+      </AccordionGroup>
+
+    If no selection is made, default event and data will be pushed.
+
+    This allows you to receive specific data or custom analysis results configured for your assistant in the webhook payload.
+
+  </Step>
+
+  <Step title="Add Optional Parameters">
+    ![Optional Parameters](/images/create_assistant/create_webhook_4.png)
+
+    You can include additional contextual information by adding optional parameters:
+
+    - **Assistant**: Information about the assistant handling the conversation
+    - **Conversation**: Details about the current conversation session
+    - **Argument**: Any arguments passed to the assistant
+    - **Metadata**: Additional metadata associated with the conversation
+    - **Option**: Configuration options used for the assistant
+
+  </Step>
+
+  <Step title="Select Trigger Events">
+    ![Select Events](/images/create_assistant/create_webhook_5.png)
+
+    Choose which events should trigger your webhook:
+
+    - **Conversation.Begin**: Triggered when a new conversation starts
+    - **Conversation.Completed**: Triggered when a conversation ends successfully
+    - **Conversation.Failed**: Triggered when a conversation encounters an error
+
+    You can select multiple events depending on your use case.
+
+  </Step>
+
+  <Step title="Finalize Configuration">
+    ![Finalize Configuration](/images/create_assistant/create_webhook_5.png)
+
+    Review your webhook configuration and click **Configure webhook** to save and activate it.
+
+    Your webhook is now configured and will be triggered during the selected conversation events.
+
+  </Step>
+</Steps>
+
+## Webhook Payload Structure
+
+When triggered, your webhook will receive a JSON payload containing the configured parameters. Here's an example structure:
+
+```json
+{
+  "conversation-analysis": {
+    "result": "At the start of the conversation, the user greets with a neutral \"hello,\" suggesting a neutral or open emotional state. However, their brief and vague response \"any\" may indicate a sense of uncertainty, indifference, or perhaps even hesitation. This could imply that the user may be unsure about how to express themselves or what they want to discuss. There doesn't appear to be a strong emotional shift yet, but there may be a subtle undercurrent of introspection or ambiguity."
+  },
+  "data": {
+    "analysis": {
+      "conversation-analysis": {
+        "result": "At the start of the conversation, the user greets with a neutral \"hello,\" suggesting a neutral or open emotional state. However, their brief and vague response \"any\" may indicate a sense of uncertainty, indifference, or perhaps even hesitation. This could imply that the user may be unsure about how to express themselves or what they want to discuss. There doesn't appear to be a strong emotional shift yet, but there may be a subtle undercurrent of introspection or ambiguity."
+      }
+    },
+    "assistant": {
+      "id": "2193965165215481856",
+      "version": "vrsn_2216851806678417408"
+    },
+    "conversation": {
+      "id": "2216964057603244032",
+      "messages": [
+        {
+          "message": "hello",
+          "role": "user"
+        },
+        {
+          "message": "Hi there, it's good to hear from you. What's on your mind today?",
+          "role": "assistant"
+        },
+        {
+          "message": "any",
+          "role": "user"
+        },
+        {
+          "message": "It sounds like you're leaving things open-ended right now, maybe unsure where to begin. Is there something you've been thinking about or feeling lately that you'd like to explore?",
+          "role": "assistant"
+        }
+      ]
+    }
+  },
+  "event": "conversation.completed"
+}
+```

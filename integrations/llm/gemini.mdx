@@ -1,0 +1,80 @@
+---
+title: "Gemini / Google AI Studio"
+description: "Gemini is Google's latest family of large language models that can understand and generate text, images, and more."
+---
+
+## Getting Started
+
+To integrate Gemini with your Rapida application, follow these steps:
+
+## Supported Models
+
+Google Gemini offers several advanced language models that can be used with this integration:
+
+| Model Name            | Series     | Description                                                      |
+| --------------------- | ---------- | ---------------------------------------------------------------- |
+| gemini-2.5-pro        | Gemini 2.5 | Latest Gemini Pro model with advanced reasoning and capabilities |
+| gemini-2.5-flash      | Gemini 2.5 | Fast and efficient version of Gemini 2.5                         |
+| gemini-2.0-flash      | Gemini 2.0 | Gemini 2.0 Flash model optimized for speed                       |
+| gemini-2.0-flash-lite | Gemini 2.0 | Lightweight version of Gemini 2.0 Flash                          |
+| gemini-1.5-pro        | Gemini 1.5 | Gemini 1.5 Pro for complex tasks                                 |
+| gemini-1.5-flash      | Gemini 1.5 | Gemini 1.5 Flash for fast processing                             |
+
+These models offer various capabilities and performance levels. Choose the appropriate model based on your specific use case and requirements.
+
+## Prerequisites
+
+- Have a Google account with access to Google AI Studio
+- Visit [Google AI Studio](https://aistudio.google.com/) to get started
+- Generate your API key from the Google AI Studio dashboard
+- Copy the API key (make sure to save it securely, as it won't be shown again)
+
+# Setting Up Provider Credentials
+
+<Steps>
+<Step title="Access the Integrations Page">
+![Integrations Page](/images/integration/providers/providers-and-models.png)
+
+Navigate to the "Integration > Models" page. Here you'll see a grid of various AI model providers including Gemini, Azure OpenAI, Anthropic, and more.
+
+</Step>
+
+<Step title="Select Gemini">
+On the Integrations page, find the Gemini / Google AI Studio provider card.
+
+Click the "Setup Credential" button for Gemini.
+
+</Step>
+
+<Step title="Create Provider Credential">
+![Create Provider Credential](/images/integration/providers/gemini_key.png)
+
+A modal window will appear titled "Create provider credential". Follow these steps:
+
+1. Select "Gemini / Google AI Studio" from the dropdown (if not already selected)
+2. Enter a Key Name: Assign a unique name to this provider key for easy identification
+3. Enter the API Key: Input your Gemini API key from Google AI Studio
+4. Click "Configure" to save the credential
+
+</Step>
+
+<Step title="Verify Credential Setup">
+After setting up the credential, you can verify it's been added:
+
+1. The Gemini provider card should now show "Connected"
+2. If you click on the provider, you'll see a "View provider credential" modal
+3. This modal displays the credential name, when it was last updated, and options to delete or close
+
+</Step>
+</Steps>
+
+Your Gemini provider credential is now set up and ready to use with the integration system.
+
+## Integration Features
+
+- **Multimodal Capabilities**: Process text and images
+- **Advanced Reasoning**: Powerful reasoning capabilities for complex tasks
+- **Fast Processing**: Optimized models for quick response times
+- **Free Tier Available**: Get started with Google AI Studio's free tier
+
+For more information, visit the [Google AI Studio](https://aistudio.google.com/).

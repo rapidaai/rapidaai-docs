@@ -1,0 +1,102 @@
+---
+title: "Azure Cognitive Services"
+description: "Azure Cognitive Services Text-to-Speech provides natural-sounding voice synthesis with multiple languages and voices."
+---
+
+## Getting Started
+
+To integrate Azure Cognitive Services with your Rapida application for text-to-speech (TTS) capabilities, follow these steps:
+
+## Supported Models
+
+### Text-to-Speech Voices
+
+Azure Cognitive Services supports 400+ voices across multiple languages. Some popular voices include:
+
+#### English Voices
+
+| Voice Name          | Gender | Description                                |
+| ------------------- | ------ | ------------------------------------------ |
+| en-US-AriaNeural    | Female | Modern, natural-sounding US English female |
+| en-US-GuyNeural     | Male   | Natural US English male voice              |
+| en-GB-AmberNeural   | Female | British English female voice               |
+| en-GB-AlfieNeural   | Male   | British English male voice                 |
+| en-AU-NatashaNeural | Female | Australian English female                  |
+| en-AU-WilliamNeural | Male   | Australian English male                    |
+
+### Supported Languages
+
+Azure supports text-to-speech in 50+ languages including:
+
+- English (US, UK, Australian, Indian variants)
+- Spanish, French, German, Italian, Dutch
+- Mandarin, Cantonese, Japanese, Korean
+- Hindi, Portuguese, Russian, Arabic, Hebrew
+- Thai, Vietnamese, Polish, Swedish, and more
+
+### Features
+
+- **Neural Voices**: High-quality neural network-powered voices
+- **Speaking Styles**: Different emotional tones (cheerful, empathetic, calm, etc.)
+- **Pitch & Rate Control**: Fine-tune pitch and speaking rate
+- **SSML Support**: Full SSML markup support for advanced control
+- **Audio Formats**: Support for multiple audio formats and sample rates
+
+## Prerequisites
+
+- Have an Azure account
+- Create an Azure Cognitive Services Speech resource
+- Get your Subscription Key and Endpoint URL
+- Note your resource region
+
+# Setting Up Provider Credentials
+
+<Steps>
+<Step title="Access the Integrations Page">
+![Integrations Page](/images/integration/providers/providers-and-models.png)
+
+Navigate to the "Integration > Models" page to access TTS providers.
+
+</Step>
+
+<Step title="Select Azure Cognitive Services">
+On the Integrations page, find the Azure Cognitive Services provider card.
+
+Click the "Setup Credential" button for Azure Cognitive Services.
+
+</Step>
+
+<Step title="Create Provider Credential">
+A modal window will appear titled "Create provider credential". Follow these steps:
+
+1. Select "Azure Cognitive Services" from the dropdown (if not already selected)
+2. Enter a Key Name: Assign a unique name to this provider key for easy identification
+3. Enter Subscription Key: Input your Azure Subscription Key
+4. Enter Endpoint: Input your Azure Cognitive Services endpoint URL
+5. Click "Configure" to save the credential
+
+</Step>
+
+<Step title="Verify Credential Setup">
+After setting up the credential, you can verify it's been added:
+
+1. The Azure Cognitive Services provider card should now show "Connected"
+2. If you click on the provider, you'll see a "View provider credential" modal
+3. This modal displays the credential name, when it was last updated, and options to delete or close
+
+</Step>
+</Steps>
+
+Your Azure Cognitive Services provider credential is now set up for text-to-speech integration.
+
+## Integration Features
+
+- **400+ Neural Voices**: Extensive voice selection across multiple languages
+- **Natural Quality**: High-quality neural speech synthesis
+- **Multiple Languages**: Support for 50+ languages
+- **Emotional Expression**: Different speaking styles and emotions
+- **SSML Support**: Advanced markup language for precise control
+- **Cost-Effective**: Pay-as-you-go pricing model
+- **Enterprise Ready**: Compliance and security certifications
+
+For more information, visit the [Azure Cognitive Services Speech documentation](https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/).

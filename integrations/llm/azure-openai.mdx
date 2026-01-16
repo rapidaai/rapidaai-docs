@@ -1,0 +1,71 @@
+---
+title: "Azure OpenAI"
+description: "Azure OpenAI Service provides REST API access to OpenAI's powerful language models including the GPT-4 series."
+---
+
+## Getting Started
+
+To integrate Azure OpenAI with your Rapida application, follow these steps:
+
+## Supported Models
+
+Azure OpenAI offers several advanced language models that can be used with this integration. Here's a table of some supported models:
+
+| Model Name   | Series | Description                                   |
+| ------------ | ------ | --------------------------------------------- |
+| gpt-4o       | GPT-4  | Latest GPT-4 model with advanced capabilities |
+| gpt-4o-mini  | GPT-4  | Mini version of GPT-4 for specific use cases  |
+| gpt-4.1-nano | GPT-4  | Nano version of GPT-4.1 for lightweight apps  |
+
+Note: You can also enter your own deployment model name if you have custom deployments.
+
+## Prerequisites
+
+- Go to the Azure portal at [https://portal.azure.com](https://portal.azure.com).
+- Sign up or log in to your Azure account.
+- Create an Azure OpenAI resource.
+- Navigate to the resource and find the "Keys and Endpoint" section.
+- Copy the endpoint URL and one of the subscription keys (make sure to save them securely).
+
+# Setting Up Provider Credentials
+
+<Steps>
+<Step title="Access the Integrations Page">
+![Integrations Page](/images/integration/providers/providers-and-models.png)
+
+Navigate to the "Integration > Models" page. Here you'll see a grid of various AI model providers including AWS Bedrock, Azure OpenAI, Anthropic, Cohere, OpenAI, and more.
+
+</Step>
+
+<Step title="Select Azure OpenAI">
+On the Integrations page, find the Azure OpenAI provider card.
+
+Click the "Setup Credential" button for Azure OpenAI.
+
+</Step>
+
+<Step title="Create Provider Credential">
+![Create Provider Credential](/images/integration/providers/azure_openai_key.png)
+
+A modal window will appear titled "Create provider credential". Follow these steps:
+
+1. Select "Azure OpenAI" from the dropdown (if not already selected)
+2. Enter a Key Name: Assign a unique name to this provider key for easy identification
+3. Enter the Subscription Key: Input the subscription key from your Azure OpenAI resource
+4. Enter the Endpoint: Input the endpoint URL from your Azure OpenAI resource
+5. Click "Configure" to save the credential
+
+</Step>
+
+<Step title="Verify Credential Setup">
+
+After setting up the credential, you can verify it's been added:
+
+1. The Azure OpenAI provider card should now show "Connected"
+2. If you click on the provider, you'll see a "View provider credential" modal
+3. This modal displays the credential name, when it was last updated, and options to delete or close
+
+</Step>
+</Steps>
+
+Your Azure OpenAI provider credential is now set up and ready to use with the integration system.

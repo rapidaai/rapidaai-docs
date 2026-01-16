@@ -1,0 +1,77 @@
+---
+title: "Cohere"
+description: "Cohere is an AI company that provides large language models and NLP tools for developers and businesses."
+---
+
+## Getting Started
+
+To integrate Cohere with your Rapida application, follow these steps:
+
+## Supported Models
+
+Cohere offers several advanced language models that can be used with this integration. Here's a table of the supported models:
+
+| Model Name             | Description                                              |
+| ---------------------- | -------------------------------------------------------- |
+| command-a-03-2025      | Latest Command model with advanced capabilities          |
+| command-r7b-12-2024    | Specialized Command model for specific use cases         |
+| command-r-plus-04-2024 | Enhanced Command model with improved performance         |
+| command-r-plus         | Stable version of the enhanced Command model             |
+| command-r-08-2024      | Command model optimized for August 2024                  |
+| command-r-03-2024      | Command model optimized for March 2024                   |
+| command-r              | Standard Command model for general use                   |
+| command                | Original Command model                                   |
+| command-nightly        | Nightly updated version of the Command model             |
+| command-light          | Lightweight version of the Command model                 |
+| command-light-nightly  | Nightly updated lightweight version of the Command model |
+
+These models offer various capabilities and performance levels. Choose the appropriate model based on your specific use case and requirements.
+
+## Prerequisites
+
+- Go to the Cohere platform at [https://cohere.ai](https://cohere.ai).
+- Sign up or log in to your Cohere account.
+- Navigate to the API section.
+- Generate your API key.
+- Copy the API key (make sure to save it securely, as it won't be shown again).
+
+# Setting Up Provider Credentials
+
+<Steps>
+<Step title="Access the Integrations Page">
+![Integrations Page](/images/integration/providers/providers-and-models.png)
+
+Navigate to the "Integration > Models" page. Here you'll see a grid of various AI model providers including AWS Bedrock, Azure OpenAI, Anthropic, Cohere, OpenAI, and more.
+
+</Step>
+
+<Step title="Select a Provider">
+On the Integrations page, find the provider you want to set up credentials for. Each provider card shows a brief description and a "Connected" or "Setup Credential" button.
+
+Click the "Setup Credential" button for Cohere.
+
+</Step>
+
+<Step title="Create Provider Credential">
+![Create Provider Credential](/images/integration/providers/cohere_key.png)
+
+A modal window will appear titled "Create provider credential". Follow these steps:
+
+1. Select Cohere from the dropdown (if not already selected)
+2. Enter a Key Name: Assign a unique name to this provider key for easy identification
+3. Enter the Key: Input the actual API key or credential for Cohere
+4. Click "Configure" to save the credential
+
+</Step>
+
+<Step title="Verify Credential Setup">
+After setting up the credential, you can verify it's been added:
+
+1. The Cohere provider card should now show "Connected"
+2. If you click on the provider, you'll see a "View provider credential" modal
+3. This modal displays the credential name, when it was last updated, and options to delete or close
+
+</Step>
+</Steps>
+
+Your Cohere provider credential is now set up and ready to use with the integration system.
