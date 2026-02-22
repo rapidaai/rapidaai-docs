@@ -1,75 +1,289 @@
 ---
 title: "Vonage"
-description: "Vonage is a cloud communications platform offering voice, messaging, and video services for businesses."
+description: "Connect your Vonage phone numbers to Rapida AI for inbound and outbound voice AI conversations."
 ---
 
-## Getting Started
+Vonage (now part of Ericsson) is a cloud communications platform providing programmable voice, messaging, and video APIs. Rapida integrates with Vonage to enable AI-powered phone conversations using Vonage's WebSocket media streaming.
 
-To integrate Vonage with your Rapida application, follow these steps:
+<Info>
+Vonage uses **WebSocket audio streams** for real-time media. When a call connects, Vonage opens a WebSocket to Rapida carrying linear PCM audio. Rapida handles all codec conversion and resampling transparently.
+</Info>
+
+## How It Works
+
+```mermaid
+sequenceDiagram
+    participant Caller
+    participant Vonage as Vonage Cloud
+    participant API as Rapida Webhook API
+    participant WS as Rapida WebSocket
+    participant AI as AI Pipeline (STT → LLM → TTS)
+
+    Caller->>Vonage: Dials your Vonage number
+    Vonage->>API: POST /v1/talk/vonage/call/{assistantId}
+    API->>API: Create conversation + save call context
+    API-->>Vonage: NCCO (Connect → WebSocket)
+
+    rect rgb(230, 255, 230)
+    Note over Vonage,AI: Media Streaming
+    Vonage->>WS: WebSocket connect (linear PCM audio)
+    WS->>AI: Audio → STT → LLM → TTS
+    AI->>WS: TTS audio
+    WS->>Vonage: Audio frames
+    Vonage->>Caller: AI speaks
+    end
+
+    Caller->>Vonage: Hangup
+    Vonage->>API: Status callback
+```
+
+---
 
 ## Prerequisites
 
-- An active Vonage account
-- Access to Vonage's API credentials
+<CardGroup cols={2}>
+  <Card title="Vonage Account" icon="phone">
+    An active Vonage account with at least one phone number and a Vonage Application
+  </Card>
+  <Card title="Rapida Account" icon="key">
+    An active Rapida account with a configured voice assistant
+  </Card>
+</CardGroup>
 
-# Setting Up Provider Credentials
+You will need your **Vonage Application ID** and **Private Key**, which you can find in the [Vonage API Dashboard](https://dashboard.nexmo.com/).
+
+---
+
+## Step 1: Set Up Provider Credentials
+
+Store your Vonage API credentials in Rapida so the platform can authenticate with Vonage for outbound calls and webhook handling.
 
 <Steps>
-<Step title="Access the Integrations Page">
-Navigate to the "Integration > Tools" page. Here you'll see a grid of various external integrations including Vonage.
-![View Provider Credential](/images/integration/external/external.png)
+<Step title="Navigate to External Integrations">
+Go to **Integration > Tools** in the Rapida dashboard. You will see a grid of available external integrations.
 
+![External Integrations Page](/images/integration/external/external.png)
 </Step>
 
 <Step title="Select Vonage">
-On the Integrations page, find the Vonage card. Click the "Setup Credential" button for Vonage.
-
+Find the **Vonage** card and click **"Setup Credential"**.
 </Step>
 
-<Step title="Create Provider Credential">
-![View Provider Credential](/images/integration/external/create-provider-credential.png)
-A modal window will appear titled "Create provider credential". Follow these steps:
+<Step title="Enter Your Vonage Credentials">
+![Vonage Credentials](/images/integration/external/create-provider-credential.png)
 
-1. Ensure Vonage is selected from the dropdown
-2. Enter a Key Name: Assign a unique name to this Vonage credential for easy identification
-3. Enter the required credentials:
-   - Vonage API Key
-   - Vonage API Secret
-   - Vonage Application ID (if applicable)
-4. Click "Configure" to save the credentials
+A modal will appear. Fill in the following fields:
 
+| Field | Description | Where to Find |
+|-------|-------------|---------------|
+| **Key Name** | A friendly name for this credential (e.g., "Production Vonage") | Your choice |
+| **Application ID** | Your Vonage Application ID | [Vonage Dashboard](https://dashboard.nexmo.com/) → Applications → Your App |
+| **Private Key** | Your Vonage Application private key (full PEM content) | Downloaded when creating the Vonage Application |
+
+Click **"Configure"** to save.
+
+<Warning>
+The private key is the full PEM file content, not just a token. It typically begins with `-----BEGIN RSA PRIVATE KEY-----`. Paste the entire contents.
+</Warning>
 </Step>
 
-<Step title="Verify Credential Setup">
-After setting up the credential, you can verify it's been added:
-
-1. The Vonage card should now show "Connected"
-2. If you click on Vonage, you'll see a "View provider credential" modal
-3. This modal displays the credential name, when it was last updated, and options to delete or close
-
+<Step title="Verify Connection">
+After saving, the Vonage card should display **"Connected"**. Click on it to see credential details, last updated time, and management options.
 </Step>
 </Steps>
 
-Your Vonage credential is now set up and ready to use with the integration system.
+---
+
+## Step 2: Configure Phone Deployment
+
+With credentials saved, configure your assistant's phone deployment to use Vonage.
+
+<Steps>
+<Step title="Open Your Assistant">
+Navigate to **Assistants** and select the assistant you want to deploy via phone.
+</Step>
+
+<Step title="Go to Phone Deployment">
+Click **"Deploy"** → **"Phone"** to open the phone deployment configuration page.
+</Step>
+
+<Step title="Select Vonage as Telephony Provider">
+In the **Telephony** section:
+
+1. Select **Vonage** from the telephony provider dropdown
+2. Choose the Vonage credential you created in Step 1 from the **Credential** dropdown
+3. Enter your **Phone** number — the Vonage virtual number for inbound calls and outbound caller ID (e.g., `+15551234567`)
+</Step>
+
+<Step title="Configure Experience Settings">
+Set up the conversation experience:
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| **Greeting** | The first message the AI speaks when answering | *(optional)* |
+| **Error Message** | Message spoken when an error occurs | *(optional)* |
+| **Idle Timeout** | Seconds before prompting an idle caller | `30` |
+| **Idle Message** | Message spoken when caller is idle | `"Are you there?"` |
+| **Idle Timeout Retries** | How many times to retry before ending call | `2` |
+| **Max Call Duration** | Maximum call length in seconds | `300` |
+</Step>
+
+<Step title="Configure Audio Providers">
+Select your **Speech-to-Text** (STT) and **Text-to-Speech** (TTS) providers. These determine how audio is transcribed and synthesized during the call.
+</Step>
+
+<Step title="Save Deployment">
+Click **"Deploy"** to save. Your assistant is now ready to handle phone calls via Vonage.
+</Step>
+</Steps>
+
+---
+
+## Step 3: Configure Your Vonage Application
+
+Point your Vonage Application's webhook URLs to Rapida so incoming calls are routed to your AI assistant.
+
+<Steps>
+<Step title="Open Vonage Dashboard">
+Go to [Vonage Dashboard → Applications](https://dashboard.nexmo.com/applications) and select your application.
+</Step>
+
+<Step title="Set Voice Webhooks">
+Under **Capabilities → Voice**, configure:
+
+| Field | Value |
+|-------|-------|
+| **Answer URL** | `https://api.rapida.ai/v1/talk/vonage/call/{your-assistant-id}` |
+| **Event URL** | `https://api.rapida.ai/v1/talk/vonage/ctx/{contextId}/event` |
+| **HTTP Method** | `POST` |
+
+Replace `{your-assistant-id}` with your Rapida assistant ID.
+</Step>
+
+<Step title="Link Phone Number">
+Under **Numbers**, link your Vonage virtual number to this application so inbound calls are routed through it.
+</Step>
+
+<Step title="Save">
+Click **Save** in the Vonage dashboard. Your phone number is now connected to Rapida.
+</Step>
+</Steps>
+
+---
+
+## Making Outbound Calls
+
+Once your phone deployment is configured, you can initiate outbound calls using the Rapida API or SDKs.
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    from rapida import Rapida
+
+    client = Rapida(api_key="rpd-xxx-your-key")
+
+    call = client.calls.create(
+        assistant_id=123456789,
+        to_number="+15551234567",
+        from_number="+15559876543",  # optional, uses deployment default
+        metadata={"campaign": "follow-up"},
+    )
+
+    print(f"Call queued: conversation_id={call.conversation.id}")
+    ```
+  </Tab>
+  <Tab title="Node.js">
+    ```typescript
+    import { Rapida } from 'rapida';
+
+    const client = new Rapida({ apiKey: 'rpd-xxx-your-key' });
+
+    const call = await client.calls.create({
+      assistantId: 123456789,
+      toNumber: '+15551234567',
+      fromNumber: '+15559876543',
+      metadata: { campaign: 'follow-up' },
+    });
+
+    console.log(`Call queued: ${call.conversation.id}`);
+    ```
+  </Tab>
+  <Tab title="cURL">
+    ```bash
+    curl -X POST https://api.rapida.ai/v1/talk/call \
+      -H "Authorization: Bearer rpd-xxx-your-key" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "assistant": { "assistant_id": 123456789 },
+        "to_number": "+15551234567",
+        "from_number": "+15559876543",
+        "metadata": { "campaign": "follow-up" }
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+---
 
 ## Features
 
-Vonage integration provides the following features:
+| Feature | Description |
+|---------|-------------|
+| **Inbound Calls** | Customers call your Vonage number and speak with your AI assistant |
+| **Outbound Calls** | Initiate calls programmatically via SDK or API |
+| **Real-time Streaming** | Bidirectional audio via Vonage WebSocket streams |
+| **Call Recording** | Automatic conversation capture for review and compliance |
+| **Status Callbacks** | Receive call lifecycle events via Vonage event webhooks |
+| **Number Insight** | Get detailed information about phone numbers |
+| **Global Numbers** | Use Vonage virtual numbers from 80+ countries |
 
-- Voice Calls: Make outbound calls and receive inbound calls
-- SMS: Send and receive text messages
-- Video: Implement video calling and conferencing
-- Number Insight: Get detailed information about phone numbers
-- Verify: Implement two-factor authentication (2FA)
+---
 
-## Usage Examples
+## Troubleshooting
 
-Here are some common use cases for Vonage integration:
+<AccordionGroup>
+  <Accordion title="Calls don't reach Rapida">
+    - Verify the Answer URL in your Vonage Application settings
+    - Ensure the URL uses `https://` and the correct assistant ID
+    - Confirm the phone number is linked to the correct Vonage Application
+  </Accordion>
 
-1. Customer Support: Set up a cloud-based call center for your support team
-2. Appointment Reminders: Send automated voice or SMS reminders to customers
-3. Two-Factor Authentication: Use SMS or voice calls for secure user verification
-4. Lead Management: Automate outbound calls for sales and marketing campaigns
-5. Video Conferencing: Implement secure video meetings for remote teams
+  <Accordion title="One-way audio or no audio">
+    - Verify your Vonage credential (Application ID + Private Key) is correct in Rapida
+    - Ensure the private key is the complete PEM content
+    - Check that your STT and TTS providers are configured in the phone deployment
+  </Accordion>
 
-For more information on Vonage's API and capabilities, visit the [Vonage API Developer Documentation](https://developer.vonage.com/).
+  <Accordion title="Outbound calls fail">
+    - Verify the Vonage credential is connected in **Integration > Tools**
+    - Ensure the `from_number` is a valid Vonage number linked to your application
+    - Check that the phone deployment is configured and saved
+  </Accordion>
+
+  <Accordion title="Event callbacks not received">
+    - Ensure the Event URL is configured in Vonage Application settings
+    - Verify the URL format includes the correct path
+    - Check the [Vonage API Dashboard](https://dashboard.nexmo.com/) for webhook delivery logs
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Create an Assistant" icon="robot" href="/assistants/create-assistant">
+    Build your voice AI assistant
+  </Card>
+  <Card title="Phone Deployment" icon="phone" href="/voice-deployment-options/phone">
+    Overview of phone deployment options
+  </Card>
+  <Card title="Outbound Call API" icon="code" href="/api-reference/call/create-call">
+    API reference for creating calls
+  </Card>
+  <Card title="Conversation Logs" icon="list" href="/activity/conversation-logs">
+    View call history and transcripts
+  </Card>
+</CardGroup>
+
+For more information on Vonage's platform, visit the [Vonage API Developer Documentation](https://developer.vonage.com/).

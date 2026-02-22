@@ -133,7 +133,9 @@
                                 "pages": [
                                     "integrations/telephony/twilio",
                                     "integrations/telephony/vonage",
-                                    "integrations/telephony/exotel"
+                                    "integrations/telephony/exotel",
+                                    "integrations/telephony/asterisk",
+                                    "integrations/telephony/sip"
                                 ]
                             }
                         ]
