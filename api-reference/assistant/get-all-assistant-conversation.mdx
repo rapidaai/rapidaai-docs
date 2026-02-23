@@ -276,8 +276,11 @@ Configuration options for the conversation.
 <ParamField body="recordings" type="AssistantConversationRecording[]">
 Array of conversation recordings.
 <Expandable>
-<ParamField body="recordingUrl" type="string">
-URL to access the recording.
+<ParamField body="assistantRecordingUrl" type="string">
+Pre-signed URL to access the assistant audio recording.
+</ParamField>
+<ParamField body="userRecordingUrl" type="string">
+Pre-signed URL to access the user audio recording.
 </ParamField>
 </Expandable>
 </ParamField>
