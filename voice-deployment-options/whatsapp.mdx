@@ -1,0 +1,98 @@
+---
+title: "Deploy your Voice AI assistant on WhatsApp"
+description: "Connect your Rapida assistant to WhatsApp to handle conversational interactions at scale."
+icon: "message-circle"
+sidebarTitle: "WhatsApp"
+---
+
+Rapida's WhatsApp deployment lets you connect your assistant to WhatsApp Business, enabling automated conversational experiences on the world's most widely used messaging platform.
+
+<Card
+  title="Configure your assistant before deploying to WhatsApp"
+  href="/assistants/create-assistant"
+  icon="bot"
+>
+  Set up your assistant first, then return here to configure the WhatsApp deployment.
+</Card>
+
+## Prerequisites
+
+Before deploying to WhatsApp you will need:
+
+- A [WhatsApp Business Account](https://business.whatsapp.com/) with an approved phone number
+- A Meta developer account with a WhatsApp Business API app
+- Your WhatsApp Access Token and Phone Number ID from the Meta developer portal
+
+## Key Features
+
+- **Messaging at scale**: Handle thousands of simultaneous WhatsApp conversations with a single assistant
+- **Multi-turn context**: The assistant maintains full conversation context across messages in the same thread
+- **Rich media support**: Send and receive text messages, voice notes, and structured content
+- **24/7 availability**: Automate responses around the clock without human intervention
+- **Handoff to human**: Escalate complex conversations to a live agent when needed
+
+## Configuring the WhatsApp Deployment
+
+Follow these steps to connect WhatsApp to your assistant:
+
+<Steps>
+  <Step title="Navigate to your assistant">
+    Go to **Assistants** in the sidebar and select the assistant you want to deploy.
+  </Step>
+
+  <Step title="Open deployment settings">
+    Click **Configure assistant** in the top right, then select **Deployments** from the left sidebar.
+  </Step>
+
+  <Step title="Enable WhatsApp">
+    Click **Add Deployment** and choose **WhatsApp**.
+  </Step>
+
+  <Step title="Enter your WhatsApp credentials">
+    Provide:
+    - **Access Token**: Your Meta WhatsApp Business API access token
+    - **Phone Number ID**: The phone number ID for your WhatsApp Business number
+    - **Webhook Verify Token**: A secret string you define, used to verify Meta's webhook callback
+  </Step>
+
+  <Step title="Configure the Meta webhook">
+    In the Meta developer portal, set your webhook URL to:
+    ```
+    https://api.rapida.ai/v1/whatsapp/event/<ASSISTANT_ID>
+    ```
+    Set the **Verify Token** to the same value you entered in Rapida.
+  </Step>
+
+  <Step title="Subscribe to message events">
+    In the Meta webhook configuration, subscribe to the `messages` field under the WhatsApp Business Account product.
+  </Step>
+</Steps>
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Customer Support" icon="headset">
+    Automate first-line support for product inquiries, order status, and troubleshooting.
+  </Card>
+  <Card title="Appointment Booking" icon="calendar">
+    Let users book, reschedule, or cancel appointments directly in WhatsApp.
+  </Card>
+  <Card title="Order Management" icon="shopping-cart">
+    Handle order tracking, returns, and product availability queries.
+  </Card>
+  <Card title="Lead Qualification" icon="user-check">
+    Engage inbound leads with qualifying questions and route them to your sales team.
+  </Card>
+  <Card title="Notifications & Reminders" icon="bell">
+    Send proactive messages for appointment reminders, payment confirmations, and alerts.
+  </Card>
+  <Card title="Surveys & Feedback" icon="clipboard-list">
+    Collect customer feedback and NPS scores through conversational surveys.
+  </Card>
+</CardGroup>
+
+## Related
+
+- [Phone Call Deployment](/voice-deployment-options/phone)
+- [Web Widget Deployment](/voice-deployment-options/web-widget)
+- [Webhooks](/assistants/webhook/overview)

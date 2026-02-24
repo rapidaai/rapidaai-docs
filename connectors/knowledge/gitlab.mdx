@@ -1,0 +1,54 @@
+---
+title: "GitLab"
+description: "Connect GitLab to Rapida to index your repositories as knowledge sources for code-aware assistants."
+---
+
+The GitLab connector connects Rapida to your GitLab repositories, enabling your assistant to reference source code, documentation, and wikis when answering developer questions.
+
+## Prerequisites
+
+- A GitLab.com account with access to the repositories you want to index
+- The Rapida administrator must have configured `gitlab_client_id` and `gitlab_client_secret` in the OAuth settings
+
+## Connecting GitLab
+
+Follow these steps to connect GitLab to Rapida:
+
+<Steps>
+  <Step title="Open the Connectors page">
+    In the Rapida dashboard, navigate to **Integrations → Connectors** and select **GitLab** under Knowledge Connectors.
+  </Step>
+
+  <Step title="Authorize Rapida">
+    Click **Connect**. You will be redirected to GitLab's authorization screen. Sign in and approve the access request.
+  </Step>
+
+  <Step title="Select repositories">
+    After authorizing, select the repositories you want to include in your knowledge base.
+  </Step>
+
+  <Step title="Attach to a knowledge base">
+    Navigate to your knowledge base, click **Add Source**, and select your GitLab connection.
+  </Step>
+</Steps>
+
+## How It Works
+
+Rapida uses the GitLab OAuth 2.0 authorization code flow to obtain a token with repository access. The token is stored securely in your Rapida Vault. Selected repository content is then indexed for retrieval.
+
+## Permissions
+
+| Scope | Purpose |
+|-------|---------|
+| `repo` | Read access to repositories |
+
+## Limitations
+
+- Only GitLab.com (cloud) is supported. Self-hosted GitLab instances are not currently supported.
+- Repository content is indexed at the time of connection. New commits require a manual re-sync.
+
+## Related
+
+- [Create a Knowledge Base](/knowledge/create-knowledge)
+- [GitHub Connector](/connectors/knowledge/github)
+- [Confluence Connector](/connectors/knowledge/confluence)

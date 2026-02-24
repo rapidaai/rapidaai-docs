@@ -1,0 +1,68 @@
+---
+title: "Confluence"
+description: "Connect Atlassian Confluence to Rapida to index your team's documentation and wikis as knowledge sources."
+---
+
+The Confluence connector syncs spaces and pages from your Atlassian Confluence instance into Rapida's knowledge base. Your assistant can answer questions based on your team's documentation without requiring users to leave their conversation.
+
+## Prerequisites
+
+- An Atlassian account with access to at least one Confluence cloud instance
+- The Rapida administrator must have configured `atlassian_client_id` and `atlassian_client_secret` in the OAuth settings
+
+## Connecting Confluence
+
+Follow these steps to connect Confluence to Rapida:
+
+<Steps>
+  <Step title="Open the Connectors page">
+    In the Rapida dashboard, navigate to **Integrations → Connectors** and select **Confluence** under Knowledge Connectors.
+  </Step>
+
+  <Step title="Authorize Rapida">
+    Click **Connect**. You will be redirected to Atlassian's authorization screen. Grant Rapida access to your Confluence instance.
+  </Step>
+
+  <Step title="Select spaces to sync">
+    After authorizing, Rapida discovers all spaces accessible to your account across your Confluence cloud instances. Select the spaces you want to index.
+  </Step>
+
+  <Step title="Attach to a knowledge base">
+    Navigate to your knowledge base, click **Add Source**, and select your Confluence connection.
+  </Step>
+</Steps>
+
+## How It Works
+
+After authorization, Rapida:
+
+1. Discovers all accessible Atlassian cloud instances via the Atlassian API
+2. Lists all Confluence spaces in each instance
+3. Fetches up to 100 pages per space
+4. Indexes the page content for retrieval
+
+The connector requests a refresh token (`offline_access`) so it can re-sync without requiring you to re-authorize.
+
+## Permissions
+
+| Scope | Purpose |
+|-------|---------|
+| `offline_access` | Obtain a refresh token for background re-syncing |
+| `search:confluence` | Search across Confluence content |
+| `read:space:confluence` | List available spaces |
+| `read:confluence-props` | Read page and space properties |
+| `read:confluence-space.summary` | Read space metadata |
+| `read:confluence-content.permission` | Check content access permissions |
+| `read:confluence-content.summary` | Read content summaries |
+| `read:confluence-content.all` | Read full page content |
+
+## Limitations
+
+- Pages are fetched in batches of up to 100 per space. Very large spaces may not be fully indexed in a single sync.
+- Only Confluence Cloud is supported. Confluence Data Center / Server is not currently supported.
+
+## Related
+
+- [Create a Knowledge Base](/knowledge/create-knowledge)
+- [Notion Connector](/connectors/knowledge/notion)
+- [Jira Action Connector](/connectors/action/jira)

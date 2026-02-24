@@ -5,7 +5,7 @@ title: "Create Bulk Phone Calls"
 Creates multiple outbound phone calls in a single request using your configured assistant.
 
 <Info>
-  For full setup and authentication options, see the Installation guide: [/api-reference/introduction](/api-reference/introduction).
+  For full setup and authentication options, see the Installation guide: [Installation guide](/api-reference/installation) and [Authentication](/api-reference/authentication).
 </Info>
 
 
@@ -59,15 +59,17 @@ Creates multiple outbound phone calls in a single request using your configured 
 ```ts React
 import {   
   AssistantDefinition,
-  CreatePhoneCall,
+  CreateBulkPhoneCall,
   ConnectionConfig,
   CreateBulkPhoneCallRequest,
-  CreatePhoneCallRequest, 
+  CreatePhoneCallRequest,
+  AssistantDefinition,
 } from '@rapidaai/react';
 
-const connectionConfig: ConnectionConfig = { /* ... */ };
+const connectionCfg = ConnectionConfig.DefaultConnectionConfig(
+  ConnectionConfig.WithSDK({ ApiKey: process.env.RAPIDA_API_KEY })
+);
 const phoneCallRequest = new CreatePhoneCallRequest();
-// define assistant
 const assistant = new AssistantDefinition();
 assistant.setAssistantid("ASSISTANT_ID_PLACEHOLDER");
 assistant.setVersion("VERSION_PLACEHOLDER");
@@ -76,7 +78,7 @@ phoneCallRequest.setTonumber("TO_NUMBER_PLACEHOLDER");
 
 const bulkPhoneCallRequest = new CreateBulkPhoneCallRequest();
 bulkPhoneCallRequest.addPhonecalls(phoneCallRequest);
-CreateBulkPhoneCallRequest(connectionConfig, phoneCallRequest)
+CreateBulkPhoneCall(connectionCfg, bulkPhoneCallRequest)
   .then((x) => {
     if (x.getSuccess()) {
       console.dir(x.getData().toObject());
@@ -94,7 +96,7 @@ CreateBulkPhoneCallRequest(connectionConfig, phoneCallRequest)
 ```javascript Node.js
 import {
   AssistantDefinition,
-  CreatePhoneCall,
+  CreateBulkPhoneCall,
   ConnectionConfig,
   CreateBulkPhoneCallRequest,
   CreatePhoneCallRequest,
@@ -115,7 +117,7 @@ phoneCallRequest.setTonumber("TO_NUMBER_PLACEHOLDER");
 
 const bulkPhoneCallRequest = new CreateBulkPhoneCallRequest();
 bulkPhoneCallRequest.addPhonecalls(phoneCallRequest);
-CreateBulkPhoneCallRequest(connectionCfg, phoneCallRequest)
+CreateBulkPhoneCall(connectionCfg, bulkPhoneCallRequest)
   .then((x) => {
     if (x.getSuccess()) {
       console.dir(x.getData().toObject());

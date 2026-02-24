@@ -1,4 +1,39 @@
 ---
-title: "Project"
-description: "As an Organization Admin, you may create and manage security processes that dictates the requirements needed for your users to access your organization."
+title: "Projects"
+description: "Projects are isolated workspaces within your organization — each with its own assistants, endpoints, knowledge bases, credentials, and team members."
 ---
+
+A **Project** is an isolated workspace within your organization. Projects keep resources — assistants, endpoints, knowledge bases, and credentials — separated so different teams or environments don't interfere with each other.
+
+## What Lives Inside a Project
+
+- **Assistants**: Voice AI agents deployed on phone, web widget, or via API
+- **LLM Endpoints**: Configured language model connections with prompt templates
+- **Knowledge Bases**: Documents and data sources for RAG-powered responses
+- **Credentials**: Project-scoped API keys used by SDKs and the web widget
+- **Activity Logs**: Conversation, LLM, and webhook logs scoped to this project
+
+## Project Credentials
+
+Each project has its own set of **Publishable Keys** used to authenticate SDK calls and web widget embeds. These are scoped to the project and cannot be used to access resources in other projects. See [Credentials](/credential/rapida-credentials) for details.
+
+## Creating a Project
+
+See [Create a New Project](/workspace/create-new-project) for step-by-step instructions.
+
+## Project Roles
+
+Membership and permissions are set at the project level. A user can have different roles in different projects:
+
+| Role | Capabilities |
+|------|-------------|
+| **Super Admin** | Full control over the project |
+| **Admin** | Manage resources and invite collaborators |
+| **Member** | Create and use project resources |
+| **Viewer** | Read-only access |
+
+## Best Practices
+
+- Create separate projects for `development`, `staging`, and `production`.
+- Use descriptive project names that reflect the team or product they serve.
+- Review project membership regularly and remove users who no longer need access.

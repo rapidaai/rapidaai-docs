@@ -1,0 +1,69 @@
+---
+title: "Azure Cognitive Services"
+description: "Azure Cognitive Services Speech-to-Text provides real-time and batch transcription in 100+ languages."
+---
+
+Azure Cognitive Services Speech provides cloud-based automatic speech recognition (ASR) built on Microsoft's neural network models. It supports real-time streaming transcription, diarization, and custom models — making it a strong choice for enterprise voice applications.
+
+## Getting Started
+
+Follow these steps to configure Azure Cognitive Services as your STT provider:
+
+<Steps>
+<Step title="Add Azure credentials to your vault">
+Navigate to **Integration → Vault** in the Rapida dashboard. Add your Azure Subscription Key and the endpoint URL for your Speech resource. The IAM role must have the `Cognitive Services User` permission.
+
+</Step>
+
+<Step title="Select Azure as your STT provider">
+When configuring your assistant, open **Audio Settings** and choose **Azure Cognitive Services** as your Speech-to-Text provider.
+
+</Step>
+
+<Step title="Choose a language">
+Select the BCP-47 language code for your primary language (e.g. `en-US`, `es-ES`, `fr-FR`). Azure supports 100+ languages and locales.
+
+</Step>
+</Steps>
+
+## Supported Models
+
+| Model | Description |
+|-------|-------------|
+| `latest` | Microsoft's latest neural ASR model for the selected locale |
+| Custom | Custom Speech models trained on your own audio data |
+
+## Key Features
+
+- **Real-time streaming**: Low-latency partial and final transcripts for live voice applications
+- **Speaker diarization**: Identify and label individual speakers in a conversation
+- **Custom Speech models**: Train on your own audio data to improve accuracy for domain-specific terms
+- **Profanity filtering**: Mask or remove profane words from transcripts
+- **Phrase lists**: Boost recognition accuracy for specific words or phrases
+- **Content redaction**: Automatically redact PII from transcripts
+
+## Supported Languages
+
+Azure supports 100+ languages and locales including English (US, UK, AU, IN), Spanish, French, German, Italian, Portuguese, Japanese, Chinese (Simplified, Traditional), Korean, Hindi, and Arabic. See the [Azure documentation](https://learn.microsoft.com/en-us/azure/ai-services/speech-service/language-support) for the full list.
+
+## Configuration Options
+
+| Option | Description |
+|--------|-------------|
+| Subscription key | Azure Cognitive Services authentication key |
+| Endpoint | Azure Speech resource endpoint URL |
+| Region | Azure region (e.g. `eastus`, `westeurope`) |
+| Language code | BCP-47 locale code |
+| Sample rate | Audio input sample rate in Hz (8000 or 16000) |
+
+## Notes
+
+- For telephony use cases, set sample rate to 8000 Hz to match PSTN audio.
+- Custom Speech models require training data upload via the Azure portal.
+- Pricing is per audio hour. See [Azure Speech pricing](https://azure.microsoft.com/en-us/pricing/details/cognitive-services/speech-services/).
+
+## Related
+
+- [Azure Speech TTS](/integrations/tts/azure-speech-service)
+- [Deepgram STT](/integrations/stt/deepgram)
+- [AWS Transcribe STT](/integrations/stt/aws-transcribe)

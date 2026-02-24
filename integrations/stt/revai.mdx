@@ -1,0 +1,50 @@
+---
+title: "Rev.ai"
+description: "Rev.ai provides highly accurate speech recognition powered by deep learning, with real-time and asynchronous transcription options."
+---
+
+Rev.ai delivers streaming and batch speech recognition with industry-leading accuracy for telephony and media applications. It is particularly well-suited for call center transcription and voice analytics use cases.
+
+## Getting Started
+
+Follow these steps to configure your provider:
+
+<Steps>
+  <Step title="Add Rev.ai credentials to your vault">
+    Navigate to **Integration → Vault** in the Rapida dashboard. Add your Rev.ai Access Token, which you can generate from your [Rev.ai account dashboard](https://www.rev.ai/access_token).
+  </Step>
+
+  <Step title="Select Rev.ai as your STT provider">
+    When configuring your assistant, open **Audio Settings** and choose **Rev.ai** as your Speech-to-Text provider.
+  </Step>
+</Steps>
+
+## Key Features
+
+- **Streaming transcription**: Real-time partial and final hypotheses for low-latency voice applications
+- **High telephony accuracy**: Optimized for 8kHz telephone audio
+- **Speaker diarization**: Identify individual speakers in multi-party conversations
+- **Custom vocabularies**: Boost recognition of domain-specific terms
+- **Confidence scores**: Per-word confidence scores for downstream analytics
+
+## Supported Languages
+
+Rev.ai primarily targets English with specialized models for different English accents and telephony audio. Check the [Rev.ai docs](https://docs.rev.ai) for the current language list.
+
+## Configuration Options
+
+| Option | Description |
+|--------|-------------|
+| Access token | Rev.ai API access token |
+| Language | Language code for transcription (default: `en`) |
+| Filter profanity | Enable/disable profanity filtering |
+
+## Notes
+
+- Rev.ai's streaming API uses a WebSocket-based protocol; Rapida handles the connection automatically.
+- Ideal for call center and telephony use cases where audio is 8kHz PCM.
+
+## Related
+
+- [Deepgram STT](/integrations/stt/deepgram)
+- [AssemblyAI STT](/integrations/stt/assemblyai)

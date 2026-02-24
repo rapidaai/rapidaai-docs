@@ -1,0 +1,74 @@
+---
+title: "SharePoint"
+description: "Connect Microsoft SharePoint to Rapida to index your organization's sites, document libraries, and wikis."
+---
+
+The SharePoint connector syncs content from your Microsoft SharePoint sites into Rapida's knowledge base. Teams can connect their intranet, project wikis, and document libraries to power an AI assistant that understands organizational knowledge.
+
+## Prerequisites
+
+- A Microsoft 365 account with access to the SharePoint sites you want to index
+- The Rapida administrator must have configured `microsoft_client_id` and `microsoft_client_secret` in the OAuth settings (Microsoft Azure AD app registration)
+
+## Connecting SharePoint
+
+Follow these steps to connect SharePoint to Rapida:
+
+<Steps>
+  <Step title="Open the Connectors page">
+    In the Rapida dashboard, navigate to **Integrations → Connectors** and select **SharePoint** under Knowledge Connectors.
+  </Step>
+
+  <Step title="Authorize Rapida">
+    Click **Connect**. You will be redirected to Microsoft's authorization screen. Sign in with your Microsoft 365 account and grant Rapida access to your SharePoint sites.
+  </Step>
+
+  <Step title="Select sites and libraries">
+    After authorizing, Rapida discovers your organization's SharePoint sites. Select the sites and document libraries you want to index.
+  </Step>
+
+  <Step title="Attach to a knowledge base">
+    Navigate to your knowledge base, click **Add Source**, and select your SharePoint connection.
+  </Step>
+</Steps>
+
+## How It Works
+
+Rapida uses the Microsoft Graph API with Azure AD OAuth (tenant-agnostic) to:
+
+1. Discover the default SharePoint root site
+2. List document library contents across accessible sites
+3. Index files and pages for retrieval
+
+The connection uses PKCE (Proof Key for Code Exchange) for enhanced OAuth security.
+
+## Permissions
+
+| Scope | Purpose |
+|-------|---------|
+| `Sites.Read` | Read SharePoint site data |
+| `Sites.Read.All` | Read all SharePoint sites in the organization |
+| `Sites.ReadWrite.All` | Read and write to all SharePoint sites |
+| `Files.Read` | Read files in SharePoint document libraries |
+| `Files.Read.All` | Read all files the user has access to |
+| `Files.ReadWrite` | Read and write files |
+| `Files.ReadWrite.All` | Read and write all files |
+| `offline_access` | Obtain a refresh token for background re-syncing |
+
+## Supported Content
+
+- SharePoint Pages (wiki content)
+- Document libraries (Word, Excel, PDF, plain text)
+- Team site documents
+
+## Limitations
+
+- Only SharePoint Online (Microsoft 365) is supported. SharePoint Server (on-premises) is not currently supported.
+- Very large document libraries may take a significant amount of time to sync.
+- Content permissions in SharePoint are respected — only documents accessible to the authorized account are indexed.
+
+## Related
+
+- [Create a Knowledge Base](/knowledge/create-knowledge)
+- [OneDrive Connector](/connectors/knowledge/onedrive)
+- [Confluence Connector](/connectors/knowledge/confluence)

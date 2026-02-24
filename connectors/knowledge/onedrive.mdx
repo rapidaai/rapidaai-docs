@@ -1,0 +1,66 @@
+---
+title: "OneDrive"
+description: "Connect Microsoft OneDrive to Rapida to use your personal cloud files as knowledge sources."
+---
+
+The OneDrive connector indexes files from your personal Microsoft OneDrive into Rapida's knowledge base. Your assistant can retrieve and answer questions based on documents, spreadsheets, and other files stored in OneDrive.
+
+## Prerequisites
+
+- A Microsoft account with a personal OneDrive
+- The Rapida administrator must have configured `microsoft_client_id` and `microsoft_client_secret` in the OAuth settings
+
+## Connecting OneDrive
+
+Follow these steps to connect OneDrive to Rapida:
+
+<Steps>
+  <Step title="Open the Connectors page">
+    In the Rapida dashboard, navigate to **Integrations → Connectors** and select **OneDrive** under Knowledge Connectors.
+  </Step>
+
+  <Step title="Authorize Rapida">
+    Click **Connect**. You will be redirected to Microsoft's authorization screen. Sign in with your Microsoft account and grant access to your OneDrive files.
+  </Step>
+
+  <Step title="Select files to sync">
+    After authorizing, Rapida recursively lists your OneDrive files and folders. Select the content you want to index.
+  </Step>
+
+  <Step title="Attach to a knowledge base">
+    Navigate to your knowledge base, click **Add Source**, and select your OneDrive connection.
+  </Step>
+</Steps>
+
+## How It Works
+
+Rapida uses the Microsoft Graph API to traverse your OneDrive starting from the root folder. It lists all files and folders recursively and indexes supported file types for knowledge retrieval.
+
+## Permissions
+
+| Scope | Purpose |
+|-------|---------|
+| `Files.Read` | Read files in OneDrive |
+| `Files.Read.All` | Read all files the user has access to |
+| `Files.ReadWrite` | Read and write files |
+| `Files.ReadWrite.All` | Read and write all files |
+| `offline_access` | Obtain a refresh token for background re-syncing |
+
+## Supported File Types
+
+- Word documents (`.docx`)
+- Excel spreadsheets (`.xlsx`)
+- PDF documents
+- Plain text and Markdown files
+- PowerPoint presentations (`.pptx`, exported as text)
+
+## Limitations
+
+- Only personal OneDrive is supported via this connector. For organizational SharePoint / OneDrive for Business content, use the [SharePoint connector](/connectors/knowledge/sharepoint).
+- Large files (>100 MB) may not be fully indexed.
+
+## Related
+
+- [Create a Knowledge Base](/knowledge/create-knowledge)
+- [SharePoint Connector](/connectors/knowledge/sharepoint)
+- [Google Drive Connector](/connectors/knowledge/google-drive)

@@ -1,0 +1,61 @@
+---
+title: "Jira"
+description: "Connect Atlassian Jira to Rapida to enable your assistant to create, update, and query issues."
+---
+
+The Jira action connector authorizes Rapida to interact with your Atlassian Jira projects. Your assistant can create issues, update statuses, and query tickets as part of automated workflows — all from within a conversation.
+
+## Prerequisites
+
+- An Atlassian account with access to the Jira project(s) you want to use
+- The Rapida administrator must have configured `atlassian_client_id` and `atlassian_client_secret` in the OAuth settings (shared with the Confluence connector)
+
+## Connecting Jira
+
+Follow these steps to connect Jira to Rapida:
+
+<Steps>
+  <Step title="Open the Connectors page">
+    In the Rapida dashboard, navigate to **Integrations → Connectors** and select **Jira** under Action Connectors.
+  </Step>
+
+  <Step title="Authorize Rapida">
+    Click **Connect**. You will be redirected to Atlassian's authorization screen. Sign in and grant Rapida access to your Jira instance.
+  </Step>
+
+  <Step title="Attach to an assistant">
+    After authorizing, reference this Jira connection when configuring tools or workflows for your assistant.
+  </Step>
+</Steps>
+
+## How It Works
+
+Rapida uses the Atlassian OAuth 2.0 (3LO) flow to obtain a token for your Jira cloud instance. The token is stored securely in your Rapida Vault. Your assistant can then invoke Jira REST API operations using this token.
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Issue Creation" icon="plus-circle">
+    Let users report bugs or request features by speaking to your assistant — issues are created in Jira automatically.
+  </Card>
+  <Card title="Status Updates" icon="refresh-cw">
+    Transition issue statuses (e.g., "In Progress", "Done") via voice or chat commands.
+  </Card>
+  <Card title="Sprint Queries" icon="list">
+    Ask your assistant which issues are assigned to the current sprint or which are blocked.
+  </Card>
+  <Card title="Ticket Lookup" icon="search">
+    Retrieve issue details, comments, and priority directly in conversation.
+  </Card>
+</CardGroup>
+
+## Limitations
+
+- Only Jira Cloud is supported. Jira Data Center / Server is not currently supported.
+- The connected account must have the necessary project permissions for the operations your assistant will perform.
+
+## Related
+
+- [Confluence Connector](/connectors/knowledge/confluence)
+- [Slack Action Connector](/connectors/action/slack)
+- [HubSpot Action Connector](/connectors/action/hubspot)

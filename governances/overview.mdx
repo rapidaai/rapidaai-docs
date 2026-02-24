@@ -1,4 +1,51 @@
 ---
-title: "Overview"
-description: "The Rapida.ai administrative system includes organization and projects."
+title: "Governance Overview"
+description: "Understand how organizations, projects, users, and roles are structured in the Rapida platform."
 ---
+
+Rapida uses a two-level hierarchy to organize access and resources: **Organizations** at the top level, and **Projects** within each organization. Every user account belongs to an organization and can be a member of one or more projects within it.
+
+## Hierarchy
+
+```
+Organization
+└── Project A
+│   ├── Assistants
+│   ├── Endpoints
+│   ├── Knowledge Bases
+│   └── Members (with project roles)
+└── Project B
+    └── ...
+```
+
+## Key Concepts
+
+<CardGroup cols={2}>
+  <Card title="Organizations" icon="building" href="/governances/organization">
+    The top-level entity. An organization owns all projects, billing, and
+    organization-wide members.
+  </Card>
+  <Card title="Projects" icon="folder" href="/governances/project">
+    Isolated containers for assistants, endpoints, and knowledge bases. Each
+    project has its own credentials and member roles.
+  </Card>
+  <Card title="Roles & Permissions" icon="shield-check" href="/governances/roles-and-permission">
+    Fine-grained access control at the project level. A user can hold different
+    roles across different projects.
+  </Card>
+  <Card title="Users & Teams" icon="users" href="/workspace/user-management">
+    Invite team members to your organization or specific projects and assign
+    them the appropriate role.
+  </Card>
+</CardGroup>
+
+## Role Summary
+
+| Role | Scope | Capabilities |
+|------|-------|-------------|
+| **Super Admin** | Project | Full control — manage resources, settings, and members |
+| **Admin** | Project | Manage resources and invite collaborators |
+| **Member** | Project | Create and use project resources |
+| **Viewer** | Project | Read-only access |
+
+Organization admins can create and archive projects but do not automatically inherit project-level admin rights.

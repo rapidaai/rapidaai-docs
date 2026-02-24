@@ -1,0 +1,66 @@
+---
+title: "GitHub"
+description: "Connect GitHub to Rapida to index your repositories as knowledge sources for code-aware assistants."
+---
+
+The GitHub connector indexes your repositories — including READMEs, documentation, and source code — into Rapida's knowledge base. This lets your assistant answer questions about codebases, architecture, and development workflows.
+
+## Prerequisites
+
+- A GitHub account with access to the repositories you want to index
+- The Rapida administrator must have configured `github_client_id` and `github_client_secret` in the OAuth settings
+
+## Connecting GitHub
+
+Follow these steps to connect GitHub to Rapida:
+
+<Steps>
+  <Step title="Open the Connectors page">
+    In the Rapida dashboard, navigate to **Integrations → Connectors** and select **GitHub** under Knowledge Connectors.
+  </Step>
+
+  <Step title="Authorize Rapida">
+    Click **Connect**. You will be redirected to GitHub's authorization screen. Grant Rapida `read:org` access to your account.
+  </Step>
+
+  <Step title="Select repositories">
+    After authorizing, Rapida lists all personal repositories and repositories from your organizations. Select the ones you want to index.
+  </Step>
+
+  <Step title="Attach to a knowledge base">
+    Navigate to your knowledge base, click **Add Source**, and select your GitHub connection.
+  </Step>
+</Steps>
+
+## How It Works
+
+After authorization, Rapida:
+
+1. Fetches your personal repositories via the GitHub API
+2. Discovers all organizations your account belongs to
+3. Fetches repositories from each organization
+4. Indexes selected repository content (documentation files, source code)
+
+## Permissions
+
+| Scope | Purpose |
+|-------|---------|
+| `read:org` | List organizations and their repositories |
+
+## Supported Content
+
+- `README.md` and other Markdown documentation
+- Source code files (for code-aware assistants)
+- Wiki pages (if enabled in the repository)
+
+## Limitations
+
+- Private repositories are only accessible if your GitHub account has read access.
+- Repository content is indexed at the time of connection. New commits are not automatically re-indexed.
+- Forked repositories are listed but may not be selectable depending on your organization's settings.
+
+## Related
+
+- [Create a Knowledge Base](/knowledge/create-knowledge)
+- [GitLab Connector](/connectors/knowledge/gitlab)
+- [Confluence Connector](/connectors/knowledge/confluence)

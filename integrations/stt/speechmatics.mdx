@@ -1,0 +1,55 @@
+---
+title: "Speechmatics"
+description: "Speechmatics delivers highly accurate, language-inclusive speech recognition with real-time and batch processing capabilities."
+---
+
+Speechmatics is a speech recognition platform known for its broad language coverage and accuracy across diverse accents and audio conditions. It supports real-time streaming transcription for conversational applications.
+
+## Getting Started
+
+Follow these steps to configure your provider:
+
+<Steps>
+  <Step title="Add Speechmatics credentials to your vault">
+    Navigate to **Integration → Vault** in the Rapida dashboard. Add your Speechmatics API key, available from your [Speechmatics account](https://portal.speechmatics.com).
+  </Step>
+
+  <Step title="Select Speechmatics as your STT provider">
+    When configuring your assistant, open **Audio Settings** and choose **Speechmatics** as your Speech-to-Text provider.
+  </Step>
+
+  <Step title="Choose a language">
+    Speechmatics supports 50+ languages. Select the appropriate language code for your use case.
+  </Step>
+</Steps>
+
+## Key Features
+
+- **Broad language support**: 50+ languages with strong performance in non-English languages
+- **Real-time streaming**: Low-latency partial and final transcripts via WebSocket
+- **Speaker diarization**: Multi-speaker labelling for call analytics
+- **Custom dictionary**: Add domain-specific terminology to improve recognition accuracy
+- **Accent robustness**: Trained on diverse speaker populations for improved coverage
+
+## Supported Languages
+
+50+ languages including English, Spanish, French, German, Italian, Portuguese, Japanese, Chinese, Arabic, Dutch, and many more. See [Speechmatics language support](https://docs.speechmatics.com/introduction/supported-languages).
+
+## Configuration Options
+
+| Option | Description |
+|--------|-------------|
+| API key | Speechmatics API authentication key |
+| Language | Language code (e.g. `en`, `es`, `fr`) |
+| Operating point | `standard` or `enhanced` accuracy (enhanced has higher latency) |
+| Enable entities | Extract named entities from transcripts |
+
+## Notes
+
+- Speechmatics streams over WebSockets; Rapida manages the session lifecycle and reconnection.
+- The `enhanced` operating point provides higher accuracy at the cost of additional latency.
+
+## Related
+
+- [Deepgram STT](/integrations/stt/deepgram)
+- [Google Speech STT](/integrations/stt/google-speech-service)

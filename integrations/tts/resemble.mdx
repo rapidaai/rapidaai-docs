@@ -1,0 +1,52 @@
+---
+title: "Resemble AI"
+description: "Resemble AI provides high-quality, real-time voice synthesis with support for custom voice cloning."
+---
+
+Resemble AI specializes in neural text-to-speech and voice cloning. It is particularly well-suited for branded voice assistants where a custom or cloned voice is needed to match a specific persona or brand identity.
+
+## Getting Started
+
+Follow these steps to configure your provider:
+
+<Steps>
+  <Step title="Add Resemble AI credentials to your vault">
+    Navigate to **Integration → Vault** in the Rapida dashboard. Add your Resemble AI API key from your [Resemble AI account](https://app.resemble.ai).
+  </Step>
+
+  <Step title="Select Resemble as your TTS provider">
+    When configuring your assistant, open **Audio Settings** and choose **Resemble** as your Text-to-Speech provider.
+  </Step>
+
+  <Step title="Configure your voice UUID">
+    Specify the UUID of the voice you want to use. You can use a pre-built Resemble voice or a custom cloned voice from your Resemble account.
+  </Step>
+</Steps>
+
+## Key Features
+
+- **Voice cloning**: Create a custom voice from a small amount of sample audio
+- **Real-time synthesis**: Low-latency streaming for live voice assistant applications
+- **Emotion control**: Adjust speech emotion and style programmatically
+- **SSML support**: Fine-grained control over pronunciation, pauses, and emphasis
+- **Localization**: Multilingual synthesis with the same cloned voice
+
+## Configuration Options
+
+| Option | Description |
+|--------|-------------|
+| API key | Resemble AI authentication key |
+| Voice UUID | UUID of the target voice (from your Resemble account) |
+| Project UUID | UUID of the Resemble project containing your voice |
+| Sample rate | Output audio sample rate |
+
+## Notes
+
+- Voice cloning requires a minimum of 30–60 minutes of clean audio recordings per voice.
+- Real-time streaming latency is typically under 300ms for the first audio chunk.
+- Resemble charges per character synthesized plus a monthly fee for custom voices. See [Resemble pricing](https://www.resemble.ai/pricing/).
+
+## Related
+
+- [ElevenLabs TTS](/integrations/tts/elevenlabs)
+- [Deepgram TTS](/integrations/tts/deepgram)

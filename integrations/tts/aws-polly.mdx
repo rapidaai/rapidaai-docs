@@ -1,0 +1,78 @@
+---
+title: "AWS Polly"
+description: "Amazon Polly is a cloud-based text-to-speech service that synthesizes natural-sounding speech in dozens of languages and voices."
+---
+
+Amazon Polly converts text to lifelike speech using deep learning models. It offers standard neural voices and supports SSML for fine-grained control over speech output — ideal for telephony and IVR systems.
+
+## Getting Started
+
+Follow these steps to configure your provider:
+
+<Steps>
+  <Step title="Add AWS credentials to your vault">
+    Navigate to **Integration → Vault** in the Rapida dashboard. Add your AWS Access Key ID and Secret Access Key. The IAM role needs `AmazonPollyReadOnlyAccess` or a scoped `polly:SynthesizeSpeech` permission.
+  </Step>
+
+  <Step title="Select AWS Polly as your TTS provider">
+    When configuring your assistant, open **Audio Settings** and choose **AWS** as your Text-to-Speech provider.
+  </Step>
+
+  <Step title="Choose a voice and language">
+    Polly offers 60+ voices across 30+ languages. Choose the voice that matches your assistant's target language and persona.
+  </Step>
+</Steps>
+
+## Voice Types
+
+| Type | Description |
+|------|-------------|
+| **Neural** | Higher quality, more natural-sounding voices using a neural TTS engine |
+| **Standard** | Concatenative synthesis — lower cost, suitable for basic use cases |
+
+Neural voices are recommended for production voice assistants.
+
+## Popular Voices
+
+| Voice ID | Language | Gender |
+|----------|----------|--------|
+| `Joanna` | English (US) | Female |
+| `Matthew` | English (US) | Male |
+| `Amy` | English (UK) | Female |
+| `Brian` | English (UK) | Male |
+| `Léa` | French | Female |
+| `Lupe` | Spanish (US) | Female |
+
+## SSML Support
+
+Polly supports SSML tags for granular speech control:
+
+```xml
+<speak>
+  Welcome back, <emphasis level="strong">valued customer</emphasis>.
+  Your appointment is scheduled for <say-as interpret-as="date" format="mdy">12/25/2025</say-as>.
+  <break time="500ms"/>
+  Is there anything else I can help you with?
+</speak>
+```
+
+## Configuration Options
+
+| Option | Description |
+|--------|-------------|
+| Region | AWS region for Polly (e.g. `us-east-1`) |
+| Voice ID | Polly voice identifier |
+| Engine | `neural` or `standard` |
+| Language code | BCP-47 language code (required for some bilingual voices) |
+| Sample rate | Output audio sample rate (8000 or 16000 Hz for telephony) |
+
+## Notes
+
+- Neural voices are not available in all AWS regions. Check the [Polly neural voice list](https://docs.aws.amazon.com/polly/latest/dg/ntts-voices-main.html).
+- For telephony use cases, set sample rate to 8000 Hz to match PSTN audio formats.
+- Pricing is per character synthesized. See [AWS Polly pricing](https://aws.amazon.com/polly/pricing/).
+
+## Related
+
+- [AWS Transcribe STT](/integrations/stt/aws-transcribe)
+- [Azure Speech TTS](/integrations/tts/azure-speech-service)

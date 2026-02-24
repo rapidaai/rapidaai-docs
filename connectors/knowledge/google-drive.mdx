@@ -1,0 +1,67 @@
+---
+title: "Google Drive"
+description: "Connect Google Drive to Rapida to use your documents, spreadsheets, and files as knowledge sources."
+---
+
+The Google Drive connector indexes files from your Google Drive into Rapida's knowledge base. Your assistant can retrieve and answer questions based on documents, spreadsheets, and other files stored in Drive.
+
+## Prerequisites
+
+- A Google account with access to the Drive files you want to index
+- The Rapida administrator must have configured `google_client_id` and `google_client_secret` in the OAuth settings
+
+## Connecting Google Drive
+
+Follow these steps to connect Google Drive to Rapida:
+
+<Steps>
+  <Step title="Open the Connectors page">
+    In the Rapida dashboard, navigate to **Integrations → Connectors** and select **Google Drive** under Knowledge Connectors.
+  </Step>
+
+  <Step title="Authorize Rapida">
+    Click **Connect**. You will be redirected to Google's authorization screen. Sign in and grant Rapida access to your Drive.
+  </Step>
+
+  <Step title="Select files to sync">
+    After authorizing, Rapida lists your Drive files. Select the files and folders you want to include in your knowledge base.
+  </Step>
+
+  <Step title="Attach to a knowledge base">
+    Navigate to your knowledge base, click **Add Source**, and select your Google Drive connection.
+  </Step>
+</Steps>
+
+## How It Works
+
+After authorization, Rapida connects to Google Drive using the official Drive API. It retrieves file metadata (name, type, size, parent folder) and downloads content for supported file types (Google Docs, Sheets, PDFs, plain text). Files are indexed into the knowledge base for retrieval-augmented generation.
+
+## Permissions
+
+| Scope | Purpose |
+|-------|---------|
+| `drive` | Full read/write access to Drive files |
+| `drive.readonly` | Read-only access to all Drive files |
+| `drive.file` | Access to files created or opened by the app |
+| `drive.metadata.readonly` | Read file metadata only |
+
+## Supported File Types
+
+- Google Docs (exported as plain text)
+- Google Sheets (exported as CSV)
+- PDF documents
+- Plain text files (`.txt`, `.md`)
+- Microsoft Word and Excel files (`.docx`, `.xlsx`)
+
+## Limitations
+
+- Files in shared drives owned by other users require the owner to have explicitly shared them with your account.
+- Very large files (>100 MB) may not be fully indexed.
+- Binary files (images, videos, executables) are not supported for content indexing.
+
+## Related
+
+- [Create a Knowledge Base](/knowledge/create-knowledge)
+- [Notion Connector](/connectors/knowledge/notion)
+- [OneDrive Connector](/connectors/knowledge/onedrive)
+- [Gmail Action Connector](/connectors/action/gmail)

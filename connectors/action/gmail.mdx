@@ -1,0 +1,65 @@
+---
+title: "Gmail"
+description: "Connect Gmail to Rapida to enable your assistant to read, compose, and send emails on behalf of users."
+---
+
+The Gmail action connector authorizes Rapida to interact with Gmail on behalf of the connected account. Your assistant can read incoming emails, compose replies, and send messages as part of automated workflows.
+
+## Prerequisites
+
+- A Google account with Gmail access
+- The Rapida administrator must have configured `google_client_id` and `google_client_secret` in the OAuth settings (shared with the Google Drive connector)
+
+## Connecting Gmail
+
+Follow these steps to connect Gmail to Rapida:
+
+<Steps>
+  <Step title="Open the Connectors page">
+    In the Rapida dashboard, navigate to **Integrations → Connectors** and select **Gmail** under Action Connectors.
+  </Step>
+
+  <Step title="Authorize Rapida">
+    Click **Connect**. You will be redirected to Google's authorization screen. Sign in and grant Rapida access to your Gmail account.
+  </Step>
+
+  <Step title="Attach to an assistant">
+    After authorizing, you can reference this Gmail connection when configuring your assistant's tools or workflows.
+  </Step>
+</Steps>
+
+## Permissions
+
+| Scope | Purpose |
+|-------|---------|
+| `gmail.readonly` | Read email messages and metadata |
+| `gmail.compose` | Create and edit draft emails |
+| `gmail.send` | Send emails on behalf of the user |
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Email Triage" icon="inbox">
+    Have your assistant summarize, categorize, or route incoming emails automatically.
+  </Card>
+  <Card title="Automated Replies" icon="reply">
+    Generate and send contextual reply emails based on conversation history.
+  </Card>
+  <Card title="Follow-up Reminders" icon="bell">
+    Detect unanswered threads and send follow-up messages after a set period.
+  </Card>
+  <Card title="Lead Nurturing" icon="user-plus">
+    Send personalized outreach emails triggered by CRM events.
+  </Card>
+</CardGroup>
+
+## Limitations
+
+- The connection is scoped to a single Google account. Multi-account setups require multiple connections.
+- Sending email is performed on behalf of the authorized user. Ensure the connected account is intended for automated sending.
+
+## Related
+
+- [Google Drive Connector](/connectors/knowledge/google-drive)
+- [Slack Action Connector](/connectors/action/slack)
+- [HubSpot Action Connector](/connectors/action/hubspot)

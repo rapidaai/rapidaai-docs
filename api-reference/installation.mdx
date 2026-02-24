@@ -48,13 +48,13 @@ A voice AI assistant built with React.
 </Info>
 
 <Info>
-  **Go**: Please install [Go](https://golang.org/dl/) (version 1.19 or higher)
+  **Go**: Please install [Go](https://golang.org/dl/) (version 1.21 or higher)
   before proceeding.
 </Info>
 
 <Info>
   **Python**: Please install [Python](https://python.org/downloads/) (version
-  3.8 or higher) before proceeding.
+  3.9 or higher) before proceeding.
 </Info>
 
 You can check your installed versions:
@@ -80,24 +80,21 @@ python --version
 <CodeGroup>
     ```bash React
     # React (choose one)
-    npm install rapida-react      # npm
-    yarn add rapida-react         # yarn
-    pnpm add rapida-react         # pnpm
-    # Other languages: see tabs
+    npm install @rapidaai/react      # npm
+    yarn add @rapidaai/react         # yarn
+    pnpm add @rapidaai/react         # pnpm
     ```
 
     ```bash Node.js
     # Node.js (choose one)
-    npm install rapida-nodejs     # npm
-    yarn add rapida-nodejs        # yarn
-    pnpm add rapida-nodejs        # pnpm
-    # Other languages: see tabs
+    npm install @rapidaai/nodejs     # npm
+    yarn add @rapidaai/nodejs        # yarn
+    pnpm add @rapidaai/nodejs        # pnpm
     ```
 
     ```bash Go
     # Go
-    go get github.com/rapidaai/rapida-go@v0.0.7
-    # Other languages: see tabs
+    go get github.com/rapidaai/rapida-go@latest
     ```
 
     ```bash Python
@@ -140,7 +137,7 @@ python --version
     **Solution**:
     1. Ensure Go modules are enabled: `go mod init your-project-name`
     2. Run `go mod tidy` to clean up dependencies
-    3. Check that you're using Go 1.19 or higher
+    3. Check that you're using Go 1.21 or higher
 
   </Accordion>
 
@@ -158,6 +155,6 @@ python --version
 ## Next Steps
 
 - Explore the [API Reference](/api-reference) for all available endpoints
-- Review [Examples](/examples) to see common usage patterns
-- Learn how to configure [Assistants](/guides/assistants) and build custom experiences
-- Check out our [Quickstart Guide](/quickstart) for a step-by-step tutorial
+- Learn how to configure [Assistants](/assistants/overview) and build custom experiences
+- Read the [Authentication](/api-reference/authentication) guide to set up API access
+- Review [API Reference](/api-reference/authentication) for all available endpoints

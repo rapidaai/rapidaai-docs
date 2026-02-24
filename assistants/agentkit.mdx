@@ -1,0 +1,245 @@
+---
+title: "AgentKit — Custom LLM Backend"
+description: "Build a custom server-side LLM backend that Rapida calls over gRPC, giving you full control over reasoning, tool use, and context management."
+sidebarTitle: "AgentKit"
+---
+
+AgentKit lets you run your own LLM logic on your own server. Instead of using Rapida's built-in LLM endpoint routing, Rapida calls your gRPC service in real time — streaming user speech transcripts to your server, which streams back assistant responses that are synthesized to audio and played to the caller.
+
+This gives you complete control over:
+- Which LLM you call and how you call it
+- Custom tool definitions and execution
+- Multi-step reasoning chains (LangChain, CrewAI, AutoGen, etc.)
+- State management and memory
+- Any external API or database your logic needs
+
+## How It Works
+
+```
+User speaks
+    ↓ (Rapida transcribes via STT)
+Your AgentKit server receives TalkInput (user text)
+    ↓ (your code calls OpenAI / Anthropic / custom model)
+Your server streams back TalkOutput (assistant text chunks)
+    ↓ (Rapida synthesizes via TTS and plays to user)
+User hears the response
+```
+
+The protocol is a bidirectional gRPC stream. Rapida manages the audio pipeline (VAD, STT, TTS, telephony) — your server only handles text in / text out.
+
+## Python Quick Start
+
+### 1. Install the SDK
+
+```bash
+pip install rapida-python
+```
+
+### 2. Implement your agent
+
+Subclass `AgentKitAgent` and override the `Talk` method:
+
+```python
+import os
+from openai import OpenAI
+from rapida import AgentKitAgent, AgentKitServer
+from rapida.clients.protos.talk_api_pb2 import TalkInput, TalkOutput
+
+openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+class MyVoiceAgent(AgentKitAgent):
+    def Talk(self, request_iterator, context):
+        messages = [{"role": "system", "content": "You are a helpful voice assistant."}]
+
+        for request in request_iterator:
+            # Acknowledge configuration handshake
+            if self.is_configuration_request(request):
+                yield self.configuration_response(request.configuration)
+                continue
+
+            # Get the user's transcribed text
+            user_text = self.get_user_text(request)
+            if not user_text:
+                continue
+
+            messages.append({"role": "user", "content": user_text})
+            msg_id = self.get_message_id(request)
+
+            # Stream the LLM response back
+            full_response = ""
+            stream = openai_client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages,
+                stream=True,
+            )
+            for chunk in stream:
+                delta = chunk.choices[0].delta.content or ""
+                if delta:
+                    full_response += delta
+                    yield self.assistant_response(msg_id, delta, completed=False)
+
+            # Signal end of response
+            yield self.assistant_response(msg_id, "", completed=True)
+            messages.append({"role": "assistant", "content": full_response})
+
+
+if __name__ == "__main__":
+    server = AgentKitServer(
+        agent=MyVoiceAgent(),
+        host="0.0.0.0",
+        port=50051,
+    )
+    print("AgentKit server listening on port 50051")
+    server.start()
+    server.wait_for_termination()
+```
+
+### 3. Point your assistant to your server
+
+In the Rapida dashboard, when configuring your assistant's LLM provider, select **AgentKit** and enter the address of your server (e.g. `my-server.example.com:50051`).
+
+## Response Types
+
+Your `Talk` method yields `TalkOutput` objects. Use the convenience methods on `AgentKitAgent`:
+
+| Method | Use when |
+|--------|----------|
+| `assistant_response(msg_id, text, completed)` | Streaming text response chunks |
+| `configuration_response(config)` | Acknowledging the initial handshake |
+| `tool_call(msg_id, tool_id, name, args)` | Requesting Rapida to execute a tool |
+| `tool_call_result(msg_id, tool_id, name, result, success)` | Returning a tool result |
+| `transfer_call(msg_id, args)` | Transferring the call to another number |
+| `terminate_call(msg_id, args)` | Ending the call programmatically |
+| `error_response(code, message)` | Signalling an error |
+
+## Handling Tool Calls
+
+Rapida can execute tools on your behalf (knowledge retrieval, endpoint invocation) and send results back to your server. Here's how to request a tool call and receive its result:
+
+```python
+for request in request_iterator:
+    if self.is_configuration_request(request):
+        yield self.configuration_response(request.configuration)
+        continue
+
+    user_text = self.get_user_text(request)
+    msg_id = self.get_message_id(request)
+
+    # Request a tool call from Rapida
+    yield self.tool_call(
+        msg_id=msg_id,
+        tool_id="tool_001",
+        name="get_weather",
+        args={"location": "London"}
+    )
+
+    # The next message will contain the tool result
+    tool_result_request = next(request_iterator)
+    # Process tool result and continue...
+```
+
+## SSL / TLS Configuration
+
+For production deployments, enable TLS:
+
+```python
+server = AgentKitServer(
+    agent=MyVoiceAgent(),
+    host="0.0.0.0",
+    port=50051,
+    ssl_config={
+        "cert_path": "/etc/ssl/server.crt",
+        "key_path": "/etc/ssl/server.key",
+        "ca_cert_path": "/etc/ssl/ca.crt",  # Optional: for mutual TLS
+    }
+)
+```
+
+## Authentication
+
+Protect your server with a bearer token:
+
+```python
+server = AgentKitServer(
+    agent=MyVoiceAgent(),
+    host="0.0.0.0",
+    port=50051,
+    auth_config={
+        "enabled": True,
+        "token": os.getenv("AGENTKIT_TOKEN"),
+    }
+)
+```
+
+## Framework Examples
+
+AgentKit works with any Python code. Here are some common patterns:
+
+<AccordionGroup>
+  <Accordion title="LangChain ReAct agent">
+    ```python
+    from langchain.agents import AgentExecutor, create_react_agent
+    from langchain_openai import ChatOpenAI
+    from langchain.tools import tool
+
+    @tool
+    def get_account_balance(account_id: str) -> str:
+        """Get the balance for a customer account."""
+        # Call your database or API
+        return f"Account {account_id} balance: $1,234.56"
+
+    llm = ChatOpenAI(model="gpt-4o", streaming=True)
+    tools = [get_account_balance]
+    agent = create_react_agent(llm, tools, prompt)
+    agent_executor = AgentExecutor(agent=agent, tools=tools)
+
+    class LangChainAgent(AgentKitAgent):
+        def Talk(self, request_iterator, context):
+            for request in request_iterator:
+                if self.is_configuration_request(request):
+                    yield self.configuration_response(request.configuration)
+                    continue
+                user_text = self.get_user_text(request)
+                msg_id = self.get_message_id(request)
+                for chunk in agent_executor.stream({"input": user_text}):
+                    if "output" in chunk:
+                        yield self.assistant_response(msg_id, chunk["output"], completed=False)
+                yield self.assistant_response(msg_id, "", completed=True)
+    ```
+  </Accordion>
+
+  <Accordion title="Anthropic Claude">
+    ```python
+    import anthropic
+    client = anthropic.Anthropic()
+
+    class ClaudeAgent(AgentKitAgent):
+        def Talk(self, request_iterator, context):
+            messages = []
+            for request in request_iterator:
+                if self.is_configuration_request(request):
+                    yield self.configuration_response(request.configuration)
+                    continue
+                user_text = self.get_user_text(request)
+                msg_id = self.get_message_id(request)
+                messages.append({"role": "user", "content": user_text})
+                with client.messages.stream(
+                    model="claude-opus-4-6",
+                    max_tokens=1024,
+                    messages=messages,
+                ) as stream:
+                    full = ""
+                    for text in stream.text_stream:
+                        full += text
+                        yield self.assistant_response(msg_id, text, completed=False)
+                yield self.assistant_response(msg_id, "", completed=True)
+                messages.append({"role": "assistant", "content": full})
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Related
+
+- [Python SDK Reference](/api-reference/installation)
+- [Create Assistant](/assistants/create-assistant)
+- [Endpoint Tool](/assistants/tools/add-endpoint-tool)

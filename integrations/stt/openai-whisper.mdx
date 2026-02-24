@@ -1,0 +1,58 @@
+---
+title: "OpenAI Whisper"
+description: "OpenAI Whisper is a state-of-the-art speech recognition model with broad language support and high accuracy."
+---
+
+OpenAI Whisper is a general-purpose speech recognition model trained on a large, diverse audio dataset. It supports multilingual transcription and translation with strong performance across accents, dialects, and noisy environments.
+
+## Getting Started
+
+Follow these steps to configure your provider:
+
+<Steps>
+  <Step title="Add OpenAI credentials to your vault">
+    Navigate to **Integration → Vault** in the Rapida dashboard and add your OpenAI API key. This credential is shared across all OpenAI services (LLM, Whisper STT, and TTS).
+  </Step>
+
+  <Step title="Select Whisper as your STT provider">
+    When configuring your assistant, open **Audio Settings** and choose **OpenAI** as your Speech-to-Text provider.
+  </Step>
+
+  <Step title="Choose a model">
+    Rapida supports the following Whisper models:
+
+    | Model | Description |
+    |-------|-------------|
+    | `whisper-1` | Standard Whisper model — strong multilingual accuracy |
+  </Step>
+</Steps>
+
+## Supported Languages
+
+Whisper supports transcription in 99+ languages including English, Spanish, French, German, Japanese, Chinese, Hindi, Arabic, and Portuguese.
+
+## Key Features
+
+- **Noise robustness**: Performs well in challenging acoustic environments
+- **Multilingual**: Transcribes 99+ languages without separate language models
+- **Punctuation & formatting**: Returns properly punctuated and formatted text
+- **Long-form audio**: Handles extended utterances with timestamps
+
+## Configuration Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| Language | BCP-47 language code (e.g. `en`, `es`). Leave blank for auto-detection | Auto |
+| Temperature | Sampling temperature (0–1). Lower values produce more deterministic output | `0` |
+| Prompt | Optional text to guide transcription style or provide context | — |
+
+## Notes
+
+- Whisper is a non-streaming model; Rapida buffers and segments audio before sending to the API.
+- For lowest latency in real-time voice, consider Deepgram or AssemblyAI which offer true streaming STT.
+- Whisper rate limits and pricing follow your OpenAI account tier.
+
+## Related
+
+- [OpenAI TTS](/integrations/tts/openai-tts)
+- [OpenAI LLM](/integrations/llm/openai)

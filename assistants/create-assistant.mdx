@@ -1,75 +1,305 @@
 ---
-title: "Creating an Assistant"
-description: "Step-by-step guide to creating a new AI assistant"
+title: "Create and Configure an Assistant"
+description: "Build a production-ready voice AI assistant — from prompt definition to voice pipeline, tools, knowledge, and deployment."
 sidebarTitle: "Create assistant"
 ---
 
-This guide walks you through the process of creating a new assistant in the platform.
+An assistant is the central object in Rapida. It holds your LLM configuration, system prompt, voice pipeline settings, tools, knowledge bases, and deployment channels — all versioned and deployable across phone, web, and messaging from one place.
+
+<Info>
+Before creating an assistant, set up credentials for your LLM, STT, and TTS providers in **Integration → Vault**. The creation wizard will ask you to select a provider — credentials must exist first.
+</Info>
+
+## Create your first assistant
 
 <Steps>
   <Step title="Navigate to Assistants">
     ![Navigate to Assistants](/images/create_assistant/create_assistant_1.png)
 
-    Begin by navigating to the Assistants section in the main navigation menu.
+    Go to **Assistants** in the main sidebar. Click **Add new assistant** to open the creation wizard.
 
   </Step>
 
-  <Step title="Initiate Assistant Creation">
-    ![Initiate Assistant Creation](/images/create_assistant/create_assistant_2.png)
-
-    Click on the "Add new assistant" button to start the process of creating a new assistant.
-
-  </Step>
-
-  <Step title="Select your LLM">
+  <Step title="Select your LLM provider and model">
     ![Select your LLM](/images/create_assistant/create_assistant_3.png)
 
-    Select the right LLM for your assistant:
+    Choose your LLM provider and the specific model to power this assistant. Supported providers: [OpenAI](/integrations/llm/openai), [Anthropic](/integrations/llm/anthropic), [Azure OpenAI](/integrations/llm/azure-openai), [Google Gemini](/integrations/llm/google-ai), [Cohere](/integrations/llm/cohere), [Vertex AI](/integrations/llm/vertexai), or a custom [AgentKit](/assistants/agentkit) gRPC backend.
 
-    - Choose the appropriate model from the model provider list. The platform supports various model providers including:
-      - [OpenAI](/integrations/openai)
-      - [Azure OpenAI](/integrations/azure-openai)
-      - [Anthropic](/integrations/anthropic)
-      - [Google AI](/integrations/google-ai)
-
-    - For each provider, you'll need to select a specific model (like GPT-4o for Azure OpenAI as shown in the image).
-
-    - Make sure you've already configured credentials for your chosen provider in the Integrations section.
+    Each provider requires a vault credential. The model you select here sets the default — you can tune all parameters after creation.
 
   </Step>
 
-  <Step title="Provide Assistant Instructions">
+  <Step title="Write your system prompt">
     ![Provide Assistant Instructions](/images/create_assistant/create_assistant_4.png)
 
-    Define the detailed instructions that guide the assistant's behavior.
-      This will be the System prompt used by the assistant.
+    Define the assistant's persona, scope, and behaviour in the **Instructions** field. This becomes the system prompt sent to the LLM at the start of every conversation.
+
+    Use `{{variable}}` syntax to inject dynamic values at runtime — caller name, account ID, or any context passed when a call is initiated.
 
   </Step>
 
-  <Step title="Add Function Tools">
+  <Step title="Add tools (optional)">
     ![Add Tools](/images/create_assistant/create_assistant_6.png)
 
-    Add function tools to extend your assistant's capabilities. The platform supports several tool types:
-
-    - **[Knowledge Retrieval](/assistants/tools/add-knowledge-tool)**: Access and search documents from your knowledge base on Rapida
-    - **[API Request](/assistants/tools/add-api-tool)**: Make external API calls to fetch or push data in realtime
-    - **[Endpoint (LLM Call)](/assistants/tools/add-endpoint-tool)**: Trigger other LLM services for your special use cases
-    - **[Put On Hold](/assistants/tools/add-put-on-hold-tool)**: Pause conversation flow if you want to implement call Hold
-    - **[End Of Conversation](/assistants/tools/add-end-of-conversation-tool)**: Terminate the call when conversation is over.
+    Attach tools to extend what the assistant can do mid-conversation — query a knowledge base, call an external API, transfer the call, or end the session. Tools can also be added or modified after creation.
 
   </Step>
 
-  <Step title="Finalise Name">
+  <Step title="Name and create">
     ![Success Confirmation](/images/create_assistant/create_assistant_7.png)
 
-    Enter the basic information for your assistant:
-
-    - **Name**: Give your assistant a descriptive name
-    - **Description**: Provide a brief explanation of the assistant's purpose
-
-    Click "Create Assistant" when done.
-
-    You'll see a confirmation that your assistant has been created successfully. You can now start using your new assistant or make additional configurations. To configure voice on your Twilio Phone for this assistant, visit please refer to the [Twilio Phone Number Deployment Manual](/assistants/twilio-integration).
+    Give the assistant a name and description, then click **Create Assistant**. The assistant is created at version `v1` in draft state. Configure voice, deployments, and advanced settings before going live.
 
   </Step>
 </Steps>
+
+<Note>
+A newly created assistant has no deployment attached. It will not handle live calls or web sessions until you configure at least one deployment under **Configure assistant → Deployments**.
+</Note>
+
+---
+
+## Configure your assistant
+
+After creation, open **Configure assistant** from the top-right of the assistant page. Configuration is organized into six areas:
+
+<CardGroup cols={2}>
+  <Card title="Prompt & Model" icon="cpu">
+    System prompt, model selection, temperature, token limits, and advanced LLM parameters.
+  </Card>
+  <Card title="Voice Pipeline" icon="mic">
+    STT provider and model, VAD sensitivity, noise cancellation, EOS detection, TTS provider and voice, pronunciation rules.
+  </Card>
+  <Card title="Knowledge & Retrieval" icon="book-open">
+    Attach knowledge bases, set retrieval method (hybrid, semantic, text), top-K, score threshold, and reranking.
+  </Card>
+  <Card title="Tools" icon="zap">
+    Knowledge retrieval, API request, endpoint invocation, call hold, and end-of-conversation tool types.
+  </Card>
+  <Card title="Deployments" icon="phone">
+    Phone, web widget, web app, WhatsApp, and API deployment channels — each with its own voice and experience settings.
+  </Card>
+  <Card title="Webhooks & Analysis" icon="activity">
+    Post-call webhooks to downstream systems and analysis pipelines for conversation scoring and custom metrics.
+  </Card>
+</CardGroup>
+
+---
+
+### Prompt and model
+
+The prompt and model configuration defines what your assistant knows, how it reasons, and how it generates responses.
+
+#### System prompt
+
+The system prompt is your primary control surface. It sets the assistant's persona, scope of knowledge, constraints, and tone. Well-written prompts are the single biggest lever for assistant quality.
+
+<Tip>
+**For voice:** Keep sentences short and natural. Avoid bullet lists, markdown, and symbols — the TTS engine reads punctuation literally. Write instructions the way you'd brief a call centre agent.
+</Tip>
+
+**Dynamic variables** — inject runtime context into your prompt using `{{variable_name}}` syntax. Variables are automatically detected from your prompt and can be populated via the SDK when initiating a call:
+
+```
+You are an assistant for {{company_name}}. The caller's name is {{caller_name}}.
+Their account tier is {{account_tier}}. Always address them by first name.
+```
+
+**Multi-turn prompt structure** — the prompt editor supports system, user, and assistant roles. Add example exchanges to shape the tone and structure of responses without increasing latency.
+
+#### LLM model parameters
+
+<AccordionGroup>
+  <Accordion title="OpenAI / Azure OpenAI parameters">
+
+| Parameter | Default | Range | Notes |
+|-----------|---------|-------|-------|
+| Model | `gpt-4o` | — | gpt-4, gpt-4o, gpt-4.1-mini, o3, o4-mini, and more |
+| Temperature | `0.7` | 0–2 | Higher = more creative, lower = more deterministic |
+| Top P | `1` | 0–1 | Nucleus sampling; use with temperature, not instead |
+| Max completion tokens | `2048` | ≥1 | Caps response length |
+| Frequency penalty | `0` | -2 to 2 | Reduces word repetition |
+| Presence penalty | `0` | -2 to 2 | Encourages topic diversity |
+| Stop sequences | — | up to 4 | Tokens that halt generation |
+| Tool choice | `auto` | none / auto / required | Control when tools are called |
+| Reasoning effort | — | low / medium / high | For o-series models only |
+| Response format | — | text / json_object / json_schema | For structured output use cases |
+
+  </Accordion>
+  <Accordion title="Anthropic parameters">
+
+| Parameter | Default | Range | Notes |
+|-----------|---------|-------|-------|
+| Model | `claude-opus-4` | — | Opus 4, Sonnet 4, Sonnet 3.7, Haiku 3.5 |
+| Max tokens | `1028` | ≥1 | Caps response length |
+| Temperature | `1.0` | 0–1 | — |
+| Top P | — | 0–1 | Nucleus sampling |
+| Top K | — | — | Top-K sampling |
+| Stop sequences | — | — | Halt generation tokens |
+| Extended thinking | — | JSON config | Claude's built-in reasoning mode |
+
+  </Accordion>
+  <Accordion title="AgentKit — custom LLM backend">
+
+AgentKit replaces the built-in LLM with your own gRPC server. Rapida streams user speech transcripts to your server and synthesizes your text responses to audio in real time.
+
+| Parameter | Notes |
+|-----------|-------|
+| Server URL | `host:port` of your gRPC service (e.g. `my-server.example.com:50051`) |
+| TLS certificate | Optional — path to CA cert for mutual TLS |
+| Metadata | Key-value map passed as gRPC metadata headers |
+
+Your server receives a bidirectional `Talk` stream. Rapida handles all audio — VAD, STT, TTS, telephony. Your server only handles text in / text out.
+
+See the [AgentKit guide](/assistants/agentkit) for implementation examples with LangChain, CrewAI, and Anthropic Claude.
+
+  </Accordion>
+</AccordionGroup>
+
+---
+
+### Voice pipeline
+
+The voice pipeline controls how audio is captured, cleaned, converted to text, and how text responses are spoken back. These settings directly affect latency, accuracy, and caller experience.
+
+#### Voice input — STT, VAD, and noise processing
+
+<Tip>
+For telephone deployments (8kHz audio), choose STT providers with dedicated telephony models: Deepgram `nova-3`, Azure Speech (telephony mode), or AssemblyAI. For high-fidelity web audio (16kHz+), all providers perform well.
+</Tip>
+
+**STT providers:** Deepgram, AssemblyAI, Azure Cognitive Speech, Google Speech, OpenAI Whisper, Cartesia, Sarvam AI
+
+| Audio setting | Default | Range | What it controls |
+|---------------|---------|-------|-----------------|
+| STT language | `multi` | Provider-dependent | Primary transcription language; `multi` enables auto-detection |
+| STT model | `nova-3` | Provider-dependent | Accuracy vs. latency tradeoff per provider |
+| VAD threshold | `0.6` | 0.5–1.0 | Speech detection sensitivity. Lower = more sensitive (may catch noise). Higher = stricter (may miss quiet speech) |
+| EOS timeout | `700 ms` | 500–4000 ms | Silence duration before the assistant treats a pause as end-of-turn. Increase for conversational pauses; decrease for snappy IVR-style responses |
+| EOS backoff | `2` | 0–5 | Re-prompts ("Are you there?") before ending session on silence |
+| Noise cancellation | `rn_noise` | — | RNNoise background noise suppression applied before VAD and STT |
+
+<Note>
+EOS timeout is the most impactful latency lever after model selection. At 700ms, the assistant waits 0.7 seconds of silence before responding. Reducing to 500ms cuts perceived latency noticeably but risks cutting off slow speakers mid-sentence.
+</Note>
+
+#### Voice output — TTS and pronunciation
+
+**TTS providers:** ElevenLabs, Cartesia, Deepgram Aura, OpenAI TTS, Azure Speech, Google Cloud TTS, PlayHT, Sarvam AI
+
+| Speaker setting | Default | What it controls |
+|-----------------|---------|-----------------|
+| Voice ID | Provider-dependent | The specific voice model. Supports cloned brand voices on ElevenLabs and Resemble |
+| Speed / emotion | Normal | Provider-specific; Cartesia exposes `slowest → fastest` and emotion controls (`anger:high`, `positivity:low`, etc.) |
+| Sentence boundaries | `.!?;:—…` | Characters that flush a TTS chunk for immediate playback. Tuning these reduces time-to-first-audio |
+| Conjunction break | `240 ms` | Pause inserted at conjunctions (and, but, or). Adds natural rhythm to long sentences |
+| Pronunciation dictionaries | — | Normalize how abbreviations, currencies, dates, URLs, and technical terms are spoken |
+
+<Tip>
+Add your product names, acronyms, and technical terms to the pronunciation dictionary to prevent the TTS engine from mispronouncing them. This is especially important for brand names and medical or legal terms.
+</Tip>
+
+---
+
+### Knowledge and retrieval
+
+Attach one or more knowledge bases to give your assistant access to documents, FAQs, product data, or any content indexed in Rapida.
+
+| Setting | Default | Range | Notes |
+|---------|---------|-------|-------|
+| Retrieval method | `hybrid` | hybrid / semantic / text | Hybrid combines vector similarity and full-text search — best default for most use cases |
+| Top K | `5` | 1–20 | Number of document chunks retrieved per query. Higher = more context, higher latency |
+| Score threshold | `0.5` | 0–1 | Minimum relevance score. Raise to reduce noise; lower to improve recall |
+| Reranking | `off` | — | Cohere reranker re-scores retrieved chunks before passing to the LLM. Improves precision at the cost of a small latency increase |
+
+See [Create a Knowledge Base](/knowledge/create-knowledge) for document ingestion, connector setup, and embedding model configuration.
+
+---
+
+### Tools
+
+Tools extend what your assistant can do mid-conversation without breaking the voice flow. The LLM decides when to call a tool based on its description — write clear, specific descriptions.
+
+<CardGroup cols={2}>
+  <Card title="Knowledge Retrieval" icon="book-open" href="/assistants/tools/add-knowledge-tool">
+    Query a Rapida knowledge base in real time. Returns the most relevant document chunks to the LLM as context.
+  </Card>
+  <Card title="API Request" icon="zap" href="/assistants/tools/add-api-tool">
+    Call any external HTTP endpoint mid-conversation — CRM lookups, inventory checks, booking APIs. Define the request schema and the LLM populates the parameters from conversation context.
+  </Card>
+  <Card title="Endpoint (LLM Call)" icon="cpu" href="/assistants/tools/add-endpoint-tool">
+    Invoke a Rapida endpoint — a separately configured LLM prompt — for specialised sub-tasks: classification, extraction, or complex reasoning offloaded from the main conversation model.
+  </Card>
+  <Card title="Put On Hold" icon="phone" href="/assistants/tools/add-put-on-hold-tool">
+    Pause the call and play hold music while a backend process completes — useful when a lookup or action takes longer than a voice turn allows.
+  </Card>
+  <Card title="End of Conversation" icon="phone-off" href="/assistants/tools/add-end-of-conversation-tool">
+    Terminate the call programmatically when the assistant determines the conversation objective has been met.
+  </Card>
+</CardGroup>
+
+<Note>
+Tool names must use only letters, numbers, and underscores (no spaces). The description is passed directly to the LLM — it determines when and whether the tool is called. Be specific: "Search the product knowledge base for pricing information" outperforms "Search knowledge base".
+</Note>
+
+---
+
+### Conversation experience
+
+These settings control the runtime behaviour of a live session — what happens when the caller goes silent, how long sessions last, and what the assistant says at the start of a call.
+
+| Setting | Default | Range | Notes |
+|---------|---------|-------|-------|
+| Greeting message | — | — | Spoken immediately when a call connects. Supports `{{variable}}` for personalisation |
+| Idle message | `Are you there?` | — | Spoken after the idle timeout expires without user input |
+| Idle silence timeout | `30 s` | 15–120 s (phone) | Time before the idle message triggers |
+| Idle backoff | `2` | 0–5 | How many times the idle message repeats before ending the session |
+| Max session duration | `300 s` | 180–600 s (phone) | Hard cap on session length — protects against runaway calls |
+| Error message | — | — | Spoken when the assistant encounters an unrecoverable error |
+
+---
+
+### Webhooks and post-call analysis
+
+**Webhooks** fire at `conversation.begin`, `conversation.completed`, and `conversation.failed` events. Deliver transcripts, metadata, and analysis results to your CRM, data warehouse, or alerting system in real time.
+
+**Analysis pipelines** run after a conversation ends. They invoke a configured Rapida endpoint — typically an LLM prompt — against the conversation transcript to produce structured output: sentiment scores, intent labels, CSAT predictions, compliance flags, or any custom metric.
+
+See [Webhooks](/assistants/webhook/overview) and [Analysis](/assistants/analysis/overview) for full configuration details.
+
+---
+
+## Version control
+
+Every change to your assistant's prompt, model, or parameters creates a new **version**. Versions let you safely iterate without affecting live traffic.
+
+<Warning>
+New versions are **not deployed automatically**. After creating a version, it stays in draft state until you explicitly release it. Live deployments continue running the previously released version until you promote the new one.
+</Warning>
+
+| Action | What it does |
+|--------|--------------|
+| Create version | Saves a new draft with updated prompt/model config and a change description |
+| Release version | Promotes the version to live — all active deployments switch immediately |
+| Rollback | Re-release a previous version to revert a bad change |
+
+This model lets you run A/B tests, stage changes in a debugger deployment before pushing to phone, and maintain a full audit trail of every prompt change — who made it, when, and why.
+
+---
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Set up a phone deployment" icon="phone" href="/voice-deployment-options/phone">
+    Connect a telephony provider and go live with inbound and outbound calling.
+  </Card>
+  <Card title="Add a knowledge base" icon="book-open" href="/knowledge/create-knowledge">
+    Index documents, wikis, and data sources for retrieval during calls.
+  </Card>
+  <Card title="Configure webhooks" icon="activity" href="/assistants/webhook/overview">
+    Stream call events and transcripts to external systems in real time.
+  </Card>
+  <Card title="Build a custom LLM backend" icon="cpu" href="/assistants/agentkit">
+    Use AgentKit to plug your own reasoning engine into Rapida's audio pipeline.
+  </Card>
+</CardGroup>

@@ -1,0 +1,73 @@
+---
+title: "HubSpot"
+description: "Connect HubSpot CRM to Rapida to read and write leads, companies, and contacts from your assistant."
+---
+
+The HubSpot action connector integrates Rapida with your HubSpot CRM. Your assistant can look up contacts, create or update leads, and record company information — all in real time during a conversation.
+
+## Prerequisites
+
+- A HubSpot account with CRM access
+- The Rapida administrator must have configured `hubspot_client_id` and `hubspot_client_secret` in the OAuth settings
+
+## Connecting HubSpot
+
+Follow these steps to connect HubSpot to Rapida:
+
+<Steps>
+  <Step title="Open the Connectors page">
+    In the Rapida dashboard, navigate to **Integrations → Connectors** and select **HubSpot** under Action Connectors.
+  </Step>
+
+  <Step title="Authorize Rapida">
+    Click **Connect**. You will be redirected to HubSpot's OAuth authorization screen. Sign in and grant Rapida access to your CRM.
+  </Step>
+
+  <Step title="Attach to an assistant">
+    After authorizing, reference this HubSpot connection when configuring tools or workflows for your assistant.
+  </Step>
+</Steps>
+
+## How It Works
+
+Rapida uses HubSpot's OAuth 2.0 flow to obtain an access token and refresh token. The credentials are stored securely in your Rapida Vault. Rapida automatically handles token renewal using the refresh token, so the connection stays active without requiring you to re-authorize.
+
+## Permissions
+
+| Scope | Purpose |
+|-------|---------|
+| `crm.objects.leads.read` | Read lead records |
+| `crm.objects.leads.write` | Create and update lead records |
+| `crm.objects.companies.read` | Read company records |
+| `crm.objects.companies.write` | Create and update company records |
+| `crm.objects.contacts.read` | Read contact records |
+| `crm.objects.contacts.write` | Create and update contact records |
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Lead Capture" icon="user-plus">
+    Automatically create a HubSpot lead when your assistant qualifies a caller or chat user.
+  </Card>
+  <Card title="Contact Lookup" icon="search">
+    Look up a contact's details in HubSpot during a call to personalize the conversation.
+  </Card>
+  <Card title="CRM Updates" icon="edit">
+    Update contact properties or deal stages based on what the user says during a conversation.
+  </Card>
+  <Card title="Company Enrichment" icon="building">
+    Associate a new contact with their company record in HubSpot automatically.
+  </Card>
+</CardGroup>
+
+## Limitations
+
+- Only HubSpot CRM objects (leads, contacts, companies) are covered by the current scope. Deals, tickets, and custom objects require additional configuration.
+- The connected HubSpot account must have sufficient CRM permissions for the operations your assistant performs.
+
+## Related
+
+- [Jira Action Connector](/connectors/action/jira)
+- [Slack Action Connector](/connectors/action/slack)
+- [Gmail Action Connector](/connectors/action/gmail)
+- [Endpoint Tools](/assistants/tools/add-endpoint-tool)

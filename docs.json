@@ -34,6 +34,16 @@
                             "assistants/overview",
                             "assistants/create-assistant",
                             "assistants/create-new-version",
+                            "assistants/agentkit",
+                            {
+                                "group": "Voice Deployment",
+                                "pages": [
+                                    "voice-deployment-options/phone",
+                                    "voice-deployment-options/web-widget",
+                                    "voice-deployment-options/web-app",
+                                    "voice-deployment-options/whatsapp"
+                                ]
+                            },
                             {
                                 "group": "Tool",
                                 "pages": [
@@ -100,31 +110,43 @@
                                 "pages": [
                                     "integrations/llm/openai",
                                     "integrations/llm/anthropic",
-                                    "integrations/llm/cohere",
-                                    "integrations/llm/google-ai",
                                     "integrations/llm/azure-openai",
                                     "integrations/llm/gemini",
-                                    "integrations/llm/google-vertex-ai"
+                                    "integrations/llm/google-ai",
+                                    "integrations/llm/google-vertex-ai",
+                                    "integrations/llm/cohere",
+                                    "integrations/llm/mistral",
+                                    "integrations/llm/huggingface",
+                                    "integrations/llm/bedrock",
+                                    "integrations/llm/voyageai"
                                 ]
                             },
                             {
                                 "group": "Speech to Text",
                                 "pages": [
-                                    "integrations/stt/google-speech-service",
                                     "integrations/stt/deepgram",
-                                    "integrations/stt/cartesia",
                                     "integrations/stt/assemblyai",
+                                    "integrations/stt/google-speech-service",
+                                    "integrations/stt/azure-speech-service",
+                                    "integrations/stt/openai-whisper",
+                                    "integrations/stt/aws-transcribe",
+                                    "integrations/stt/cartesia",
+                                    "integrations/stt/revai",
+                                    "integrations/stt/speechmatics",
                                     "integrations/stt/sarvam"
                                 ]
                             },
                             {
                                 "group": "Text to Speech",
                                 "pages": [
+                                    "integrations/tts/elevenlabs",
+                                    "integrations/tts/deepgram",
                                     "integrations/tts/azure-speech-service",
                                     "integrations/tts/google-speech-service",
-                                    "integrations/tts/deepgram",
+                                    "integrations/tts/openai-tts",
+                                    "integrations/tts/aws-polly",
                                     "integrations/tts/cartesia",
-                                    "integrations/tts/elevenlabs",
+                                    "integrations/tts/resemble",
                                     "integrations/tts/sarvam"
                                 ]
                             },
@@ -157,6 +179,25 @@
                             "workspace/user-management",
                             "workspace/invite-a-user"
                         ]
+                    },
+                    {
+                        "group": "Governance",
+                        "icon": "shield",
+                        "pages": [
+                            "governances/overview",
+                            "governances/organization",
+                            "governances/project",
+                            "governances/roles-and-permission"
+                        ]
+                    },
+                    {
+                        "group": "Deployment Options",
+                        "icon": "cloud",
+                        "pages": [
+                            "deployments/deployment-options",
+                            "deployments/fully-managed",
+                            "deployments/self-hosted"
+                        ]
                     }
                 ]
             },
@@ -166,6 +207,7 @@
                     {
                         "group": "Getting Started",
                         "pages": [
+                            "opensource/overview",
                             "opensource/installation",
                             "opensource/architecture",
                             "opensource/configuration",
@@ -178,6 +220,7 @@
                             "opensource/services/web-console",
                             "opensource/services/web-api",
                             "opensource/services/assistant-api",
+                            "opensource/services/endpoint-api",
                             "opensource/services/document-api",
                             "opensource/services/integration-api"
                         ]
@@ -229,7 +272,9 @@
                             "api-reference/assistant/get-assistant-tool",
                             "api-reference/assistant/get-all-assistant-tool",
                             "api-reference/assistant/get-assistant-webhook-log",
-                            "api-reference/assistant/get-all-assistant-webhook-log"
+                            "api-reference/assistant/get-all-assistant-webhook-log",
+                            "api-reference/assistant/get-assistant-analysis",
+                            "api-reference/assistant/get-all-assistant-analysis"
                         ]
                     }
                 ]

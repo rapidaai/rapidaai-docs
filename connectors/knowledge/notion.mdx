@@ -1,0 +1,57 @@
+---
+title: "Notion"
+description: "Connect your Notion workspace to Rapida to use pages and databases as knowledge sources for your AI assistant."
+---
+
+The Notion connector syncs pages and databases from your Notion workspace into Rapida's knowledge base. Your assistant can then retrieve and answer questions based on your Notion content.
+
+## Prerequisites
+
+- A Notion account with access to the workspace you want to connect
+- The Rapida administrator must have configured `OAUTH2__NOTION_CLIENT_ID` and `OAUTH2__NOTION_CLIENT_SECRET` in the environment
+
+## Connecting Notion
+
+Follow these steps to connect Notion to Rapida:
+
+<Steps>
+  <Step title="Open the Connectors page">
+    In the Rapida dashboard, navigate to **Integrations → Connectors** and select **Notion** under Knowledge Connectors.
+  </Step>
+
+  <Step title="Authorize Rapida">
+    Click **Connect**. You will be redirected to Notion's authorization screen. Grant Rapida `read_content` access to the pages and databases you want to share.
+  </Step>
+
+  <Step title="Select content to sync">
+    After authorizing, choose the Notion pages and databases to include in your knowledge base. Only content explicitly shared with the integration during the authorization step will be visible.
+  </Step>
+
+  <Step title="Attach to a knowledge base">
+    Navigate to the knowledge base where you want to use this content, click **Add Source**, and select your Notion connection.
+  </Step>
+</Steps>
+
+## How It Works
+
+After authorization, Rapida queries the Notion Search API (`POST https://api.notion.com/v1/search`) using your workspace token. It retrieves all pages and databases that were shared during the OAuth flow, sorted by last edited time.
+
+Content is indexed into your knowledge base and used for retrieval-augmented generation (RAG) when your assistant answers questions.
+
+## Permissions
+
+| Permission | Purpose |
+|------------|---------|
+| `read_content` | Read pages and databases in your Notion workspace |
+
+## Limitations
+
+- Only content explicitly shared with the Rapida integration during authorization is accessible. Rapida cannot access content that was not shared.
+- Syncing large workspaces may take a few minutes.
+- Changes to Notion content require a manual re-sync to be reflected in the knowledge base.
+
+## Related
+
+- [Create a Knowledge Base](/knowledge/create-knowledge)
+- [Confluence Connector](/connectors/knowledge/confluence)
+- [Google Drive Connector](/connectors/knowledge/google-drive)

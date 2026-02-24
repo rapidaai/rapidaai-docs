@@ -1,0 +1,65 @@
+---
+title: "OpenAI TTS"
+description: "OpenAI Text-to-Speech delivers natural-sounding speech synthesis with multiple high-quality voices."
+---
+
+OpenAI TTS produces natural, expressive speech from text using neural voice synthesis. It supports multiple distinct voices and is available in standard and HD quality tiers.
+
+## Getting Started
+
+Follow these steps to configure your provider:
+
+<Steps>
+  <Step title="Add OpenAI credentials to your vault">
+    Navigate to **Integration → Vault** in the Rapida dashboard and add your OpenAI API key. This credential is shared across all OpenAI services (LLM, Whisper STT, and TTS).
+  </Step>
+
+  <Step title="Select OpenAI as your TTS provider">
+    When configuring your assistant, open **Audio Settings** and choose **OpenAI** as your Text-to-Speech provider.
+  </Step>
+
+  <Step title="Choose a voice">
+    Select from the available voices to match your assistant's persona.
+  </Step>
+</Steps>
+
+## Available Voices
+
+| Voice | Character |
+|-------|-----------|
+| `alloy` | Neutral, balanced |
+| `echo` | Male, clear |
+| `fable` | Expressive, narrative |
+| `onyx` | Deep, authoritative |
+| `nova` | Warm, natural |
+| `shimmer` | Clear, bright |
+
+## Supported Models
+
+| Model | Description |
+|-------|-------------|
+| `tts-1` | Optimized for real-time, low-latency synthesis |
+| `tts-1-hd` | Higher quality, best for offline or non-real-time use |
+
+For real-time voice assistants, use `tts-1` to minimize latency.
+
+## Configuration Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| Model | `tts-1` or `tts-1-hd` | `tts-1` |
+| Voice | One of the six voices above | `alloy` |
+| Speed | Playback speed multiplier (0.25–4.0) | `1.0` |
+| Format | Output format: `mp3`, `opus`, `aac`, `flac`, `wav`, `pcm` | `pcm` |
+
+## Notes
+
+- Use `tts-1` for real-time conversations; `tts-1-hd` adds perceptible latency.
+- Audio is streamed in chunks, so playback begins before synthesis is fully complete.
+- Pricing is per 1,000 characters of input text. See [OpenAI TTS pricing](https://openai.com/pricing).
+
+## Related
+
+- [OpenAI Whisper STT](/integrations/stt/openai-whisper)
+- [OpenAI LLM](/integrations/llm/openai)
+- [ElevenLabs TTS](/integrations/tts/elevenlabs)

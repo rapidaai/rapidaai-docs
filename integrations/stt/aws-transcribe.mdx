@@ -1,0 +1,55 @@
+---
+title: "AWS Transcribe"
+description: "Amazon Transcribe is a fully managed automatic speech recognition (ASR) service that makes it easy to add speech-to-text capabilities to applications."
+---
+
+Amazon Transcribe delivers real-time and batch speech recognition with support for custom vocabularies, speaker diarization, and content redaction. It integrates natively with AWS infrastructure for low-latency voice workloads.
+
+## Getting Started
+
+Follow these steps to configure your provider:
+
+<Steps>
+  <Step title="Add AWS credentials to your vault">
+    Navigate to **Integration → Vault** in the Rapida dashboard and add your AWS Access Key ID and Secret Access Key. Ensure the associated IAM role has `AmazonTranscribeFullAccess` (or a scoped equivalent).
+  </Step>
+
+  <Step title="Select AWS Transcribe as your STT provider">
+    When configuring your assistant, open **Audio Settings** and choose **AWS** as your Speech-to-Text provider.
+  </Step>
+
+  <Step title="Select a region">
+    Choose the AWS region closest to your deployment for lowest latency (e.g. `us-east-1`, `eu-west-1`, `ap-southeast-1`).
+  </Step>
+</Steps>
+
+## Key Features
+
+- **Real-time streaming**: Low-latency streaming transcription for live voice applications
+- **Custom vocabularies**: Improve accuracy for domain-specific terms (medical, legal, technical)
+- **Speaker diarization**: Identify and separate multiple speakers in a conversation
+- **Content redaction**: Automatically redact PII (names, phone numbers, SSNs) from transcripts
+- **Custom language models**: Train models on domain-specific text corpora
+
+## Supported Languages
+
+Amazon Transcribe supports 100+ languages and dialects. For streaming transcription, availability varies by region. See the [AWS Transcribe documentation](https://docs.aws.amazon.com/transcribe/latest/dg/supported-languages.html) for a full list.
+
+## Configuration Options
+
+| Option | Description |
+|--------|-------------|
+| Region | AWS region for the Transcribe service |
+| Language code | BCP-47 language code (e.g. `en-US`, `es-US`) |
+| Vocabulary name | Optional custom vocabulary to use |
+| Sample rate | Audio sample rate in Hz (8000 or 16000) |
+
+## Notes
+
+- AWS Transcribe streaming uses WebSocket connections; Rapida manages the connection lifecycle.
+- For lower cost on non-real-time workloads, batch transcription is available via the REST API.
+- Costs are billed per second of audio processed. See [AWS Transcribe pricing](https://aws.amazon.com/transcribe/pricing/).
+
+## Related
+
+- [AWS Polly TTS](/integrations/tts/aws-polly)

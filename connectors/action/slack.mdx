@@ -1,0 +1,68 @@
+---
+title: "Slack"
+description: "Connect Slack to Rapida to enable your assistant to send messages and notifications to Slack channels."
+---
+
+The Slack action connector authorizes Rapida to post messages to Slack channels on behalf of your workspace. Use it to send alerts, summaries, or notifications from your assistant's workflows directly into Slack.
+
+## Prerequisites
+
+- A Slack workspace where you have permission to install apps
+- The Rapida administrator must have configured `slack_client_id`, `slack_client_secret`, `slack_app_id`, `slack_signing_secret`, and `slack_verification_secret` in the environment
+
+## Connecting Slack
+
+Follow these steps to connect Slack to Rapida:
+
+<Steps>
+  <Step title="Open the Connectors page">
+    In the Rapida dashboard, navigate to **Integrations → Connectors** and select **Slack** under Action Connectors.
+  </Step>
+
+  <Step title="Authorize Rapida">
+    Click **Connect**. You will be redirected to Slack's OAuth authorization screen. Sign in and select the workspace where you want to install Rapida.
+  </Step>
+
+  <Step title="Grant access">
+    Review the requested permissions and click **Allow**. Rapida will be installed as a bot in your workspace.
+  </Step>
+
+  <Step title="Invite the bot to channels">
+    In Slack, invite the Rapida bot to any channels where it should be able to send messages by typing `/invite @Rapida`.
+  </Step>
+</Steps>
+
+## Permissions
+
+| Scope | Purpose |
+|-------|---------|
+| `chat:write` | Post messages as the Rapida bot in channels the bot has been invited to |
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Alerts & Notifications" icon="bell">
+    Send real-time alerts to operations or on-call channels when your assistant detects important events.
+  </Card>
+  <Card title="Call Summaries" icon="file-text">
+    Automatically post a summary of completed voice calls to a Slack channel.
+  </Card>
+  <Card title="Lead Notifications" icon="user-check">
+    Notify a sales channel when a new lead is captured or qualified through your assistant.
+  </Card>
+  <Card title="Escalation Handoffs" icon="arrow-right">
+    Post a message to a support channel when a call is escalated to a human agent.
+  </Card>
+</CardGroup>
+
+## Limitations
+
+- Rapida can only post to channels where the bot has been explicitly invited.
+- The `chat:write` scope does not allow reading messages or accessing message history.
+- Sending direct messages (DMs) to users requires additional Slack scopes not currently configured.
+
+## Related
+
+- [Gmail Action Connector](/connectors/action/gmail)
+- [Jira Action Connector](/connectors/action/jira)
+- [Webhooks](/assistants/webhook/overview)

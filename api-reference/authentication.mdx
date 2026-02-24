@@ -8,7 +8,7 @@ Use `ConnectionConfig` to configure authentication and endpoints for all SDK cli
 <CodeGroup>
 
 ```ts TypeScript / Node.js
-import { ConnectionConfig } from "rapida-nodejs";
+import { ConnectionConfig } from "@rapidaai/nodejs";
 
 const connection = ConnectionConfig.DefaultConnectionConfig(
   ConnectionConfig.WithSDK({ ApiKey: process.env.RAPIDA_API_KEY })
@@ -16,7 +16,7 @@ const connection = ConnectionConfig.DefaultConnectionConfig(
 ```
 
 ```javascript React
-import { ConnectionConfig } from "rapida-react";
+import { ConnectionConfig } from "@rapidaai/react";
 
 const connection = ConnectionConfig.DefaultConnectionConfig(
   ConnectionConfig.WithSDK({ ApiKey: process.env.RAPIDA_API_KEY })
@@ -38,11 +38,12 @@ connectionConfig := connections.DefaultconnectionConfig(
 ```
 
 ```python Python
-from rapida_sdk import ConnectionConfig, WithSDK
 import os
+from rapida import ConnectionConfig
 
-connection_config = ConnectionConfig()
-connection_config.with_auth(WithSDK(api_key=os.getenv("RAPIDA_API_KEY")))
+connection_config = ConnectionConfig.default_connection_config(
+    ConnectionConfig.with_sdk(api_key=os.getenv("RAPIDA_API_KEY"))
+)
 ```
 
 </CodeGroup>
@@ -66,7 +67,7 @@ connection_config.with_auth(WithSDK(api_key=os.getenv("RAPIDA_API_KEY")))
 <CodeGroup>
 
 ```ts TypeScript / Node.js
-import { ConnectionConfig } from "rapida-nodejs";
+import { ConnectionConfig } from "@rapidaai/nodejs";
 const connection = ConnectionConfig.DefaultConnectionConfig(
   ConnectionConfig.WithPersonalToken({
     Authorization: RAPIDA_AUTHORIZATION_TOKEN,
@@ -77,7 +78,7 @@ const connection = ConnectionConfig.DefaultConnectionConfig(
 ```
 
 ```javascript React
-import { ConnectionConfig } from "rapida-react";
+import { ConnectionConfig } from "@rapidaai/react";
 const connection = ConnectionConfig.DefaultConnectionConfig(
   ConnectionConfig.WithPersonalToken({
     Authorization: RAPIDA_AUTHORIZATION_TOKEN,
@@ -135,14 +136,14 @@ connectionConfig = ConnectionConfig.default_connection_config(
 <CodeGroup>
 
 ```ts TypeScript / Node.js
-import { ConnectionConfig } from "rapida-nodejs";
+import { ConnectionConfig } from "@rapidaai/nodejs";
 const connection = ConnectionConfig.DefaultConnectionConfig(
   ConnectionConfig.WithSDK({ ApiKey: process.env.RAPIDA_API_KEY })
 );
 ```
 
 ```javascript React
-import { ConnectionConfig } from "rapida-react";
+import { ConnectionConfig } from "@rapidaai/react";
 const connection = ConnectionConfig.DefaultConnectionConfig(
   ConnectionConfig.WithSDK({ ApiKey: process.env.RAPIDA_API_KEY })
 );
