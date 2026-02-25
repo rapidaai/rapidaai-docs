@@ -23,13 +23,85 @@ In the Rapida dashboard go to **Credentials → Create Credential**, select prov
 
 <Steps>
 
-<Step title="Set the required env var">
-```env
-# docker/assistant-api/.assistant.env
-PUBLIC_ASSISTANT_HOST=your-hostname.com   # HTTPS only, no protocol prefix
-```
+<Step title="Set PUBLIC_ASSISTANT_HOST">
 
-For local development, replace with your ngrok domain — see the [ngrok guide](/opensource/services/assistant-api/ngrok).
+`PUBLIC_ASSISTANT_HOST` is the public HTTPS hostname Twilio will use to reach your server — for webhooks and the WebSocket media stream.
+
+<Tabs>
+  <Tab title="Production">
+    Set it to your server's public domain in `docker/assistant-api/.assistant.env`:
+
+    ```env
+    PUBLIC_ASSISTANT_HOST=your-server.com   # no https:// prefix
+    ```
+
+    Also update `connection.media` in `ui/src/configs/config.production.json`:
+
+    ```json
+    {
+      "connection": {
+        "media": "https://your-server.com"
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Local Development (ngrok)">
+    Twilio's servers cannot reach `localhost`. Use ngrok to create a public HTTPS tunnel:
+
+    **1. Install and authenticate ngrok**
+    ```bash
+    # macOS
+    brew install ngrok/ngrok/ngrok
+
+    # Linux
+    curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
+      | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+    echo "deb https://ngrok-agent.s3.amazonaws.com buster main" \
+      | sudo tee /etc/apt/sources.list.d/ngrok.list
+    sudo apt update && sudo apt install ngrok
+
+    ngrok config add-authtoken <your-authtoken>
+    ```
+    Get your authtoken at [dashboard.ngrok.com](https://dashboard.ngrok.com/get-started/your-authtoken).
+
+    **2. Start the tunnel** (keep this running)
+    ```bash
+    ngrok http 8080
+    # Forwarding  https://abc123.ngrok-free.app -> http://localhost:8080
+    ```
+
+    **3. Update two files with the ngrok hostname**
+
+    | File | Field | Value |
+    |------|-------|-------|
+    | `docker/assistant-api/.assistant.env` | `PUBLIC_ASSISTANT_HOST` | `abc123.ngrok-free.app` *(no `https://`)* |
+    | `ui/src/configs/config.development.json` | `connection.media` | `https://abc123.ngrok-free.app` *(with `https://`)* |
+
+    ```env
+    # docker/assistant-api/.assistant.env
+    PUBLIC_ASSISTANT_HOST=abc123.ngrok-free.app
+    ```
+
+    ```json
+    // ui/src/configs/config.development.json
+    {
+      "connection": {
+        "media": "https://abc123.ngrok-free.app"
+      }
+    }
+    ```
+
+    **4. Rebuild**
+    ```bash
+    make rebuild-assistant
+    ```
+
+    <Note>
+    The free ngrok tier generates a new URL on every restart. When it changes, update both files above and re-run `make rebuild-assistant`. Use a [free static domain](https://ngrok.com/blog-post/free-static-domains-ngrok-users) (`ngrok http --domain=your-name.ngrok-free.app 8080`) to avoid this.
+    </Note>
+  </Tab>
+</Tabs>
 </Step>
 
 <Step title="Configure the Twilio phone number webhook">
@@ -37,7 +109,8 @@ In [Twilio Console](https://console.twilio.com) → **Phone Numbers → Manage �
 
 | Field | Value |
 |-------|-------|
-| **Voice webhook** (HTTP POST) | `https://{PUBLIC_ASSISTANT_HOST}/v1/talk/twilio/call/{assistantId}` |
+| **A call comes in** | Webhook, HTTP POST |
+| **URL** | `https://{PUBLIC_ASSISTANT_HOST}/v1/talk/twilio/call/{assistantId}` |
 | **Status callback URL** | `https://{PUBLIC_ASSISTANT_HOST}/v1/talk/twilio/ctx/{contextId}/event` |
 
 Replace `{assistantId}` with the numeric assistant ID from the Rapida dashboard.
@@ -47,8 +120,27 @@ Replace `{assistantId}` with the numeric assistant ID from the Rapida dashboard.
 In the assistant's **Phone Deployment**, select the Twilio vault credential you created.
 </Step>
 
-<Step title="Test inbound call">
-Call your Twilio number. Rapida responds with:
+<Step title="Verify">
+```bash
+# Check the tunnel is proxying correctly
+curl https://{PUBLIC_ASSISTANT_HOST}/readiness/
+# Expected: {"status":"ok"}
+```
+
+You can monitor Twilio webhook requests in real time at **http://localhost:4040** (ngrok inspector) or in the Twilio Console under **Monitor → Logs → Calls**.
+</Step>
+
+</Steps>
+
+<Warning>
+`PUBLIC_ASSISTANT_HOST` must be HTTPS. Twilio rejects plain HTTP webhook URLs and `ws://` WebSocket connections — always use `https://` for the webhook URL and `wss://` for the media stream (Rapida handles this automatically).
+</Warning>
+
+---
+
+## What Rapida Returns
+
+When Twilio hits the inbound webhook, Rapida responds with TwiML connecting a Media Stream:
 
 ```xml
 <Response>
@@ -63,13 +155,6 @@ Call your Twilio number. Rapida responds with:
   </Connect>
 </Response>
 ```
-</Step>
-
-</Steps>
-
-<Warning>
-`PUBLIC_ASSISTANT_HOST` must be an HTTPS hostname. Twilio rejects plain HTTP webhooks and WebSocket connections. Use `wss://` (WebSocket Secure), not `ws://`.
-</Warning>
 
 ---
 
@@ -91,16 +176,16 @@ Rapida calls `client.Api.CreateCall` via the Twilio Go SDK. The `StatusCallback`
 ---
 
 <CardGroup cols={2}>
-  <Card title="ngrok — Local Testing" icon="tunnel" href="/opensource/services/assistant-api/ngrok">
-    Expose localhost to Twilio for development
-  </Card>
   <Card title="Vonage" icon="phone" href="/opensource/services/assistant-api/telephony/vonage">
     Global PSTN alternative with higher audio quality
+  </Card>
+  <Card title="Exotel" icon="phone" href="/opensource/services/assistant-api/telephony/exotel">
+    India / SEA PSTN
   </Card>
   <Card title="Telephony Overview" icon="diagram-project" href="/opensource/services/assistant-api/telephony/overview">
     All providers and URL routing reference
   </Card>
   <Card title="Configuration" icon="sliders" href="/opensource/services/assistant-api/configuration">
-    PUBLIC_ASSISTANT_HOST and other env vars
+    Full env var reference
   </Card>
 </CardGroup>

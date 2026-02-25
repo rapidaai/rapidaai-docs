@@ -4,7 +4,7 @@ description: "Run assistant-api with Vonage (Nexmo) for global PSTN voice calls 
 sidebarTitle: "Vonage"
 ---
 
-Vonage sends a webhook when a call arrives. Rapida responds with an NCCO (Nexmo Call Control Object) containing a `connect` action that opens a WebSocket carrying Linear PCM 16kHz audio — higher quality than Twilio's μ-law.
+Vonage sends a webhook when a call arrives. Rapida responds with an NCCO (Nexmo Call Control Object) that opens a WebSocket carrying Linear PCM 16kHz audio — higher quality than Twilio's μ-law.
 
 ---
 
@@ -25,34 +25,120 @@ In the Rapida dashboard go to **Credentials → Create Credential**, select prov
 
 <Steps>
 
-<Step title="Set the required env var">
-```env
-# docker/assistant-api/.assistant.env
-PUBLIC_ASSISTANT_HOST=your-hostname.com
-```
+<Step title="Set PUBLIC_ASSISTANT_HOST">
+
+`PUBLIC_ASSISTANT_HOST` is the public HTTPS hostname Vonage will use to reach your server — for the answer URL and the WebSocket media stream.
+
+<Tabs>
+  <Tab title="Production">
+    Set it in `docker/assistant-api/.assistant.env`:
+
+    ```env
+    PUBLIC_ASSISTANT_HOST=your-server.com   # no https:// prefix
+    ```
+
+    Also update `connection.media` in `ui/src/configs/config.production.json`:
+
+    ```json
+    {
+      "connection": {
+        "media": "https://your-server.com"
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Local Development (ngrok)">
+    Vonage's servers cannot reach `localhost`. Use ngrok to create a public HTTPS tunnel:
+
+    **1. Install and authenticate ngrok**
+    ```bash
+    # macOS
+    brew install ngrok/ngrok/ngrok
+
+    # Linux
+    curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
+      | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+    echo "deb https://ngrok-agent.s3.amazonaws.com buster main" \
+      | sudo tee /etc/apt/sources.list.d/ngrok.list
+    sudo apt update && sudo apt install ngrok
+
+    ngrok config add-authtoken <your-authtoken>
+    ```
+    Get your authtoken at [dashboard.ngrok.com](https://dashboard.ngrok.com/get-started/your-authtoken).
+
+    **2. Start the tunnel** (keep this running)
+    ```bash
+    ngrok http 8080
+    # Forwarding  https://abc123.ngrok-free.app -> http://localhost:8080
+    ```
+
+    **3. Update two files with the ngrok hostname**
+
+    | File | Field | Value |
+    |------|-------|-------|
+    | `docker/assistant-api/.assistant.env` | `PUBLIC_ASSISTANT_HOST` | `abc123.ngrok-free.app` *(no `https://`)* |
+    | `ui/src/configs/config.development.json` | `connection.media` | `https://abc123.ngrok-free.app` *(with `https://`)* |
+
+    ```env
+    # docker/assistant-api/.assistant.env
+    PUBLIC_ASSISTANT_HOST=abc123.ngrok-free.app
+    ```
+
+    ```json
+    // ui/src/configs/config.development.json
+    {
+      "connection": {
+        "media": "https://abc123.ngrok-free.app"
+      }
+    }
+    ```
+
+    **4. Rebuild**
+    ```bash
+    make rebuild-assistant
+    ```
+
+    <Note>
+    The free ngrok tier generates a new URL on every restart. Use a [free static domain](https://ngrok.com/blog-post/free-static-domains-ngrok-users) (`ngrok http --domain=your-name.ngrok-free.app 8080`) so you only need to update Vonage's answer URL once.
+    </Note>
+  </Tab>
+</Tabs>
 </Step>
 
 <Step title="Create a Vonage Voice Application">
-In the [Vonage Dashboard](https://dashboard.nexmo.com) → **Applications → Create a new application**, enable **Voice** capability and set:
+In [Vonage Dashboard](https://dashboard.nexmo.com) → **Applications → Create a new application**, enable **Voice** capability and set:
 
 | Field | Value |
 |-------|-------|
 | **Answer URL** (POST) | `https://{PUBLIC_ASSISTANT_HOST}/v1/talk/vonage/call/{assistantId}` |
 | **Event URL** (POST) | `https://{PUBLIC_ASSISTANT_HOST}/v1/talk/vonage/ctx/{contextId}/event` |
 
-Download the private key and save it in the vault credential.
+Click **Generate public and private key** — download the private key and store the PEM content in the vault credential's `private_key` field.
 </Step>
 
 <Step title="Link a Vonage number">
-In **Numbers**, assign a virtual number to the application.
+In **Numbers**, assign a virtual number to the application you just created.
 </Step>
 
 <Step title="Attach vault credential to the assistant">
 In the assistant's **Phone Deployment**, select the Vonage vault credential.
 </Step>
 
-<Step title="Test inbound call">
-Call your Vonage number. Rapida responds with:
+<Step title="Verify">
+```bash
+curl https://{PUBLIC_ASSISTANT_HOST}/readiness/
+# Expected: {"status":"ok"}
+```
+</Step>
+
+</Steps>
+
+---
+
+## What Rapida Returns
+
+When Vonage hits the answer URL, Rapida responds with an NCCO:
 
 ```json
 [{
@@ -64,9 +150,6 @@ Call your Vonage number. Rapida responds with:
   }]
 }]
 ```
-</Step>
-
-</Steps>
 
 ---
 
@@ -80,22 +163,22 @@ Call your Vonage number. Rapida responds with:
 | Transport | Raw binary WebSocket frames |
 
 <Note>
-Vonage uses 16kHz Linear PCM — higher quality than Twilio's 8kHz μ-law. This can improve STT accuracy for providers that support 16kHz input.
+16kHz Linear PCM improves STT accuracy over 8kHz μ-law (Twilio/Exotel), particularly for providers that natively support 16kHz input.
 </Note>
 
 ---
 
 <CardGroup cols={2}>
-  <Card title="ngrok — Local Testing" icon="tunnel" href="/opensource/services/assistant-api/ngrok">
-    Expose localhost to Vonage for development
-  </Card>
   <Card title="Twilio" icon="phone" href="/opensource/services/assistant-api/telephony/twilio">
     Alternative global PSTN provider
+  </Card>
+  <Card title="Exotel" icon="phone" href="/opensource/services/assistant-api/telephony/exotel">
+    India / SEA PSTN
   </Card>
   <Card title="Telephony Overview" icon="diagram-project" href="/opensource/services/assistant-api/telephony/overview">
     All providers and URL routing reference
   </Card>
   <Card title="Configuration" icon="sliders" href="/opensource/services/assistant-api/configuration">
-    PUBLIC_ASSISTANT_HOST and other env vars
+    Full env var reference
   </Card>
 </CardGroup>

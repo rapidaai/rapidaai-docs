@@ -4,7 +4,7 @@ description: "Run assistant-api with Exotel for PSTN voice calls in India and So
 sidebarTitle: "Exotel"
 ---
 
-Exotel is a cloud telephony provider operating in India and South-East Asia. It follows the same webhook → WebSocket pattern as Twilio: Exotel calls your server when a call arrives, Rapida responds with passthru XML that opens a WebSocket media stream.
+Exotel is a cloud telephony provider for India and South-East Asia. It follows the same webhook → WebSocket pattern as Twilio: Exotel calls your server when a call arrives, Rapida responds with passthru XML that opens a WebSocket media stream.
 
 ---
 
@@ -24,17 +24,89 @@ In the Rapida dashboard go to **Credentials → Create Credential**, select prov
 
 <Steps>
 
-<Step title="Set the required env var">
-```env
-# docker/assistant-api/.assistant.env
-PUBLIC_ASSISTANT_HOST=your-hostname.com   # Must be publicly reachable HTTPS
-```
+<Step title="Set PUBLIC_ASSISTANT_HOST">
 
-For local development, replace with your ngrok domain — see the [ngrok guide](/opensource/services/assistant-api/ngrok).
+`PUBLIC_ASSISTANT_HOST` is the public HTTPS hostname Exotel will use to reach your server — for webhooks and the WebSocket media stream.
+
+<Tabs>
+  <Tab title="Production">
+    Set it in `docker/assistant-api/.assistant.env`:
+
+    ```env
+    PUBLIC_ASSISTANT_HOST=your-server.com   # no https:// prefix
+    ```
+
+    Also update `connection.media` in `ui/src/configs/config.production.json`:
+
+    ```json
+    {
+      "connection": {
+        "media": "https://your-server.com"
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Local Development (ngrok)">
+    Exotel's servers originate from India/SEA and cannot reach `localhost`. Use ngrok to create a public HTTPS tunnel:
+
+    **1. Install and authenticate ngrok**
+    ```bash
+    # macOS
+    brew install ngrok/ngrok/ngrok
+
+    # Linux
+    curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
+      | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+    echo "deb https://ngrok-agent.s3.amazonaws.com buster main" \
+      | sudo tee /etc/apt/sources.list.d/ngrok.list
+    sudo apt update && sudo apt install ngrok
+
+    ngrok config add-authtoken <your-authtoken>
+    ```
+    Get your authtoken at [dashboard.ngrok.com](https://dashboard.ngrok.com/get-started/your-authtoken).
+
+    **2. Start the tunnel** (keep this running)
+    ```bash
+    ngrok http 8080
+    # Forwarding  https://abc123.ngrok-free.app -> http://localhost:8080
+    ```
+
+    **3. Update two files with the ngrok hostname**
+
+    | File | Field | Value |
+    |------|-------|-------|
+    | `docker/assistant-api/.assistant.env` | `PUBLIC_ASSISTANT_HOST` | `abc123.ngrok-free.app` *(no `https://`)* |
+    | `ui/src/configs/config.development.json` | `connection.media` | `https://abc123.ngrok-free.app` *(with `https://`)* |
+
+    ```env
+    # docker/assistant-api/.assistant.env
+    PUBLIC_ASSISTANT_HOST=abc123.ngrok-free.app
+    ```
+
+    ```json
+    // ui/src/configs/config.development.json
+    {
+      "connection": {
+        "media": "https://abc123.ngrok-free.app"
+      }
+    }
+    ```
+
+    **4. Rebuild**
+    ```bash
+    make rebuild-assistant
+    ```
+
+    <Note>
+    Exotel may have higher latency to ngrok tunnels depending on region. For best results during testing, use an ngrok region closest to Exotel's traffic origin (India): `ngrok http 8080 --region=in` (if available on your plan).
+    </Note>
+  </Tab>
+</Tabs>
 </Step>
 
 <Step title="Configure the ExoPhone app">
-In the [Exotel Dashboard](https://my.exotel.com) → **ExoPhones**, select your ExoPhone and assign it an **App**. Set the passthru URL to:
+In [Exotel Dashboard](https://my.exotel.com) → **ExoPhones**, select your ExoPhone and assign it an **App**. Set the passthru URL to:
 
 ```
 https://{PUBLIC_ASSISTANT_HOST}/v1/talk/exotel/call/{assistantId}
@@ -47,19 +119,24 @@ Replace `{assistantId}` with the numeric assistant ID from the Rapida dashboard.
 In the assistant's **Phone Deployment**, select the Exotel vault credential.
 </Step>
 
-<Step title="Test inbound call">
-Call your Exotel number. Rapida responds with Exotel passthru XML that connects a WebSocket stream at:
-
-```
-wss://{PUBLIC_ASSISTANT_HOST}/v1/talk/exotel/ctx/{contextId}
+<Step title="Verify">
+```bash
+curl https://{PUBLIC_ASSISTANT_HOST}/readiness/
+# Expected: {"status":"ok"}
 ```
 </Step>
 
 </Steps>
 
-<Note>
-Exotel's servers originate calls from India and SEA regions. Ensure `PUBLIC_ASSISTANT_HOST` is reachable from those regions. Avoid using localhost or VPN-only addresses.
-</Note>
+---
+
+## What Rapida Returns
+
+When Exotel hits the webhook, Rapida returns passthru XML that connects a WebSocket at:
+
+```
+wss://{PUBLIC_ASSISTANT_HOST}/v1/talk/exotel/ctx/{contextId}
+```
 
 ---
 
@@ -74,16 +151,16 @@ Exotel's servers originate calls from India and SEA regions. Ensure `PUBLIC_ASSI
 ---
 
 <CardGroup cols={2}>
-  <Card title="ngrok — Local Testing" icon="tunnel" href="/opensource/services/assistant-api/ngrok">
-    Expose localhost to Exotel for development
-  </Card>
   <Card title="Twilio" icon="phone" href="/opensource/services/assistant-api/telephony/twilio">
-    Alternative global PSTN provider
+    Global PSTN alternative
+  </Card>
+  <Card title="Vonage" icon="phone" href="/opensource/services/assistant-api/telephony/vonage">
+    Higher audio quality (16kHz)
   </Card>
   <Card title="Telephony Overview" icon="diagram-project" href="/opensource/services/assistant-api/telephony/overview">
     All providers and URL routing reference
   </Card>
   <Card title="Configuration" icon="sliders" href="/opensource/services/assistant-api/configuration">
-    PUBLIC_ASSISTANT_HOST and other env vars
+    Full env var reference
   </Card>
 </CardGroup>
