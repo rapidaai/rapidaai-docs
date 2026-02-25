@@ -110,8 +110,8 @@ In [Twilio Console](https://console.twilio.com) → **Phone Numbers → Manage �
 | Field | Value |
 |-------|-------|
 | **A call comes in** | Webhook, HTTP POST |
-| **URL** | `https://{PUBLIC_ASSISTANT_HOST}/v1/talk/twilio/call/{assistantId}` |
-| **Status callback URL** | `https://{PUBLIC_ASSISTANT_HOST}/v1/talk/twilio/ctx/{contextId}/event` |
+| **URL** | `https://{PUBLIC_ASSISTANT_HOST}/v1/talk/twilio/call/{assistantId}?x-api-key={apiKey}` |
+| **Status callback URL** | `https://{PUBLIC_ASSISTANT_HOST}/v1/talk/twilio/ctx/{contextId}/event?x-api-key={apiKey}` |
 
 Replace `{assistantId}` with the numeric assistant ID from the Rapida dashboard.
 </Step>
@@ -145,9 +145,9 @@ When Twilio hits the inbound webhook, Rapida responds with TwiML connecting a Me
 ```xml
 <Response>
   <Connect>
-    <Stream url="wss://{PUBLIC_ASSISTANT_HOST}/v1/talk/twilio/ctx/{contextId}"
+    <Stream url="wss://{PUBLIC_ASSISTANT_HOST}/v1/talk/twilio/ctx/{contextId}?x-api-key={apiKey}"
             name="{assistantId}__{conversationId}"
-            statusCallback="https://{PUBLIC_ASSISTANT_HOST}/v1/talk/twilio/ctx/{contextId}/event"
+            statusCallback="https://{PUBLIC_ASSISTANT_HOST}/v1/talk/twilio/ctx/{contextId}/event?x-api-key={apiKey}"
             statusCallbackEvent="initiated ringing answered completed">
       <Parameter name="assistant_id" value="{assistantId}"/>
       <Parameter name="client_number" value="{callerNumber}"/>

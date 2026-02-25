@@ -157,7 +157,7 @@ exten => _X.,1,Answer()
  same => n,Set(CTX=${CURL(https://${RAPIDA_HOST}/v1/talk/asterisk/call/${ASSISTANT_ID}?from=${CALLERID(num)}&x-api-key=${RAPIDA_API_KEY})})
  same => n,GotoIf($["${CTX}" = ""]?error)
  ; Phase 2 — open WSS connection with contextId in the URL path
- same => n,WebSocket(wss://${RAPIDA_HOST}/v1/talk/asterisk/ctx/${CTX})
+ same => n,WebSocket(wss://${RAPIDA_HOST}/v1/talk/asterisk/ctx/${CTX}?x-api-key=${RAPIDA_API_KEY})
  same => n,Hangup()
  same => n(error),Playback(an-error-has-occurred)
  same => n,Hangup()
@@ -180,7 +180,7 @@ curl -I https://{RAPIDA_HOST}
 [rapida-outbound-ws]
 exten => s,1,NoOp(Outbound WebSocket call)
  ; RAPIDA_CONTEXT_ID is set by Rapida ARI
- same => n,WebSocket(wss://${RAPIDA_HOST}/v1/talk/asterisk/ctx/${RAPIDA_CONTEXT_ID})
+ same => n,WebSocket(wss://${RAPIDA_HOST}/v1/talk/asterisk/ctx/${RAPIDA_CONTEXT_ID}?x-api-key=${RAPIDA_API_KEY})
  same => n,Hangup()
 ```
 

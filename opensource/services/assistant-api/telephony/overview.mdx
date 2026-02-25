@@ -43,11 +43,15 @@ const (
 
 All telephony paths follow this pattern (source: `api/assistant-api/internal/type/telephony.go`):
 
-| Path | Method | Purpose |
-|------|--------|---------|
-| `/v1/talk/{provider}/call/{assistantId}` | POST / GET | Inbound call webhook — provider → Rapida |
-| `/v1/talk/{provider}/ctx/{contextId}` | WebSocket | Bidirectional audio stream |
-| `/v1/talk/{provider}/ctx/{contextId}/event` | POST | Call status / lifecycle events |
+| Path | Method | Auth | Purpose |
+|------|--------|------|---------|
+| `/v1/talk/{provider}/call/{assistantId}?x-api-key={apiKey}` | POST / GET | Query param | Inbound call webhook — provider → Rapida |
+| `/v1/talk/{provider}/ctx/{contextId}?x-api-key={apiKey}` | WebSocket | Query param | Bidirectional audio stream |
+| `/v1/talk/{provider}/ctx/{contextId}/event?x-api-key={apiKey}` | POST | Query param | Call status / lifecycle events |
+
+<Info>
+All telephony endpoints authenticate via the `x-api-key` query parameter. Use a **project API key** (`rpd-xxx`) scoped to the project that owns the assistant.
+</Info>
 
 ```go
 func GetContextAnswerPath(provider, contextID string) string {
@@ -74,8 +78,8 @@ sequenceDiagram
     Phone->>Provider: Dials configured number
     Provider->>AS: POST /v1/talk/{provider}/call/{assistantId}
     AS->>DB: Create CallContext (contextId, assistantId, conversationId)
-    AS-->>Provider: TwiML / NCCO / XML (contextId embedded in WebSocket URL)
-    Provider->>AS: WSS /v1/talk/{provider}/ctx/{contextId}
+    AS-->>Provider: TwiML / NCCO / XML (contextId + x-api-key embedded in WebSocket URL)
+    Provider->>AS: WSS /v1/talk/{provider}/ctx/{contextId}?x-api-key={apiKey}
     AS->>DB: Resolve and delete CallContext (atomic)
     AS->>AS: Start STT → LLM → TTS pipeline
     AS-->>Provider: Audio stream back to caller

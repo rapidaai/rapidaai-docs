@@ -191,7 +191,7 @@ exten => _X.,1,Answer()
  same => n,Set(CTX=${CURL(https://${RAPIDA_HOST}/v1/talk/asterisk/call/${ASSISTANT_ID}?from=${CALLERID(num)}&x-api-key=${RAPIDA_API_KEY})})
  same => n,GotoIf($["${CTX}" = ""]?error)
  ; Phase 2: Connect WebSocket with contextId in URL path
- same => n,WebSocket(wss://${RAPIDA_HOST}/v1/talk/asterisk/ctx/${CTX})
+ same => n,WebSocket(wss://${RAPIDA_HOST}/v1/talk/asterisk/ctx/${CTX}?x-api-key=${RAPIDA_API_KEY})
  same => n,Hangup()
  same => n(error),Playback(an-error-has-occurred)
  same => n,Hangup()
@@ -349,7 +349,7 @@ Outbound calls are initiated via the **Rapida SDK** (gRPC `CreatePhoneCall` RPC)
         [rapida-outbound-ws]
         exten => s,1,NoOp(Outbound WebSocket call)
          ; RAPIDA_CONTEXT_ID is passed as a channel variable by ARI
-         same => n,WebSocket(wss://${RAPIDA_HOST}/v1/talk/asterisk/ctx/${RAPIDA_CONTEXT_ID})
+         same => n,WebSocket(wss://${RAPIDA_HOST}/v1/talk/asterisk/ctx/${RAPIDA_CONTEXT_ID}?x-api-key=${RAPIDA_API_KEY})
          same => n,Hangup()
         ```
 
@@ -529,7 +529,7 @@ Rapida sends status updates to Asterisk via ARI events. You can also configure a
 ### Event Callback URL
 
 ```
-POST https://{RAPIDA_HOST}/v1/talk/asterisk/ctx/{contextId}/event
+POST https://{RAPIDA_HOST}/v1/talk/asterisk/ctx/{contextId}/event?x-api-key={apiKey}
 ```
 
 This endpoint is automatically configured during outbound call setup. For inbound calls, Asterisk can optionally POST events to this URL.
@@ -641,7 +641,7 @@ ASSISTANT_ID   = 123456789
 exten => _X.,1,Answer()
  same => n,Set(CTX=${CURL(https://${RAPIDA_HOST}/v1/talk/asterisk/call/${ASSISTANT_ID}?from=${CALLERID(num)}&x-api-key=${RAPIDA_API_KEY})})
  same => n,GotoIf($["${CTX}" = ""]?error)
- same => n,WebSocket(wss://${RAPIDA_HOST}/v1/talk/asterisk/ctx/${CTX})
+ same => n,WebSocket(wss://${RAPIDA_HOST}/v1/talk/asterisk/ctx/${CTX}?x-api-key=${RAPIDA_API_KEY})
  same => n,Hangup()
  same => n(error),Playback(an-error-has-occurred)
  same => n,Hangup()
@@ -747,14 +747,14 @@ Zero custom ports — everything runs over HTTPS.
     exten => _X.,1,Answer()
      same => n,Set(CTX=${CURL(https://${RAPIDA_HOST}/v1/talk/asterisk/call/${ASSISTANT_ID}?from=${CALLERID(num)}&x-api-key=${RAPIDA_API_KEY})})
      same => n,GotoIf($["${CTX}" = ""]?error)
-     same => n,WebSocket(wss://${RAPIDA_HOST}/v1/talk/asterisk/ctx/${CTX})
+     same => n,WebSocket(wss://${RAPIDA_HOST}/v1/talk/asterisk/ctx/${CTX}?x-api-key=${RAPIDA_API_KEY})
      same => n,Hangup()
      same => n(error),Playback(an-error-has-occurred)
      same => n,Hangup()
 
     ; ---- Outbound (ARI routes here with RAPIDA_CONTEXT_ID) ----
     [rapida-outbound-ws]
-    exten => s,1,WebSocket(wss://${RAPIDA_HOST}/v1/talk/asterisk/ctx/${RAPIDA_CONTEXT_ID})
+    exten => s,1,WebSocket(wss://${RAPIDA_HOST}/v1/talk/asterisk/ctx/${RAPIDA_CONTEXT_ID}?x-api-key=${RAPIDA_API_KEY})
      same => n,Hangup()
     ```
   </Tab>
@@ -828,7 +828,7 @@ Each call automatically records:
     **Symptoms:** `WebSocket()` fails, no audio
 
     **Checklist:**
-    - Verify WSS URL is correct: `wss://websocket-01.in.rapida.ai/v1/talk/asterisk/ctx/{contextId}`
+    - Verify WSS URL is correct: `wss://websocket-01.in.rapida.ai/v1/talk/asterisk/ctx/{contextId}?x-api-key={your-api-key}`
     - Ensure `chan_websocket.so` is loaded
     - Check TLS certificate trust on the Asterisk server
     - Verify Asterisk version is 20+ for `chan_websocket`
@@ -995,6 +995,7 @@ Upgrade: websocket
 | Parameter | Location | Required | Description |
 |-----------|----------|----------|-------------|
 | `contextId` | Path | Yes | Context ID from webhook response |
+| `x-api-key` | Query | Yes | API key for authentication |
 
 ### Status Callback
 

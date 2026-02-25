@@ -111,8 +111,8 @@ In [Vonage Dashboard](https://dashboard.nexmo.com) → **Applications → Create
 
 | Field | Value |
 |-------|-------|
-| **Answer URL** (POST) | `https://{PUBLIC_ASSISTANT_HOST}/v1/talk/vonage/call/{assistantId}` |
-| **Event URL** (POST) | `https://{PUBLIC_ASSISTANT_HOST}/v1/talk/vonage/ctx/{contextId}/event` |
+| **Answer URL** (POST) | `https://{PUBLIC_ASSISTANT_HOST}/v1/talk/vonage/call/{assistantId}?x-api-key={apiKey}` |
+| **Event URL** (POST) | `https://{PUBLIC_ASSISTANT_HOST}/v1/talk/vonage/ctx/{contextId}/event?x-api-key={apiKey}` |
 
 Click **Generate public and private key** — download the private key and store the PEM content in the vault credential's `private_key` field.
 </Step>
@@ -145,7 +145,7 @@ When Vonage hits the answer URL, Rapida responds with an NCCO:
   "action": "connect",
   "endpoint": [{
     "type": "websocket",
-    "uri": "wss://{PUBLIC_ASSISTANT_HOST}/v1/talk/vonage/ctx/{contextId}",
+    "uri": "wss://{PUBLIC_ASSISTANT_HOST}/v1/talk/vonage/ctx/{contextId}?x-api-key={apiKey}",
     "content-type": "audio/l16;rate=16000"
   }]
 }]

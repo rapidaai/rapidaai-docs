@@ -109,7 +109,7 @@ In the Rapida dashboard go to **Credentials → Create Credential**, select prov
 In [Exotel Dashboard](https://my.exotel.com) → **ExoPhones**, select your ExoPhone and assign it an **App**. Set the passthru URL to:
 
 ```
-https://{PUBLIC_ASSISTANT_HOST}/v1/talk/exotel/call/{assistantId}
+https://{PUBLIC_ASSISTANT_HOST}/v1/talk/exotel/call/{assistantId}?x-api-key={apiKey}
 ```
 
 Replace `{assistantId}` with the numeric assistant ID from the Rapida dashboard.
@@ -135,7 +135,7 @@ curl https://{PUBLIC_ASSISTANT_HOST}/readiness/
 When Exotel hits the webhook, Rapida returns passthru XML that connects a WebSocket at:
 
 ```
-wss://{PUBLIC_ASSISTANT_HOST}/v1/talk/exotel/ctx/{contextId}
+wss://{PUBLIC_ASSISTANT_HOST}/v1/talk/exotel/ctx/{contextId}?x-api-key={apiKey}
 ```
 
 ---
