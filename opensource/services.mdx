@@ -16,7 +16,7 @@ Rapida consists of multiple microservices, each with specific responsibilities. 
 | **assistant-api**   | 9007 | Voice agents, conversations      | assistant_db   | Go       |
 | **integration-api** | 9004 | Third-party integrations         | integration_db | Go       |
 | **endpoint-api**    | 9005 | Webhooks, callbacks              | endpoint_db    | Go       |
-| **document-api**    | 9010 | Knowledge base, RAG              | document_db    | Python   |
+| **document-api**    | 9010 | Knowledge base, RAG              | assistant_db   | Python   |
 | **ui**              | 3000 | Web dashboard                    | N/A            | React    |
 | **nginx**           | 8080 | API gateway, reverse proxy       | N/A            | N/A      |
 
@@ -101,7 +101,7 @@ SENDGRID_API_KEY=optional-for-emails
 **Health Check**:
 
 ```bash
-curl http://localhost:9001/health
+curl http://localhost:9001/readiness/
 ```
 
 **Common Operations**:
@@ -237,7 +237,7 @@ MAX_CONCURRENT_CONVERSATIONS=1000
 **Health Check**:
 
 ```bash
-curl http://localhost:9007/health
+curl http://localhost:9007/readiness/
 ```
 
 **Common Operations**:
@@ -323,7 +323,7 @@ OAUTH_CALLBACK_URL=http://localhost:8080/oauth/callback
 **Health Check**:
 
 ```bash
-curl http://localhost:9004/health
+curl http://localhost:9004/readiness/
 ```
 
 **Common Operations**:
@@ -410,7 +410,7 @@ MAX_EVENTS_PER_SECOND=1000
 **Health Check**:
 
 ```bash
-curl http://localhost:9005/health
+curl http://localhost:9005/readiness/
 ```
 
 **Common Operations**:
@@ -472,7 +472,7 @@ LOG_LEVEL=info
 ENV=production
 
 # Database
-DATABASE_URL=postgresql://rapida_user:rapida_db_password@postgres:5432/document_db
+DATABASE_URL=postgresql://rapida_user:rapida_db_password@postgres:5432/assistant_db
 SQLALCHEMY_POOL_SIZE=20
 SQLALCHEMY_MAX_OVERFLOW=10
 
@@ -539,7 +539,7 @@ RNNOISE_LEVEL=0.5
 **Health Check**:
 
 ```bash
-curl http://localhost:9010/health
+curl http://localhost:9010/readiness/
 ```
 
 **Common Operations**:
@@ -636,7 +636,7 @@ yarn lint:fix
 **Health Check**:
 
 ```bash
-curl http://localhost:8080/health
+curl http://localhost:8080/readiness/
 ```
 
 ---
@@ -651,11 +651,10 @@ curl http://localhost:8080/health
 
 | Database         | Service         | Purpose                              |
 | ---------------- | --------------- | ------------------------------------ |
-| `web_db`         | web-api         | Users, organizations, credentials    |
-| `assistant_db`   | assistant-api   | Assistants, conversations, messages  |
-| `integration_db` | integration-api | Integrations, providers, credentials |
-| `endpoint_db`    | endpoint-api    | Webhooks, callbacks, events          |
-| `document_db`    | document-api    | Documents, chunks, embeddings        |
+| `web_db`         | web-api                       | Users, organizations, credentials                         |
+| `assistant_db`   | assistant-api, document-api   | Assistants, conversations, messages, documents, embeddings |
+| `integration_db` | integration-api               | Integrations, providers, credentials                      |
+| `endpoint_db`    | endpoint-api                  | Webhooks, callbacks, events                               |
 
 **Connection Details**:
 
@@ -795,7 +794,7 @@ curl -X GET "localhost:9200/assistant-conversations/_search" \
    ┌──────────────────────────────────────────┐
    │    Document API (9010)                   │
    │ Python + RNNoise + Embeddings            │
-   │ PostgreSQL (document_db)                 │
+   │ PostgreSQL (assistant_db)                │
    │ Redis (queues)                           │
    │ OpenSearch (document search)             │
    └──────────────────────────────────────────┘

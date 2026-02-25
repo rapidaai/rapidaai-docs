@@ -325,8 +325,8 @@ PORT=3001 yarn start:dev
 ### API Connection Issues
 
 ```bash
-# Verify API is running
-curl http://localhost:8080/health
+# Verify API is running (routes through Nginx to web-api)
+curl http://localhost:9001/readiness/
 
 # Check CORS headers
 # Network tab → API request → Response Headers

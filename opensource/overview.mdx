@@ -1,818 +1,287 @@
 ---
-title: "Getting Started with Rapida"
-description: "A comprehensive guide to set up and run Rapida Voice AI Platform"
-sidebarTitle: "Getting Started"
+title: "Self-Hosting Rapida"
+description: "Run the full Rapida Voice AI platform on your own infrastructure. Docker Compose gets you from zero to a working deployment in under ten minutes."
+sidebarTitle: "Overview"
 ---
 
-# Rapida Voice AI Platform - Developer Guide
+## What you are deploying
 
-Welcome to Rapida! This guide will help you set up and run the complete Rapida Voice AI Platform on your machine. Whether you prefer Docker or manual setup, we've got you covered.
+Rapida is a microservices platform. Self-hosting means running all services on your own infrastructure — no data leaves your environment.
 
-## What is Rapida?
+| Service | Port | Role |
+|---------|------|------|
+| `nginx` | 8080 | Reverse proxy, WebSocket upgrade, SSL/TLS termination |
+| `web-api` | 9001 | Auth, organizations, credential vault, gRPC proxy |
+| `assistant-api` | 9007 · 4573 | Voice orchestration, STT/LLM/TTS pipeline, telephony |
+| `integration-api` | 9004 | LLM, STT, TTS provider integrations |
+| `endpoint-api` | 9005 | Webhook delivery and event routing |
+| `document-api` | 9010 | Document ingestion, embeddings, RAG search |
+| `ui` | 3000 | React dashboard |
+| `postgres` | 5432 | Relational data (4 databases) |
+| `redis` | 6379 | Cache, sessions, job queue |
+| `opensearch` | 9200 | Conversation search, document indexing |
 
-Rapida is an open-source, end-to-end voice orchestration platform for building, deploying, and managing voice agents at scale. It provides:
+<Info>
+  The recommended path for self-hosting is Docker Compose. All services, infrastructure, and Nginx are wired together in `docker-compose.yml`. No manual network or volume configuration is needed.
+</Info>
 
-- **Voice Agents**: Build intelligent voice bots with LLM integration
-- **Real-time Audio Processing**: Stream audio with low-latency processing
-- **Orchestration**: Manage complex voice workflows and interactions
-- **Integration**: Connect with 50+ LLM, STT, TTS, and telephony providers
-- **Observable**: Deep insights into calls, metrics, and performance
+---
 
-## Architecture Overview
+## Prerequisites
 
-Rapida consists of several microservices working together:
+| Requirement | Version | Notes |
+|-------------|---------|-------|
+| Docker Engine | 20.10+ | [Install Docker](https://docs.docker.com/get-docker/) |
+| Docker Compose | v2.0+ | Included with Docker Desktop |
+| RAM | 8 GB minimum | 16 GB recommended (OpenSearch is memory-intensive) |
+| Disk | 10 GB free | For images, volumes, and uploaded assets |
+| OS | macOS · Linux · Windows WSL2 | |
 
-- **web-api** (9001) - Dashboard backend and core orchestration
-- **assistant-api** (9007) - Voice agent management and conversation handling
-- **integration-api** (9004) - Third-party service integrations
-- **endpoint-api** (9005) - Webhook and callback management
-- **document-api** (9010) - Knowledge base and RAG capabilities
-- **ui** (3000) - React dashboard
-- **nginx** (8080) - Reverse proxy and load balancer
+---
 
-Supporting infrastructure:
+## Quickstart
 
-- **PostgreSQL** (5432) - Primary database (relational data)
-- **Redis** (6379) - Cache and message queue
-- **OpenSearch** (9200) - Full-text search and analytics
+<Steps>
 
-## Quick Start - Docker (Recommended)
-
-The fastest way to get Rapida running is with Docker Compose.
-
-### Prerequisites
-
-- Docker Desktop or Docker Engine
-- Docker Compose (v2.0+)
-- ~4GB available RAM
-- macOS, Linux, or Windows with WSL2
-
-### Step 1: Clone the Repository
+<Step title="Clone the repository">
 
 ```bash
 git clone https://github.com/rapidaai/voice-ai.git
 cd voice-ai
 ```
 
-### Step 2: Initial Setup
+</Step>
 
-Create the required directories and set permissions:
+<Step title="Create data directories">
 
 ```bash
 make setup-local
 ```
 
-This command creates:
+Creates `~/rapida-data/assets/{db,redis,opensearch}` with the correct ownership for Docker volume mounts.
 
-- `~/rapida-data/assets/db` - PostgreSQL data
-- `~/rapida-data/assets/redis` - Redis data
-- `~/rapida-data/assets/opensearch` - OpenSearch data
+<Note>
+  **macOS users:** `make setup-local` uses `setfacl`, which is a Linux utility. If the command fails, create the directories manually:
 
-### Step 3: Start All Services
+  ```bash
+  mkdir -p ~/rapida-data/assets/opensearch ~/rapida-data/assets/db ~/rapida-data/assets/redis
+  sudo chown -R 1000:1000 ~/rapida-data/assets/opensearch
+  ```
+</Note>
+
+</Step>
+
+<Step title="Configure environment files">
+
+Each service reads from an env file in `docker/<service>/`. The defaults work for a local deployment with no external providers. You do not need any API keys to start the platform.
+
+```
+docker/web-api/.web.env
+docker/assistant-api/.assistant.env
+docker/integration-api/.integration.env
+docker/endpoint-api/.endpoint.env
+docker/document-api/config.yaml
+```
+
+<Warning>
+  Before going to production, change `SECRET=rpd_pks` to a strong random value in every env file. All services share the same `SECRET` for JWT signing. Generate one with `openssl rand -hex 32`.
+</Warning>
+
+</Step>
+
+<Step title="Build all service images">
+
+```bash
+make build-all
+```
+
+Builds Docker images for all Go services and the Python document-api. Initial build takes 5–10 minutes depending on your network.
+
+</Step>
+
+<Step title="Start all services">
 
 ```bash
 make up-all
 ```
 
-This starts all services including:
+</Step>
 
-- PostgreSQL database
-- Redis cache
-- OpenSearch search engine
-- All API services (web, assistant, integration, endpoint, document)
-- UI dashboard
-- Nginx reverse proxy
-
-### Step 4: Verify Services
-
-Check that all services are running:
+<Step title="Verify all services are healthy">
 
 ```bash
-make ps-all
+make status
 ```
 
-You should see all containers with status `Up`.
-
-### Step 5: Access the Dashboard
-
-Open your browser and navigate to:
-
-**Dashboard**: http://localhost:3000
-
-You should see the Rapida dashboard login page.
-
-### Viewing Logs
-
-To monitor service logs:
+All containers should show `Up` or `Up (healthy)`. If any container is in `Exited` state, check its logs:
 
 ```bash
-# All services
 make logs-all
-
-# Specific service
-make logs-web          # Web API logs
-make logs-assistant    # Assistant API logs
-make logs-integration  # Integration API logs
-make logs-endpoint     # Endpoint API logs
 ```
 
-## Services Overview
+</Step>
 
-### Core Services
+<Step title="Open the dashboard">
 
-#### web-api (Port 9001)
+Navigate to **[http://localhost:3000](http://localhost:3000)** in your browser. You should see the Rapida login page.
 
-**Purpose**: Core platform orchestration and dashboard backend
+The Nginx gateway is accessible at **[http://localhost:8080](http://localhost:8080)**.
 
-- User and organization management
-- Workspace and project management
-- Authentication and authorization
-- Dashboard API endpoints
+</Step>
 
-**Environment Variables**:
-
-- `SERVICE_NAME`: web-api
-- `PORT`: 9001
-- `LOG_LEVEL`: debug/info/warn/error
-- `ENV`: development/production
-- `SECRET`: Encryption secret
-
-**Database**: `web_db` in PostgreSQL
+</Steps>
 
 ---
 
-#### assistant-api (Port 9007)
+## Service Endpoints
 
-**Purpose**: Voice agent and conversation management
-
-- Create and manage voice assistants
-- Handle real-time conversations
-- Process audio streams
-- Integrate with LLMs
-- Audio processing (VAD, STT, TTS)
-
-**Environment Variables**:
-
-- `SERVICE_NAME`: workflow-api
-- `PORT`: 9007
-- `OPENSEARCH__HOST`: opensearch
-- `OPENSEARCH__PORT`: 9200
-
-**Database**: `assistant_db` in PostgreSQL
-**Search Index**: OpenSearch
-
-**Features**:
-
-- Real-time audio streaming
-- Voice activity detection (VAD)
-- Speech-to-text integration
-- LLM interaction
-- Text-to-speech synthesis
-
----
-
-#### integration-api (Port 9004)
-
-**Purpose**: Third-party integrations and credential management
-
-- Manage provider credentials (OpenAI, Anthropic, etc.)
-- Handle OAuth flows
-- Integration configuration
-- Provider management
-
-**Environment Variables**:
-
-- `PORT`: 9004
-- `INTEGRATION_CRYPTO_KEY`: Encryption key for credentials
-
-**Database**: `integration_db` in PostgreSQL
-
-**Integrated Providers**:
-
-- LLMs: OpenAI, Anthropic, Cohere, Google AI, Azure OpenAI, AWS Bedrock, Mistral, HuggingFace
-- STT: Google Speech, Deepgram, Cartesia, AssemblyAI, Sarvam AI
-- TTS: Azure Speech, Google TTS, ElevenLabs, Deepgram, Cartesia, Sarvam AI
-- Telephony: Twilio, Vonage, Exotel
-
----
-
-#### endpoint-api (Port 9005)
-
-**Purpose**: Webhook and callback management
-
-- Webhook configuration
-- Callback handling
-- Event routing
-- External API integration
-
-**Environment Variables**:
-
-- `PORT`: 9005
-
-**Database**: `endpoint_db` in PostgreSQL
-
----
-
-#### document-api (Port 9010)
-
-**Purpose**: Knowledge base and RAG (Retrieval Augmented Generation)
-
-- Document upload and processing
-- Text chunking and embedding
-- Similarity search
-- Knowledge base management
-
-**Technology**: Python/FastAPI
-**Database**: PostgreSQL + OpenSearch
-
-**Features**:
-
-- Support for multiple file formats (PDF, DOCX, XLSX, CSV, MD, HTML)
-- Automatic chunking and embedding
-- Entity extraction
-- Full-text search
-
----
-
-#### ui (Port 3000)
-
-**Purpose**: Web dashboard for managing Rapida
-
-- React-based single-page application
-- Tailwind CSS styling
-- Real-time updates via WebSocket
-- Responsive design
-
-**Features**:
-
-- Assistant management
-- Conversation viewing
-- Analytics and monitoring
-- Credential management
-- Knowledge base management
-
----
-
-#### nginx (Port 8080)
-
-**Purpose**: Reverse proxy and load balancing
-
-- Route traffic to appropriate services
-- SSL/TLS termination (when configured)
-- Static file serving (UI)
-- Load balancing
-
-**Main Entry Point**: http://localhost:8080
-
-## Infrastructure Services
-
-### PostgreSQL (Port 5432)
-
-**Purpose**: Primary relational database
-
-**Databases**:
-
-- `web_db` - Web API data (users, organizations, projects, credentials)
-- `assistant_db` - Assistant and conversation data
-- `integration_db` - Integration configurations
-- `endpoint_db` - Webhook and endpoint data
-
-**Credentials**:
-
-```
-Username: rapida_user
-Password: rapida_db_password
-```
-
-**Connection**:
+| Service | URL | Health Check |
+|---------|-----|-------------|
+| Dashboard | http://localhost:3000 | — |
+| Nginx Gateway | http://localhost:8080 | — |
+| Web API | http://localhost:9001 | `GET /readiness/` |
+| Assistant API | http://localhost:9007 | `GET /readiness/` |
+| Integration API | http://localhost:9004 | `GET /readiness/` |
+| Endpoint API | http://localhost:9005 | `GET /readiness/` |
+| Document API | http://localhost:9010 | `GET /readiness/` |
+| OpenSearch | http://localhost:9200 | `GET /_cluster/health` |
 
 ```bash
-# From host
-psql -h localhost -U rapida_user -d web_db
-
-# From docker
-make db-shell
-```
-
-**Data Location**: `~/rapida-data/assets/db`
-
----
-
-### Redis (Port 6379)
-
-**Purpose**: Cache and message queue
-
-**Features**:
-
-- Session caching
-- Rate limiting
-- Job queue (Celery for document processing)
-- Real-time data
-- Database query caching
-
-**Database Slots**:
-
-- DB 0: General cache
-- DB 1: Session cache
-- DB 2+: Reserved for future use
-
-**Data Location**: `~/rapida-data/assets/redis`
-
-**Connection**:
-
-```bash
-redis-cli -h localhost -p 6379
+# Verify a specific service
+curl http://localhost:9001/readiness/
 ```
 
 ---
 
-### OpenSearch (Port 9200)
+## Working with Individual Services
 
-**Purpose**: Full-text search and analytics
-
-**Features**:
-
-- Conversation search
-- Log analysis
-- Metrics aggregation
-- Document indexing
-- Real-time search
-
-**Admin Port**: 9600 (metrics)
-
-**Indices**:
-
-- `assistant-conversations` - Conversation transcripts
-- `logs-*` - Service logs
-- `documents-*` - Knowledge base documents
-
-**Data Location**: `~/rapida-data/assets/opensearch`
-
-**Health Check**:
+### Start / stop specific services
 
 ```bash
-curl http://localhost:9200/_cluster/health
-```
+# Infrastructure only (postgres, redis, opensearch)
+make deps
 
-## Configuration
-
-### Environment Configuration
-
-Each service has environment variables defined in `docker/{service}/.{service}.env`:
-
-#### Common Variables
-
-```env
-SERVICE_NAME=service-name
-HOST=0.0.0.0
-PORT=9001
-LOG_LEVEL=debug
-SECRET=rpd_pks
-ENV=development
-```
-
-#### Database Configuration
-
-```env
-POSTGRES__HOST=postgres
-POSTGRES__PORT=5432
-POSTGRES__DB_NAME=web_db
-POSTGRES__AUTH__USER=rapida_user
-POSTGRES__AUTH__PASSWORD=rapida_db_password
-POSTGRES__SSL_MODE=disable
-POSTGRES__MAX_OPEN_CONNECTION=10
-POSTGRES__MAX_IDEAL_CONNECTION=5
-```
-
-#### Redis Configuration
-
-```env
-REDIS__HOST=redis
-REDIS__PORT=6379
-REDIS__MAX_CONNECTION=10
-REDIS__DB=0
-```
-
-#### OpenSearch Configuration
-
-```env
-OPENSEARCH__SCHEMA=http
-OPENSEARCH__HOST=opensearch
-OPENSEARCH__PORT=9200
-OPENSEARCH__MAX_RETRIES=3
-OPENSEARCH__MAX_CONNECTION=10
-```
-
-### Modifying Configuration
-
-1. Edit the environment file:
-
-   ```bash
-   vi docker/web-api/.web.env
-   ```
-
-2. Restart the service:
-   ```bash
-   make restart-web
-   ```
-
-## Common Docker Commands
-
-### Service Management
-
-```bash
-# Start specific services
-make up-web              # Start only web-api
-make up-assistant        # Start only assistant-api
-make up-db              # Start only PostgreSQL
-
-# Stop services
-make down-web           # Stop web-api
-make down-all           # Stop all services
-
-# Restart services
-make restart-web        # Restart web-api
-make restart-all        # Restart all services
-```
-
-### Viewing Status
-
-```bash
-# Show running containers and ports
-make ps-all
-
-# Show service status
-docker ps
-
-# Show container logs
-make logs-web
-make logs-all -f        # Follow logs in real-time
-```
-
-### Database Management
-
-```bash
-# Open PostgreSQL shell
-make db-shell
-
-# View database contents
-psql -h localhost -U rapida_user -d web_db
-
-# Common queries
-\dt                     # List tables
-\du                     # List users
-SELECT * FROM table;    # Query table
-```
-
-### Cleaning Up
-
-```bash
-# Stop and remove all containers
-make clean
-
-# Remove only volumes (data)
-make clean-volumes
-
-# Remove images
-docker rmi $(docker images -q)
-```
-
-## Manual Setup (Without Docker)
-
-For development or if you prefer not to use Docker, follow these steps:
-
-### Prerequisites
-
-- Go 1.25 or later
-- Python 3.9+
-- Node.js 22+
-- PostgreSQL 15+
-- Redis 7+
-- OpenSearch 2.11+
-
-### Step 1: Install Dependencies
-
-#### macOS
-
-```bash
-# Using Homebrew
-brew install go postgresql redis
-brew install --cask docker  # Optional: for OpenSearch
-
-# Install Node.js
-nvm install 22
-nvm use 22
-
-# Install Python
-python3 -m venv venv
-source venv/bin/activate
-```
-
-#### Linux (Ubuntu/Debian)
-
-```bash
-# Install system dependencies
-sudo apt-get update
-sudo apt-get install -y golang-go postgresql redis-server git build-essential
-
-# Install Node.js
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-sudo apt-get install -y nodejs
-
-# Install Python
-sudo apt-get install -y python3 python3-pip python3-venv
-```
-
-### Step 2: Configure Databases
-
-#### PostgreSQL Setup
-
-```bash
-# Start PostgreSQL
-brew services start postgresql    # macOS
-sudo service postgresql start     # Linux
-
-# Create user and databases
-psql postgres -c "CREATE USER rapida_user WITH PASSWORD 'rapida_db_password';"
-psql postgres -c "CREATE DATABASE web_db OWNER rapida_user;"
-psql postgres -c "CREATE DATABASE assistant_db OWNER rapida_user;"
-psql postgres -c "CREATE DATABASE integration_db OWNER rapida_user;"
-psql postgres -c "CREATE DATABASE endpoint_db OWNER rapida_user;"
-
-# Grant privileges
-psql postgres -c "ALTER ROLE rapida_user WITH CREATEDB;"
-```
-
-#### Redis Setup
-
-```bash
-# Start Redis
-brew services start redis         # macOS
-sudo service redis-server start   # Linux
-
-# Verify Redis is running
-redis-cli ping
-# Should return: PONG
-```
-
-#### OpenSearch Setup
-
-```bash
-# Using Docker (simplest method)
-docker run -d -p 9200:9200 -p 9600:9600 \
-  -e "discovery.type=single-node" \
-  -e "plugins.security.disabled=true" \
-  opensearchproject/opensearch:2.11.1
-
-# Or install from source (follow OpenSearch docs)
-```
-
-### Step 3: Setup Environment Files
-
-Copy environment template files and configure them:
-
-```bash
-# Copy environment files
-cp docker/web-api/.web.env env/.web.env
-cp docker/assistant-api/.assistant.env env/.assistant.env
-cp docker/integration-api/.integration.env env/.integration.env
-cp docker/endpoint-api/.endpoint.env env/.endpoint.env
-
-# Edit for local environment
-vi env/.web.env
-
-# Change these values for local development:
-POSTGRES__HOST=localhost        # Change from "postgres"
-REDIS__HOST=localhost           # Change from "redis"
-OPENSEARCH__HOST=localhost      # Change from "opensearch"
-```
-
-### Step 4: Build Go Services
-
-Build each microservice:
-
-```bash
-# Create output directory
-mkdir -p bin
-
-# Build each service
-go build -o bin/web-api ./cmd/web/web.go
-go build -o bin/assistant-api ./cmd/assistant/assistant.go
-go build -o bin/integration-api ./cmd/integration/integration.go
-go build -o bin/endpoint-api ./cmd/endpoint/endpoint.go
-```
-
-### Step 5: Run Database Migrations
-
-```bash
-# Install migration tool
-go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-
-# Run migrations for each service
-migrate -path api/web-api/migrations -database "postgresql://rapida_user:rapida_db_password@localhost:5432/web_db?sslmode=disable" up
-migrate -path api/assistant-api/migrations -database "postgresql://rapida_user:rapida_db_password@localhost:5432/assistant_db?sslmode=disable" up
-migrate -path api/integration-api/migrations -database "postgresql://rapida_user:rapida_db_password@localhost:5432/integration_db?sslmode=disable" up
-migrate -path api/endpoint-api/migrations -database "postgresql://rapida_user:rapida_db_password@localhost:5432/endpoint_db?sslmode=disable" up
-```
-
-### Step 6: Setup Frontend
-
-```bash
-# Navigate to UI directory
-cd ui
-
-# Install dependencies
-yarn install
-
-# Build CSS
-yarn build:css
-
-# Start development server
-yarn start:dev
-
-# This runs Tailwind watch and React dev server concurrently
-```
-
-### Step 7: Start Services
-
-Open separate terminal windows for each service:
-
-#### Terminal 1: Web API
-
-```bash
-export $(cat env/.web.env | xargs)
-go run ./cmd/web/web.go
-# Or run the built binary
-./bin/web-api
-```
-
-#### Terminal 2: Assistant API
-
-```bash
-export $(cat env/.assistant.env | xargs)
-go run ./cmd/assistant/assistant.go
-```
-
-#### Terminal 3: Integration API
-
-```bash
-export $(cat env/.integration.env | xargs)
-go run ./cmd/integration/integration.go
-```
-
-#### Terminal 4: Endpoint API
-
-```bash
-export $(cat env/.endpoint.env | xargs)
-go run ./cmd/endpoint/endpoint.go
-```
-
-#### Terminal 5: Document API
-
-```bash
-cd api/document-api
-
-# Create Python virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run the service
-python app/main.py
-```
-
-#### Terminal 6: UI (Already running from Step 6)
-
-The UI should be running at http://localhost:3000
-
-### Step 8: Verify Services
-
-Check that all services are running:
-
-```bash
-# API endpoints should respond
-curl http://localhost:9001/health
-curl http://localhost:9007/health
-curl http://localhost:9004/health
-curl http://localhost:9005/health
-curl http://localhost:9010/health
-
-# UI should be accessible
-curl http://localhost:3000
-
-# Database should be accessible
-psql -h localhost -U rapida_user -d web_db -c "SELECT 1;"
-
-# Redis should be accessible
-redis-cli ping
-
-# OpenSearch should be accessible
-curl http://localhost:9200/_cluster/health
-```
-
-## Troubleshooting
-
-### Service Won't Start
-
-**Problem**: Service container exits immediately
-
-**Solution**:
-
-```bash
-# Check logs
-make logs-web
-
-# Common causes:
-# 1. Port already in use - change PORT in env file
-# 2. Database not running - verify postgres is up
-# 3. Invalid credentials - check env file
-```
-
-### Database Connection Issues
-
-**Problem**: `connection refused` errors
-
-**Solution**:
-
-```bash
-# Verify PostgreSQL is running
-psql -h localhost -U rapida_user -d web_db -c "SELECT 1;"
-
-# Check PostgreSQL logs
-docker logs postgres
-
-# Restart PostgreSQL
-make down-db && make up-db
-```
-
-### Memory Issues
-
-**Problem**: OpenSearch or container running out of memory
-
-**Solution**:
-
-```bash
-# Increase Docker memory limit
-# Docker Desktop -> Preferences -> Resources -> Memory: 8GB (minimum)
-
-# Or reduce OpenSearch memory usage
-# Edit docker-compose.yml
-OPENSEARCH_JAVA_OPTS: "-Xms256m -Xmx256m"
-```
-
-### Redis Connection Issues
-
-**Problem**: Redis connection refused
-
-**Solution**:
-
-```bash
-# Check Redis is running
-redis-cli ping
-
-# Restart Redis
-make down-redis && make up-redis
-
-# Check Redis logs
-docker logs redis
-```
-
-## Performance Optimization
-
-### For Development
-
-```bash
-# Reduce resource allocation
-# Edit docker-compose.yml and reduce limits
-
-# Use only required services
+# Individual services
 make up-web
-make up-db
-make up-redis
-# Skip assistant-api if not needed
+make up-assistant
+make up-integration
+make up-endpoint
+make up-document
+make up-ui
 ```
 
-### For Production
+### Logs
 
-- Increase connection pools
-- Enable caching
-- Set LOG_LEVEL to info
-- Use managed databases (AWS RDS, Azure Database)
-- Configure OpenSearch for production
-- Use separate Redis instances for different purposes
+```bash
+make logs-all           # All services
+make logs-web           # web-api only
+make logs-assistant     # assistant-api only
+make logs-integration   # integration-api only
+make logs-endpoint      # endpoint-api only
+make logs-document      # document-api only
+```
+
+### Rebuild after code changes
+
+```bash
+make rebuild-web        # Rebuild web-api (no cache)
+make rebuild-assistant  # Rebuild assistant-api (no cache)
+make rebuild-all        # Rebuild all services (no cache)
+```
+
+### Shell access
+
+```bash
+make shell-web          # Shell into web-api container
+make shell-assistant    # Shell into assistant-api container
+make shell-db           # psql shell → PostgreSQL (rapida_user / web_db)
+```
+
+---
+
+## Connecting Your First Provider
+
+The platform runs without any external provider keys. To place a voice call, you need to add at least one LLM, one STT, and one TTS provider credential through the dashboard.
+
+<Steps>
+
+<Step title="Open the dashboard">
+Navigate to http://localhost:3000 and create an account.
+</Step>
+
+<Step title="Create an organization and project">
+Every resource in Rapida is scoped to an organization and project.
+</Step>
+
+<Step title="Add provider credentials">
+Go to **Settings → Integrations** and add API keys for your LLM (e.g., OpenAI), STT (e.g., Deepgram), and TTS (e.g., ElevenLabs) providers.
+
+Credentials are encrypted with AES-256-GCM before storage. See [Integration API](/opensource/services/integration-api) for details.
+</Step>
+
+<Step title="Create an assistant">
+Go to **Assistants → New Assistant** and configure the system prompt, LLM, STT, TTS, and (optionally) a knowledge base.
+</Step>
+
+<Step title="Test the call">
+Use the built-in call tester in the dashboard or connect via the [rapida-react SDK](https://github.com/rapidaai/rapida-react).
+</Step>
+
+</Steps>
+
+---
+
+## Make Command Reference
+
+| Command | Description |
+|---------|-------------|
+| `make setup-local` | Create data directories with correct permissions |
+| `make build-all` | Build all Docker images |
+| `make rebuild-all` | Rebuild all images (no cache) |
+| `make rebuild-<service>` | Rebuild a single service (no cache) |
+| `make up-all` | Start all services |
+| `make down-all` | Stop all services |
+| `make restart-all` | Restart all services |
+| `make deps` | Start infrastructure only (postgres, redis, opensearch) |
+| `make status` | Show container status and port mappings |
+| `make logs-all` | Tail all service logs |
+| `make logs-<service>` | Tail logs for a specific service |
+| `make shell-<service>` | Open a shell inside a service container |
+| `make shell-db` | Open psql shell in the PostgreSQL container |
+| `make clean` | Remove all containers, volumes, and images |
+| `make ps-all` | List container status |
+
+---
+
+## Stopping and Resetting
+
+```bash
+# Stop all services (preserve volumes)
+make down-all
+
+# Full reset — removes containers, volumes, and images
+make clean
+```
+
+<Warning>
+  `make clean` deletes all Docker volumes, including the PostgreSQL and OpenSearch data directories. All database content and indexed documents will be lost.
+</Warning>
+
+---
 
 ## Next Steps
 
-1. **Create Your First Assistant**: See [Assistant Documentation](/assistants/overview)
-2. **Integrate LLMs**: See [LLM Integrations](/integrations/llm/openai)
-3. **Add Knowledge Base**: See [Knowledge Management](/knowledge/overview)
-4. **Deploy**: See [Deployment Options](/deployments/deployment-options)
-
-## Getting Help
-
-- **GitHub Issues**: https://github.com/rapidaai/voice-ai/issues
-- **Documentation**: https://rapida.ai/docs
-- **Community**: https://github.com/rapidaai/voice-ai/discussions
-- **Support Email**: prashant@rapida.ai
+<CardGroup cols={2}>
+  <Card title="Architecture" icon="diagram-project" href="/opensource/architecture">
+    System topology, service communication, and data flow diagrams.
+  </Card>
+  <Card title="Configuration Reference" icon="sliders" href="/opensource/configuration">
+    Complete environment variable reference for all services.
+  </Card>
+  <Card title="Services Overview" icon="server" href="/opensource/services">
+    Per-service documentation — components, routing, configuration.
+  </Card>
+  <Card title="Troubleshooting" icon="wrench" href="/opensource/troubleshooting">
+    Common issues and solutions for Docker and local setup.
+  </Card>
+</CardGroup>

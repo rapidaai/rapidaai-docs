@@ -381,10 +381,10 @@ description: "Solutions for common Rapida setup and runtime issues"
 
    ```bash
    # From host
-   curl http://localhost:9001/health
+   curl http://localhost:9001/readiness/
 
    # If fails, check if service is responsive
-   docker exec web-api curl http://localhost:9001/health
+   docker exec web-api curl http://localhost:9001/readiness/
    ```
 
 4. **Check firewall**:
@@ -429,7 +429,7 @@ description: "Solutions for common Rapida setup and runtime issues"
 
    ```bash
    # From web-api container
-   docker exec web-api curl http://assistant-api:9007/health
+   docker exec web-api curl http://assistant-api:9007/readiness/
 
    # Check DNS resolution
    docker exec web-api nslookup assistant-api
@@ -692,17 +692,11 @@ docker exec web-api netcat -zv redis 6379
 ### Health Checks
 
 ```bash
-# API health
-curl -s http://localhost:9001/health | jq .
+# Readiness check (service ready to accept traffic)
+curl -s http://localhost:9001/readiness/ | jq .
 
-# Database health
-curl -s http://localhost:9001/health/db | jq .
-
-# Cache health
-curl -s http://localhost:9001/health/redis | jq .
-
-# Search health
-curl -s http://localhost:9001/health/opensearch | jq .
+# Liveness check
+curl -s http://localhost:9001/healthz/ | jq .
 ```
 
 ## Getting Help
@@ -758,7 +752,7 @@ make ps-all
 docker ps
 
 # Logs
-make logs-all -f
+make logs-all
 docker logs -f web-api
 
 # Restart services
@@ -770,14 +764,14 @@ make clean
 docker compose down -v
 
 # Database
-make db-shell
+make shell-db
 psql -h localhost -U rapida_user -d web_db
 
 # Redis
 redis-cli -h localhost -p 6379
 
 # Verify services
-curl http://localhost:9001/health
+curl http://localhost:9001/readiness/
 ```
 
 ## Next Steps

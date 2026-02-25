@@ -285,7 +285,7 @@ SECRET=rpd_pks
 ENV=development
 
 # Database
-POSTGRES__HOST=integration-api
+POSTGRES__HOST=postgres
 POSTGRES__DB_NAME=integration_db
 POSTGRES__AUTH__USER=rapida_user
 POSTGRES__AUTH__PASSWORD=rapida_db_password
@@ -578,19 +578,17 @@ psql $POSTGRES__HOST ...
 
 ### Health Checks
 
+Each service exposes two endpoints:
+
 ```bash
-# API health
-curl http://localhost:9001/health
+# Readiness — service is ready to accept traffic
+curl http://localhost:9001/readiness/
 
-# Database
-curl http://localhost:9001/health/db
-
-# Cache
-curl http://localhost:9001/health/redis
-
-# Search
-curl http://localhost:9001/health/opensearch
+# Liveness — service process is healthy
+curl http://localhost:9001/healthz/
 ```
+
+Replace `9001` with the target service port (`9004`, `9005`, `9007`, `9010`).
 
 ## Configuration Best Practices
 

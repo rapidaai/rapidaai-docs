@@ -1,406 +1,347 @@
 ---
 title: "Architecture Overview"
-description: "Understanding Rapida's system architecture and microservices"
+description: "System architecture, service topology, and data flows for the Rapida Voice AI Platform"
 sidebarTitle: "Architecture"
 ---
 
+## System Architecture
+
+Rapida is a Go-based microservices platform (module: `github.com/rapidaai`, Go 1.25). Services communicate over gRPC internally and expose REST and gRPC-web APIs via a shared Nginx gateway on port 8080. A single TCP port per service multiplexes HTTP/2 (gRPC), grpc-web, and HTTP/1.1 using [cmux](https://github.com/soheilhy/cmux).
+
+```mermaid
+graph TD
+    subgraph Clients
+        Browser["Browser / Web App"]
+        Phone["Phone / SIP Client"]
+        SDK["Server SDK (Go · Python · Node)"]
+    end
+
+    Nginx["Nginx Gateway :8080\n(Reverse Proxy · SSL/TLS · gRPC-Web)"]
+
+    subgraph Services["Rapida Services"]
+        UI["ui :3000\nReact Dashboard"]
+        WebAPI["web-api :9001\nAuth · Orgs · Vault"]
+        AssistantAPI["assistant-api :9007\nVoice Orchestration\nSTT · LLM · TTS\nSIP :4573"]
+        IntegrationAPI["integration-api :9004\nLLM / STT / TTS\nProvider Integrations"]
+        EndpointAPI["endpoint-api :9005\nWebhooks · Callbacks"]
+        DocumentAPI["document-api :9010\nRAG · Embeddings\nKnowledge Base"]
+    end
+
+    subgraph Infra["Infrastructure"]
+        PG[("PostgreSQL :5432")]
+        Redis[("Redis :6379")]
+        OS[("OpenSearch :9200")]
+    end
+
+    subgraph Providers["External Providers"]
+        LLMs["LLMs\nOpenAI · Anthropic · Gemini\nAzure · Bedrock · Mistral · Cohere"]
+        STT_P["STT\nDeepgram · Google · Azure\nAssemblyAI · Cartesia"]
+        TTS_P["TTS\nElevenLabs · Azure · Google\nDeepgram · Cartesia"]
+        Tel["Telephony\nTwilio · Vonage · Exotel · SIP"]
+    end
+
+    Browser --> Nginx
+    SDK --> Nginx
+    Phone -->|"SIP :4573 / AudioSocket"| AssistantAPI
+    Nginx --> UI
+    Nginx --> WebAPI
+    Nginx -->|"WebSocket upgrade\n/talk_api.TalkService/AssistantTalk"| AssistantAPI
+    Nginx -->|"gRPC-web / REST\n/talk_api · /web_api · /vault_api ..."| WebAPI
+
+    WebAPI -->|gRPC| AssistantAPI
+    WebAPI -->|gRPC| IntegrationAPI
+    WebAPI -->|gRPC| EndpointAPI
+    WebAPI -->|HTTP| DocumentAPI
+    AssistantAPI -->|gRPC| IntegrationAPI
+    AssistantAPI -->|gRPC| EndpointAPI
+
+    WebAPI --> PG
+    AssistantAPI --> PG
+    IntegrationAPI --> PG
+    EndpointAPI --> PG
+    DocumentAPI --> PG
+
+    WebAPI --> Redis
+    AssistantAPI --> Redis
+    DocumentAPI --> Redis
+
+    AssistantAPI --> OS
+    DocumentAPI --> OS
+
+    IntegrationAPI --> LLMs
+    IntegrationAPI --> STT_P
+    IntegrationAPI --> TTS_P
+    AssistantAPI --> Tel
 ```
-┌──────────────────────────────────────────────────────────────────────┐
-│                                                                      │
-│                   Users & Web Clients                               │
-│              (Browser, Mobile, Web Applications)                    │
-│                                                                      │
-└────────────────────────────────┬─────────────────────────────────────┘
-                                 │
-                    ┌────────────▼────────────┐
-                    │  Nginx API Gateway      │
-                    │  Port: 8080             │
-                    │  (SSL/TLS, Load Balance)│
-                    └────────┬───────┬────────┘
-                             │       │
-          ┌──────────────────┼───────┼──────────────────┐
-          │                  │       │                  │
-     ┌────▼────┐    ┌────────▼──┐ ┌─▼────────┐    ┌───▼────┐
-     │   UI    		  │    │ web-api   │ │ integ-api│    │endpoint │
-     │ :3000         │    │ :9001     │ │ :9004    │    │ :9005   │
-     │ React   		 │    │ Dashboard │ │Providers │    │Webhooks │
-     └─────────┘    └─────┬──────┘ └──────────┘    └─────────┘
-                           │
-          ┌────────────────┼────────────────┐
-          │                │                │
-     ┌────▼──────┐  ┌──────▼──────┐  ┌────▼────────┐
-     │document-api│  │assistant-api │  │integration- │
-     │ :9010      │  │    :9007     │  │api (lookup) │
-     │Knowledge   │  │Voice Agents  │  │             │
-     │Base        │  │              │  └─────────────┘
-     └────────────┘  └──────┬───────┘
-                            │
-                ┌───────────┴──────────────────┐
-                │   Telephony Gateway          │
-                │(Twilio, Vonage, etc.)        │
-                │(Direct WebSocket/SIP)        │
-                └──────────────────────────────┘
-```
 
-## Persistent Data Layer
+---
 
-### Storage Infrastructure
+## Service Responsibilities
 
-| Service        | Port | Type               | Purpose                       | Components                                                     |
-| -------------- | ---- | ------------------ | ----------------------------- | -------------------------------------------------------------- |
-| **PostgreSQL** | 5432 | Relational DB      | Persistent data storage       | web_db, assistant_db, integration_db, endpoint_db, document_db |
-| **Redis**      | 6379 | In-Memory Cache    | Sessions, caching, job queues | DB:0 (Cache), DB:1 (Sessions), DB:2 (Jobs & Queues)            |
-| **OpenSearch** | 9200 | Search & Analytics | Full-text search, indexing    | Conversations, Metrics, Documents, Audit Logs                  |
+| Service             | Port      | Language | Responsibility                                      |
+| ------------------- | --------- | -------- | --------------------------------------------------- |
+| **web-api**         | 9001      | Go       | Auth, organizations, projects, credential vault     |
+| **assistant-api**   | 9007      | Go       | Voice orchestration, STT/TTS pipeline, telephony    |
+| **integration-api** | 9004      | Go       | LLM/STT/TTS provider integrations, OAuth            |
+| **endpoint-api**    | 9005      | Go       | Webhook management, event routing, retry            |
+| **document-api**    | 9010      | Python   | Document processing, embeddings, RAG (FastAPI)      |
+| **ui**              | 3000      | React/TS | Frontend dashboard                                  |
+| **nginx**           | 8080      | —        | Reverse proxy, WebSocket upgrade, SSL/TLS           |
+
+---
+
+## Nginx Routing
+
+The Nginx gateway at port 8080 routes requests based on the gRPC service path prefix:
+
+| Path Pattern                              | Upstream          | Protocol         |
+| ----------------------------------------- | ----------------- | ---------------- |
+| `/talk_api.TalkService/AssistantTalk`     | assistant-api:9007 | WebSocket upgrade |
+| `/talk_api`                               | assistant-api:9007 | gRPC-web         |
+| `/tool_api`, `/web_api`, `/vault_api`, `/workflow_api`, `/assistant_api`, `/knowledge_api`, `/connect_api`, `/lead_api` | web-api:9001 | gRPC-web |
+| `/rapida-data/assets/workflow/`           | Static files      | HTTP             |
+| `/`                                       | web-api:9001      | HTTP proxy       |
+
+> **Real-time audio** connections use the WebSocket upgrade path. The browser SDK connects to `ws://hostname:8080/talk_api.TalkService/AssistantTalk` for bidirectional audio streaming.
+
+---
+
+## Data Layer
 
 ### PostgreSQL Databases
 
-| Database Name      | Purpose                      | Key Tables                                       |
-| ------------------ | ---------------------------- | ------------------------------------------------ |
-| **web_db**         | User & org management        | users, organizations, projects, credentials      |
-| **assistant_db**   | Voice agents & conversations | assistants, conversations, messages, audio_files |
-| **integration_db** | Provider integrations        | integrations, credentials, oauth_tokens          |
-| **endpoint_db**    | Webhooks & events            | webhooks, webhook_events, webhook_deliveries     |
-| **document_db**    | Knowledge base & embeddings  | documents, chunks, embeddings, knowledge_bases   |
+PostgreSQL 15 is the primary relational store. Each service owns a dedicated database. The `init.sql` initializes all required databases on first container start.
 
-### Redis Data Structure
-
-| DB Number | Purpose        | Usage                                   |
-| --------- | -------------- | --------------------------------------- |
-| **DB 0**  | Cache & Config | Application cache, configuration values |
-| **DB 1**  | Session Store  | User sessions, auth tokens              |
-| **DB 2**  | Job Queues     | Background job queue, Celery tasks      |
-| **DB 3+** | Reserved       | Future use, custom applications         |
-
-### OpenSearch Indices
-
-| Index Name        | Data Type            | Purpose                                    |
-| ----------------- | -------------------- | ------------------------------------------ |
-| **conversations** | Conversation records | Full-text search, conversation transcripts |
-| **metrics**       | Performance data     | Call metrics, performance analytics        |
-| **documents**     | Knowledge content    | Knowledge base search, embeddings          |
-| **audit-logs**    | System events        | Audit trail, event tracking                |
-
-## Core Components
-
-### API Services (Microservices)
-
-| Service             | Port | Purpose                                           | Built With       |
-| ------------------- | ---- | ------------------------------------------------- | ---------------- |
-| **web-api**         | 9001 | Dashboard backend, user management, orchestration | Go + Gin         |
-| **assistant-api**   | 9007 | Voice agents, conversations, real-time audio      | Go + gRPC        |
-| **integration-api** | 9004 | Third-party integrations, credential management   | Go + Gin         |
-| **endpoint-api**    | 9005 | Webhooks, callbacks, external events              | Go + Gin         |
-| **document-api**    | 9010 | Knowledge base, RAG, embeddings                   | Python + FastAPI |
-
-### Frontend
-
-| Service | Port | Purpose       | Built With         |
-| ------- | ---- | ------------- | ------------------ |
-| **ui**  | 3000 | Web dashboard | React + TypeScript |
-
-### API Gateway
-
-| Service   | Port | Purpose                                |
-| --------- | ---- | -------------------------------------- |
-| **nginx** | 8080 | Reverse proxy, load balancing, SSL/TLS |
-
-### Infrastructure Services
-
-| Service        | Port | Purpose                     | Data                            |
-| -------------- | ---- | --------------------------- | ------------------------------- |
-| **PostgreSQL** | 5432 | Relational database         | 4 separate databases            |
-| **Redis**      | 6379 | Cache, queues, sessions     | In-memory store                 |
-| **OpenSearch** | 9200 | Full-text search, analytics | Indices for conversations, logs |
-
-## Data Flow
-
-### 1. User Authentication
+| Database         | Owners                        | Purpose                                           |
+| ---------------- | ----------------------------- | ------------------------------------------------- |
+| `web_db`         | web-api                       | Users, organizations, projects, API keys, vault   |
+| `assistant_db`   | assistant-api, document-api   | Assistants, conversations, messages, embeddings   |
+| `integration_db` | integration-api               | Integrations, provider credentials, OAuth tokens  |
+| `endpoint_db`    | endpoint-api                  | Webhooks, endpoints, delivery logs                |
 
 ```
-Dashboard (UI)
-  → nginx (8080)
-  → web-api (9001)
-  → PostgreSQL (web_db)
-  → Redis (session cache)
+PostgreSQL :5432
+├── web_db        ← web-api
+├── assistant_db  ← assistant-api + document-api
+├── integration_db ← integration-api
+└── endpoint_db   ← endpoint-api
 ```
 
-### 2. Create Voice Agent
-
-```
-Dashboard (UI)
-  → nginx (8080)
-  → web-api (9001) [stores metadata]
-  → PostgreSQL (web_db)
-  → assistant-api (9007) [creates agent]
-  → PostgreSQL (assistant_db)
-  → OpenSearch [index agent]
-```
-
-### 3. Start Voice Conversation
-
-```
-Voice Device (Phone/Browser)
-  → nginx (8080) [WebSocket]
-  → assistant-api (9007) [streams audio]
-  → Redis [store session state]
-  → integration-api (9004) [get LLM provider]
-  → PostgreSQL (assistant_db) [store conversation]
-  → OpenSearch [index messages]
-  → endpoint-api (9005) [trigger webhooks]
-```
-
-### 4. Upload Knowledge Document
-
-```
-Dashboard (UI)
-  → nginx (8080)
-  → web-api (9001) [validates]
-  → document-api (9010) [processes]
-  → PostgreSQL (document_db) [stores metadata]
-  → Redis [job queue]
-  → OpenSearch [indexes chunks]
-```
-
-## Service Communication
-
-### Synchronous Communication
-
-- **REST APIs**: Services expose HTTP/REST endpoints
-- **gRPC**: Internal service-to-service communication (assistant-api)
-- **WebSocket**: Real-time bidirectional communication for voice streams
-
-### Asynchronous Communication
-
-- **Redis Pub/Sub**: Real-time notifications, session updates
-- **Redis Queues**: Background job processing (document processing, embeddings)
-- **Webhooks**: External event notifications via HTTP callbacks
-
-## Database Strategy
-
-### PostgreSQL Databases
-
-```
-┌─────────────────────────────────────────────────────┐
-│          PostgreSQL Server (5432)                   │
-├──────────────┬──────────────┬──────────────┬────────┤
-│  web_db      │ assistant_db │integration_db│endpoint│
-├──────────────┼──────────────┼──────────────┼────────┤
-│ Users        │ Assistants   │ Integrations │ Webhooks│
-│ Orgs         │ Conversations│ Providers    │ Events  │
-│ Projects     │ Messages     │ Credentials  │ Logs    │
-│ Credentials  │ Audio Files  │              │         │
-│ API Keys     │ Analysis     │              │         │
-└──────────────┴──────────────┴──────────────┴────────┘
-```
+> The `web_db` is defined as the default database in `POSTGRES_DB` in docker-compose and created automatically by the PostgreSQL image. The remaining three databases are created by `docker/postgres/init.sql`.
 
 ### Redis Databases
 
-```
-┌──────────────────────────────────────┐
-│    Redis Server (6379)               │
-├────────┬────────┬────────┬───────────┤
-│ DB 0   │ DB 1   │ DB 2   │ DB 3+     │
-├────────┼────────┼────────┼───────────┤
-│ Cache  │ Sessions│ Jobs   │ Reserved  │
-│ Config │ Auth   │ Queues │           │
-└────────┴────────┴────────┴───────────┘
-```
+Redis 7 serves as the in-memory cache, session store, and job broker.
+
+| DB  | Purpose                                          |
+| --- | ------------------------------------------------ |
+| 0   | General application cache (GORM second-level cache) |
+| 1   | Session / auth token cache                       |
+| 2   | Celery job broker (document-api background jobs) |
 
 ### OpenSearch Indices
 
-```
-┌─────────────────────────────────────────────────────┐
-│        OpenSearch Cluster (9200)                    │
-├──────────────┬─────────────┬──────────────┬────────┤
-│ Conversations│ Metrics     │ Documents    │ Logs   │
-├──────────────┼─────────────┼──────────────┼────────┤
-│ Transcripts  │ Call Metrics│ Knowledge    │ Events │
-│ Messages     │ Performance │ Chunks       │ Traces │
-│ Metadata     │ Aggregation │ Embeddings   │        │
-└──────────────┴─────────────┴──────────────┴────────┘
-```
+OpenSearch 2.11.1 handles full-text search and vector similarity search.
 
-## Deployment Models
+| Index                     | Producer          | Purpose                                  |
+| ------------------------- | ----------------- | ---------------------------------------- |
+| `assistant-conversations` | assistant-api     | Searchable conversation transcripts      |
+| `conversation-metrics`    | assistant-api     | Call latency and quality metrics         |
+| `documents-*`             | document-api      | Knowledge base chunks and embeddings     |
+| `logs-*`                  | assistant-api     | Structured application logs              |
 
-### Docker Compose (Development/Single Server)
+---
 
-All services run as containers on a single server:
+## Data Flows
 
-```yaml
-Services:
-  - PostgreSQL container
-  - Redis container
-  - OpenSearch container
-  - web-api container
-  - assistant-api container
-  - integration-api container
-  - endpoint-api container
-  - document-api container
-  - ui container
-  - nginx container
+### 1. User Authentication
 
-Network: api-network (shared bridge network)
-Storage: Volumes for data persistence
+```mermaid
+sequenceDiagram
+    participant UI as Browser (UI :3000)
+    participant Nginx as Nginx :8080
+    participant Web as web-api :9001
+    participant PG as PostgreSQL (web_db)
+    participant Cache as Redis
+
+    UI->>Nginx: POST /web_api.AuthService/Login
+    Nginx->>Web: gRPC-web forward
+    Web->>PG: Verify credentials
+    PG-->>Web: User record
+    Web->>Cache: Store session token
+    Web-->>UI: JWT + refresh token
 ```
 
-### Kubernetes (Production)
+### 2. Voice Conversation
 
-Services can be deployed to Kubernetes clusters:
+```mermaid
+sequenceDiagram
+    participant Client as Phone / Browser
+    participant Nginx as Nginx :8080
+    participant Asst as assistant-api :9007
+    participant Integ as integration-api :9004
+    participant LLM as LLM Provider
+    participant STT as STT Provider
+    participant TTS as TTS Provider
+    participant PG as PostgreSQL
+    participant OS as OpenSearch
+    participant EP as endpoint-api :9005
 
-```
-┌──────────────────────────────────────────┐
-│         Kubernetes Cluster               │
-├──────────────────────────────────────────┤
-│ API Services (Deployments)               │
-│  ├─ web-api (3+ replicas)               │
-│  ├─ assistant-api (3+ replicas)         │
-│  ├─ integration-api (2+ replicas)       │
-│  ├─ endpoint-api (2+ replicas)          │
-│  └─ document-api (2+ replicas)          │
-├──────────────────────────────────────────┤
-│ Stateful Services (StatefulSets)        │
-│  ├─ PostgreSQL                          │
-│  ├─ Redis                               │
-│  └─ OpenSearch                          │
-├──────────────────────────────────────────┤
-│ Ingress → Nginx Service                  │
-└──────────────────────────────────────────┘
-```
-
-### AWS Deployment
-
-Services deployed with AWS CodeDeploy:
-
-```
-├─ EC2 Instances (application servers)
-│  ├─ web-api
-│  ├─ assistant-api
-│  ├─ integration-api
-│  ├─ endpoint-api
-│  └─ document-api
-├─ RDS PostgreSQL (managed database)
-├─ ElastiCache Redis (managed cache)
-├─ OpenSearch Domain (managed search)
-└─ ALB (Application Load Balancer)
+    Client->>Nginx: WebSocket /talk_api.TalkService/AssistantTalk
+    Nginx->>Asst: WebSocket upgrade (keepalive 64)
+    Asst->>PG: Create conversation record
+    Client->>Asst: Stream PCM / G.711 audio
+    Asst->>Asst: VAD: voice activity detected
+    Asst->>STT: Stream audio chunks
+    STT-->>Asst: Transcribed text
+    Asst->>Integ: gRPC: execute LLM with transcript + context
+    Integ->>LLM: Forward with system prompt + history
+    LLM-->>Integ: Stream response tokens
+    Integ-->>Asst: Streamed tokens
+    Asst->>TTS: Text → audio synthesis
+    TTS-->>Asst: Audio chunks
+    Asst-->>Client: Stream synthesized audio
+    Asst->>PG: Persist messages (assistant_db)
+    Asst->>OS: Index conversation transcript
+    Asst->>EP: gRPC: fire conversation.message webhook
+    EP->>EP: Deliver to registered endpoints (with retry)
 ```
 
-## Security Architecture
+### 3. Inbound Phone Call (Twilio / Vonage)
 
-### Authentication & Authorization
+```mermaid
+sequenceDiagram
+    participant Tel as Telephony Provider
+    participant Asst as assistant-api :9007
+    participant Integ as integration-api :9004
+    participant EP as endpoint-api :9005
 
-```
-┌─────────────┐
-│   User      │
-└──────┬──────┘
-       │
-  ┌────▼─────────────────────┐
-  │ web-api Authentication   │
-  │ - JWT Token Generation   │
-  │ - OAuth 2.0 Integration  │
-  │ - Service Credentials    │
-  └────┬─────────────────────┘
-       │
-  ┌────▼──────────────────────┐
-  │ All API Services          │
-  │ - Verify JWT Token        │
-  │ - Check Organization      │
-  │ - Check Project Scope     │
-  └───────────────────────────┘
+    Tel->>Asst: Webhook: inbound call event
+    Asst->>Asst: Resolve assistant for this number
+    Asst->>Integ: Fetch LLM + STT + TTS credentials
+    Tel->>Asst: Stream audio (WebSocket / SIP)
+    Note over Asst: STT → LLM → TTS pipeline runs
+    Asst-->>Tel: Stream synthesized audio
+    Asst->>EP: Fire conversation.started webhook
+    Tel->>Asst: Call ended
+    Asst->>EP: Fire conversation.ended webhook
 ```
 
-### Credential Management
+### 4. SIP / Asterisk Connection
 
-```
-User Credentials
-  → Encrypted at rest (AES-256)
-  → Stored in PostgreSQL (integration_db)
-  → Retrieved only when needed
-  → Never exposed in logs
-  → Rotation support available
-```
+```mermaid
+sequenceDiagram
+    participant Asterisk as Asterisk PBX
+    participant Asst as assistant-api :4573
 
-### Network Security
-
-```
-┌─────────────┐
-│ Internet    │
-└──────┬──────┘
-       │
-  ┌────▼──────┐
-  │   Nginx    │ (SSL/TLS termination)
-  │ Port 8080  │
-  └────┬───────┘
-       │
-  ┌────▼──────────────────────────────────┐
-  │   Internal API Network (api-network)   │
-  │   Services communicate within network  │
-  │   PostgreSQL (internal only)           │
-  │   Redis (internal only)                │
-  │   OpenSearch (internal only)           │
-  └────────────────────────────────────────┘
+    Asterisk->>Asst: AudioSocket TCP connect :4573
+    Asst->>Asst: Resolve assistant configuration
+    Asterisk->>Asst: Stream G.711 µ-law audio frames
+    Asst-->>Asterisk: Stream synthesized audio frames
+    Asterisk->>Asst: Hangup signal
+    Asst->>Asst: End conversation, persist record
 ```
 
-## Scaling Considerations
+### 5. Document Upload and RAG Indexing
 
-### Horizontal Scaling
+```mermaid
+sequenceDiagram
+    participant UI as Dashboard (UI)
+    participant Web as web-api :9001
+    participant Doc as document-api :9010
+    participant PG as PostgreSQL (assistant_db)
+    participant Redis as Redis (Celery queue)
+    participant OS as OpenSearch
 
-Services that can scale independently:
-
-```
-web-api:          Stateless (scale 1-N replicas)
-assistant-api:    Mostly stateless (scale 1-N)
-integration-api:  Stateless (scale 1-N)
-endpoint-api:     Stateless (scale 1-N)
-document-api:     Stateless (scale 1-N)
-
-PostgreSQL:       Vertical scaling / Read replicas
-Redis:            Vertical scaling / Cluster mode
-OpenSearch:       Horizontal (node count) + sharding
-```
-
-### Load Distribution
-
-```
-Incoming Traffic
-  ↓
-Nginx Load Balancer
-  ├→ web-api-1, web-api-2, web-api-3
-  ├→ assistant-api-1, assistant-api-2, assistant-api-3
-  ├→ integration-api-1, integration-api-2
-  ├→ endpoint-api-1, endpoint-api-2
-  └→ document-api-1, document-api-2
+    UI->>Web: Upload document (PDF/DOCX/etc.)
+    Web->>Doc: HTTP POST /api/v1/document/upload
+    Doc->>PG: Store document metadata
+    Doc->>Redis: Enqueue process_document Celery task
+    Doc-->>Web: { document_id, status: "processing" }
+    Redis->>Doc: Worker picks up task
+    Doc->>Doc: Extract text → chunk → embed
+    Doc->>PG: Store chunks + embeddings
+    Doc->>OS: Index chunks for full-text search
+    Doc->>PG: Update status: "completed"
 ```
 
-## Development vs Production
+---
 
-### Development (Docker Compose)
+## Communication Patterns
 
-- Single PostgreSQL instance
-- Single Redis instance
-- Single OpenSearch node
-- All services on one network
-- Local volume storage
-- No SSL/TLS
-- No authentication for internal services
+### Synchronous
 
-### Production (Kubernetes/AWS)
+| Pattern       | Used For                                          | Implementation         |
+| ------------- | ------------------------------------------------- | ---------------------- |
+| **REST/HTTP** | External-facing API calls, health checks          | Gin framework          |
+| **gRPC**      | Inter-service calls (typed, schema-enforced)      | gRPC + protobuf        |
+| **gRPC-web**  | Browser → backend (gRPC over HTTP/1.1)            | improbable-eng grpc-web |
+| **WebSocket** | Real-time audio streaming (assistant-api)         | gorilla/websocket      |
 
-- PostgreSQL with replication and backups
-- Redis with high availability
-- OpenSearch with multiple nodes and sharding
-- Services with health checks and auto-recovery
-- Persistent block storage or managed services
-- SSL/TLS everywhere
-- Authentication for all internal communication
-- Monitoring, logging, and alerting
+### Asynchronous
+
+| Pattern            | Used For                                          | Implementation         |
+| ------------------ | ------------------------------------------------- | ---------------------- |
+| **Redis Pub/Sub**  | Real-time session updates, notifications          | go-redis               |
+| **Celery tasks**   | Document processing, embedding generation         | Redis broker           |
+| **Webhooks**       | External event delivery with retry                | endpoint-api           |
+
+---
+
+## Port Reference
+
+| Service         | Port | Protocol          | Notes                                              |
+| --------------- | ---- | ----------------- | -------------------------------------------------- |
+| nginx           | 8080 | HTTP / WebSocket  | External entry point                               |
+| ui              | 3000 | HTTP              | React development server / production build        |
+| web-api         | 9001 | HTTP + gRPC + gRPC-web | cmux multiplexed                              |
+| assistant-api   | 9007 | HTTP + gRPC + WebSocket | cmux multiplexed; real-time audio              |
+| assistant-api   | 4573 | TCP (AudioSocket) | Asterisk AudioSocket integration                   |
+| integration-api | 9004 | HTTP + gRPC       | cmux multiplexed                                   |
+| endpoint-api    | 9005 | HTTP + gRPC       | cmux multiplexed                                   |
+| document-api    | 9010 | HTTP (FastAPI)    | ASGI / uvicorn                                     |
+| PostgreSQL      | 5432 | TCP               | Internal only (not exposed publicly)               |
+| Redis           | 6379 | TCP               | Internal only                                      |
+| OpenSearch      | 9200 | HTTP              | Internal; 9600 for metrics                         |
+
+---
+
+## Scaling
+
+All application services are stateless and scale horizontally behind the Nginx load balancer.
+
+```mermaid
+graph LR
+    LB["Nginx\nLoad Balancer"]
+    LB --> wa1["web-api-1"]
+    LB --> wa2["web-api-2"]
+    LB --> aa1["assistant-api-1"]
+    LB --> aa2["assistant-api-2"]
+    LB --> ia1["integration-api-1"]
+    LB --> ea1["endpoint-api-1"]
+
+    subgraph Stateful
+        PG[("PostgreSQL\nvertical / read replicas")]
+        Redis[("Redis\ncluster mode")]
+        OS[("OpenSearch\nhorizontal sharding")]
+    end
+
+    wa1 & wa2 & aa1 & aa2 & ia1 & ea1 --> PG
+    wa1 & wa2 & aa1 & aa2 --> Redis
+    aa1 & aa2 --> OS
+```
+
+| Layer           | Scaling Strategy                          |
+| --------------- | ----------------------------------------- |
+| Application     | Horizontal (stateless pods/containers)    |
+| PostgreSQL      | Vertical + read replicas                  |
+| Redis           | Vertical or cluster mode                  |
+| OpenSearch      | Horizontal (node count + shard count)     |
+
+---
 
 ## Next Steps
 
-Learn about individual services:
-
-- [Web Console & API](/opensource/services/web-console)
-- [Web API](/opensource/services/web-api)
-- [Assistant API](/opensource/services/assistant-api)
-- [Integration API](/opensource/services/integration-api)
-- [Endpoint API](/opensource/services/endpoint-api)
-- [Document API](/opensource/services/document-api)
+- [Installation](/opensource/installation) — Deploy locally with Docker Compose
+- [Configuration](/opensource/configuration) — Environment variable reference
+- [Services Overview](/opensource/services) — Per-service documentation

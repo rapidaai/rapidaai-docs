@@ -530,27 +530,26 @@ sidebarTitle: "Installation"
 
     <CodeGroup>
       ```bash Web Api
-      go run ./cmd/web/main.go
+      go run cmd/web/web.go
       ```
 
       ```bash Assistant Api
-      go run ./cmd/assistant/main.go
+      go run cmd/assistant/assistant.go
       ```
 
       ```bash Endpoint Api
-      cd api/endpoint-api
-      go run ./cmd/endpoint/main.go
+      go run cmd/endpoint/endpoint.go
       ```
 
       ```bash Integration Api
-      cd api/integration-api
-      go run ./cmd/integration/main.go
+      go run cmd/integration/integration.go
       ```
 
       ```bash Document Api (Optional)
       cd api/document-api
       source venv/bin/activate
-      python -m uvicorn main:app --port 9010
+      cd ../..
+      PYTHONPATH=api/document-api uvicorn app.main:app --host 0.0.0.0 --port 9010
       ```
 
       ```bash Web console (UI)

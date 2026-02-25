@@ -1,208 +1,354 @@
 ---
-title: "Web Service"
-description: "Core platform orchestration and dashboard backend"
-sidebarTitle: "Web Service"
+title: "Web API"
+description: "Core platform backend. Handles authentication, organization management, credential vault, and acts as the gRPC proxy for all dashboard operations."
+sidebarTitle: "Web API"
 ---
 
-**Service Name**: web-api  
-**Port**: 9001  
-**Technology**: Go + Gin Framework  
-**Language**: Go 1.25+  
-**Database**: PostgreSQL (web_db)
+## Overview
 
-## Purpose
+The `web-api` is the primary API backend for the Rapida dashboard. Every request from the browser — authentication, organization setup, assistant management, credential storage — goes through this service. It also acts as the gRPC proxy for downstream services, validating JWT tokens before forwarding requests.
 
-The Web API is responsible for:
+<CardGroup cols={3}>
+  <Card title="Port" icon="server">
+    `9001` — HTTP · gRPC · gRPC-web (cmux)
+  </Card>
+  <Card title="Language" icon="code">
+    Go 1.25
+    Gin (REST) + gRPC
+  </Card>
+  <Card title="Storage" icon="database">
+    PostgreSQL `web_db`
+    Redis (session cache)
+  </Card>
+</CardGroup>
 
-- User authentication and authorization
-- Organization and workspace management
-- Project management
-- Credential storage and encryption
-- API key generation and validation
-- Dashboard API endpoints
-- Configuration management
-- Audit logging
+<Info>
+  All gRPC-web requests from the browser, except for real-time audio, are routed through `web-api`. The service validates the JWT and proxies the request to the correct downstream service using typed gRPC clients from `pkg/clients/`.
+</Info>
 
-## Key Features
+---
 
-### User Management
+## Components
 
-- User registration and login
-- JWT-based authentication
-- OAuth 2.0 integration (Google, GitHub, etc.)
-- Session management
-- Password reset and recovery
-- Multi-factor authentication support
+<AccordionGroup>
 
-### Organization & Workspace
+<Accordion title="Authentication & Session Management">
 
-- Create and manage organizations
-- Multi-tenancy with organization isolation
-- Workspace boundaries for projects
-- Project grouping and organization
-- Role-based access control (RBAC)
+Handles user registration, login, password recovery, OAuth 2.0 flows, and JWT issuance.
 
-### Credential Management
+| Feature | Detail |
+|---------|--------|
+| Token type | JWT (signed with `SECRET`, shared across all services) |
+| Token storage | Client-side (Authorization header) |
+| Session cache | Redis DB 1 |
+| OAuth providers | Google, GitHub, Microsoft (configured per deployment) |
+| Token expiry | Configurable; default 24 hours |
 
-- Secure storage of API keys (encrypted with AES-256)
-- Provider credential validation
-- Credential rotation support
-- Audit trail for credential access
-- Permission-based credential access
+</Accordion>
 
-### API Key Management
+<Accordion title="Organization & Project Hierarchy">
 
-- Generate API keys for service authentication
-- Revoke keys on demand
-- Track key usage and rotation
-- IP-based restrictions
-- Rate limiting per key
+Every resource in Rapida is scoped to an `Organization → Project` hierarchy. The web-api enforces this scoping at the gRPC interceptor level.
+
+```
+Organization
+└── Project
+    ├── Assistants
+    ├── Knowledge Bases
+    ├── Integrations
+    └── Webhooks
+```
+
+Each entity stores `organization_id` and `project_id` via the `Organizational` base model. The gRPC auth interceptor rejects any request where the JWT's organization claim does not match the target resource.
+
+</Accordion>
+
+<Accordion title="Credential Vault">
+
+Provider API keys and OAuth tokens are encrypted with AES-256 before storage. The encryption key is derived from `SECRET`. The vault is the source of truth for all provider credentials — `integration-api` reads from it at call time.
+
+| Operation | Behavior |
+|-----------|----------|
+| Store key | AES-256-GCM encrypt → write to `web_db` |
+| Retrieve key | Read from `web_db` → decrypt in-memory → forward to `integration-api` |
+| Rotate key | Replace ciphertext; existing calls in flight are unaffected |
+| Audit | Every vault read/write is logged with user ID and timestamp |
+
+</Accordion>
+
+<Accordion title="Internal gRPC Proxy">
+
+The web-api acts as a proxy for all dashboard gRPC calls. It validates the JWT, extracts the organization context, and forwards to the correct downstream service.
+
+| gRPC Path Prefix | Forwarded To |
+|-----------------|--------------|
+| `/web_api` | Local (web-api owns this) |
+| `/vault_api` | Local (web-api owns this) |
+| `/workflow_api` · `/assistant_api` | `assistant-api:9007` |
+| `/knowledge_api` | `assistant-api:9007` |
+| `/tool_api` · `/endpoint_api` · `/webhook_api` | `endpoint-api:9005` |
+| `/provider_api` · `/integration_api` | `integration-api:9004` |
+| `/connect_api` | Local (OAuth connector) |
+| `/document_api` | `document-api:9010` |
+| `/lead_api` | Local |
+
+</Accordion>
+
+<Accordion title="Entity and Data Model">
+
+All entities compose base GORM models:
+
+| Base Model | Fields |
+|------------|--------|
+| `Audited` | `id` (Snowflake), `created_at`, `updated_at` |
+| `Mutable` | `status`, `created_by`, `updated_by` |
+| `Organizational` | `project_id`, `organization_id` |
+
+IDs are generated as Snowflake IDs in the `BeforeCreate` GORM hook — no UUID dependency. The Snowflake generator is initialized at service startup using the service instance ID.
+
+</Accordion>
+
+</AccordionGroup>
+
+---
+
+## Request Flow
+
+```mermaid
+sequenceDiagram
+    participant Browser as Browser (Dashboard)
+    participant Nginx as Nginx :8080
+    participant Web as web-api :9001
+    participant PG as PostgreSQL (web_db)
+    participant Redis as Redis
+    participant DS as Downstream Service
+
+    Browser->>Nginx: gRPC-web POST /<service>_api.*
+    Nginx->>Web: Forward (all non-talk_api paths)
+    Web->>Web: JWT interceptor — validate token
+    Web->>PG: Check organization + project scope
+    alt Local service
+        Web->>PG: Execute operation
+        Web->>Redis: Update cache
+    else Downstream proxy
+        Web->>DS: gRPC forward with org context
+        DS-->>Web: Response
+    end
+    Web-->>Browser: gRPC-web response
+```
+
+---
 
 ## Configuration
 
-### Environment Variables
+Edit `docker/web-api/.web.env` before starting the service.
+
+### Required variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `SECRET` | ✅ Yes | `rpd_pks` | JWT signing secret — must match all services |
+| `POSTGRES__HOST` | ✅ Yes | `postgres` | PostgreSQL host |
+| `POSTGRES__DB_NAME` | ✅ Yes | `web_db` | Database name |
+| `POSTGRES__AUTH__USER` | ✅ Yes | `rapida_user` | Database user |
+| `POSTGRES__AUTH__PASSWORD` | ✅ Yes | — | Database password |
+| `REDIS__HOST` | ✅ Yes | `redis` | Redis host |
+| `INTEGRATION_HOST` | ✅ Yes | `integration-api:9004` | integration-api gRPC address |
+| `ENDPOINT_HOST` | ✅ Yes | `endpoint-api:9005` | endpoint-api gRPC address |
+| `ASSISTANT_HOST` | ✅ Yes | `assistant-api:9007` | assistant-api gRPC address |
+| `DOCUMENT_HOST` | ✅ Yes | `http://document-api:9010` | document-api HTTP address |
+
+### Tuning variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LOG_LEVEL` | `debug` | `debug` · `info` · `warn` · `error` |
+| `ENV` | `development` | `development` · `staging` · `production` |
+| `POSTGRES__MAX_OPEN_CONNECTION` | `10` | Database connection pool size |
+| `POSTGRES__MAX_IDEAL_CONNECTION` | `10` | Idle connections to keep open |
+| `REDIS__MAX_CONNECTION` | `5` | Redis connection pool size |
+| `ASSET_STORE__STORAGE_TYPE` | `local` | `local` · `s3` · `azure` |
+
+### Full environment file
 
 ```env
-# Service
+# ── Service identity ──────────────────────────────────────────────
 SERVICE_NAME=web-api
-PORT=9001
 HOST=0.0.0.0
-ENV=development|production
-LOG_LEVEL=debug|info|warn|error
-SECRET=your-secret-key-32-chars
+PORT=9001
+LOG_LEVEL=debug
+SECRET=rpd_pks
+ENV=development
 
-# Database
+# ── PostgreSQL ────────────────────────────────────────────────────
 POSTGRES__HOST=postgres
 POSTGRES__PORT=5432
 POSTGRES__DB_NAME=web_db
 POSTGRES__AUTH__USER=rapida_user
 POSTGRES__AUTH__PASSWORD=rapida_db_password
-POSTGRES__MAX_OPEN_CONNECTION=20
+POSTGRES__MAX_OPEN_CONNECTION=10
 POSTGRES__MAX_IDEAL_CONNECTION=10
-POSTGRES__SSL_MODE=disable|require
+POSTGRES__SSL_MODE=disable
 
-# Redis
+# ── Redis (second-level GORM cache) ───────────────────────────────
+POSTGRES__SLC_CACHE__HOST=redis
+POSTGRES__SLC_CACHE__PORT=6379
+POSTGRES__SLC_CACHE__DB=1
+POSTGRES__SLC_CACHE__MAX_CONNECTION=10
+
+# ── Redis ─────────────────────────────────────────────────────────
 REDIS__HOST=redis
 REDIS__PORT=6379
-REDIS__DB=0
-REDIS__MAX_CONNECTION=10
-REDIS__PASSWORD=
+REDIS__MAX_CONNECTION=5
 
-# Security
-JWT_SECRET=your-jwt-secret-key
-JWT_EXPIRY=24h
-ENCRYPTION_KEY=base64-encoded-256-bit-key
-CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+# ── Asset storage ─────────────────────────────────────────────────
+ASSET_STORE__STORAGE_TYPE=local
+ASSET_STORE__STORAGE_PATH_PREFIX=/app/rapida-data/assets/web
 
-# OAuth (optional)
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-GITHUB_CLIENT_ID=
-GITHUB_CLIENT_SECRET=
-
-# Email (optional)
-SENDGRID_API_KEY=
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_USER=
-SMTP_PASSWORD=
+# ── Internal service addresses ────────────────────────────────────
+INTEGRATION_HOST=integration-api:9004
+ENDPOINT_HOST=endpoint-api:9005
+ASSISTANT_HOST=assistant-api:9007
+WEB_HOST=web-api:9001
+DOCUMENT_HOST=http://document-api:9010
+UI_HOST=https://localhost:3000
 ```
 
-## Source Code Structure
+<Warning>
+  `SECRET` is used for JWT signing **and** credential vault encryption. All services must share the same value. Changing it in production will invalidate all active sessions and make stored vault credentials unreadable. Rotate carefully.
+</Warning>
 
-```
-api/web-api/
-├── api/                    # HTTP handlers
-│   ├── auth.go            # Authentication endpoints
-│   ├── organization.go     # Organization endpoints
-│   ├── project.go          # Project endpoints
-│   ├── user.go             # User endpoints
-│   ├── vault.go            # Credential management
-│   ├── notification.go     # Notification endpoints
-│   └── health/            # Health check handlers
-│
-├── authenticator/         # Authentication middleware
-│   └── authenticator.go
-│
-├── internal/
-│   ├── entity/            # Data models
-│   │   ├── user.go
-│   │   ├── organization.go
-│   │   ├── provider.go
-│   │   └── notification.go
-│   │
-│   ├── service/           # Business logic
-│   │   ├── user.service.go
-│   │   ├── organization.service.go
-│   │   ├── project.service.go
-│   │   ├── vault.service.go
-│   │   ├── notification.service.go
-│   │   └── {service}/     # Service implementations
-│   │
-│   ├── connect/           # OAuth providers
-│   │   ├── google.go
-│   │   ├── github.go
-│   │   ├── microsoft.go
-│   │   └── ...
-│   │
-│   └── store/             # Database access
-│
-├── migrations/            # Database migrations
-│   ├── 000001_initial_schema.up.sql
-│   └── 000001_initial_schema.down.sql
-│
-├── router/                # Route definitions
-│   └── web.go
-│
-├── config/
-│   └── config.go
-│
-├── main.go               # Entry point
-└── README.md
-```
+---
 
-## Building and Running
+## Running
 
-### From Source
+<Tabs>
+
+<Tab title="Docker Compose">
 
 ```bash
-# Build binary
-go build -o web-api ./cmd/web/main.go
+# Start web-api and its dependencies
+make up-web
+
+# Follow logs
+make logs-web
+
+# Rebuild after code changes (no cache)
+make rebuild-web
+
+# Open a shell in the container
+make shell-web
+```
+
+</Tab>
+
+<Tab title="From Source">
+
+Requires Go 1.25, PostgreSQL 15, and Redis 7 running locally.
+
+```bash
+# Load base env file
+export $(grep -v '^#' docker/web-api/.web.env | xargs)
+
+# Override Docker hostnames
+export POSTGRES__HOST=localhost
+export REDIS__HOST=localhost
+export INTEGRATION_HOST=localhost:9004
+export ENDPOINT_HOST=localhost:9005
+export ASSISTANT_HOST=localhost:9007
+export DOCUMENT_HOST=http://localhost:9010
 
 # Run
-./web-api
-
-# With environment file
-export $(cat env/.web.env | xargs)
-./web-api
+go run cmd/web/web.go
 ```
 
-### With Docker
+</Tab>
+
+</Tabs>
+
+---
+
+## Database Migrations
+
+Migrations run automatically at service startup using [golang-migrate](https://github.com/golang-migrate/migrate). Migration files are in `api/web-api/migrations/` and follow sequential naming:
+
+```
+000001_initial_schema.up.sql
+000001_initial_schema.down.sql
+000002_add_oauth_tokens.up.sql
+```
+
+To run manually during local development:
 
 ```bash
-# Build image
-docker build -f docker/web-api/Dockerfile -t rapida-web-api:latest .
+go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
-# Run container
-docker run \
-  -p 9001:9001 \
-  --env-file docker/web-api/.web.env \
-  --network api-network \
-  rapida-web-api:latest
+migrate \
+  -path api/web-api/migrations \
+  -database "postgresql://rapida_user:rapida_db_password@localhost:5432/web_db?sslmode=disable" \
+  up
 ```
 
-### With Docker Compose
+---
+
+## Health & Observability
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /readiness/` | Reports whether the service is ready (DB + Redis connected) |
+| `GET /healthz/` | Liveness probe |
 
 ```bash
-# Start only web-api
-docker compose up web-api
-
-# Or with all services
-docker compose up -d
+curl http://localhost:9001/readiness/
 ```
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+
+<Accordion title="Service exits immediately on startup">
+The most common cause is PostgreSQL not yet healthy. Check `make logs-web` and confirm the `postgres` container is `Up (healthy)`.
+
+```bash
+docker compose ps postgres
+make logs-web | head -40
+```
+</Accordion>
+
+<Accordion title="JWT validation fails across services">
+All services must share the same `SECRET` value. Confirm it is identical in `.web.env`, `.assistant.env`, `.integration.env`, and `.endpoint.env`.
+</Accordion>
+
+<Accordion title="OAuth login redirects fail">
+- Ensure `GOOGLE_CLIENT_ID` / `GITHUB_CLIENT_ID` are set in `.web.env`.
+- Verify the redirect URI registered with the OAuth provider exactly matches `UI_HOST`.
+</Accordion>
+
+<Accordion title="gRPC proxy returns 'service unavailable'">
+- The target downstream service must be running and healthy.
+- Verify `INTEGRATION_HOST`, `ENDPOINT_HOST`, `ASSISTANT_HOST` point to reachable addresses.
+- Check `make status` to confirm all containers are `Up`.
+</Accordion>
+
+</AccordionGroup>
+
+---
 
 ## Next Steps
 
-- [Assistant API](/opensource/services/assistant-api)
-- [Installation Guide](/opensource/installation)
-- [Architecture Overview](/opensource/architecture)
+<CardGroup cols={2}>
+  <Card title="Assistant API" icon="mic" href="/opensource/services/assistant-api">
+    Voice orchestration service that web-api proxies to.
+  </Card>
+  <Card title="Integration API" icon="plug" href="/opensource/services/integration-api">
+    Provider credentials used by the vault.
+  </Card>
+  <Card title="Installation Guide" icon="rocket" href="/opensource/installation">
+    Deploy the full platform with Docker Compose.
+  </Card>
+  <Card title="Architecture" icon="diagram-project" href="/opensource/architecture">
+    Full system topology and routing.
+  </Card>
+</CardGroup>
