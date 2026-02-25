@@ -1,0 +1,53 @@
+---
+title: "Rev.ai STT"
+description: "Configure Rev.ai real-time speech-to-text in assistant-api."
+sidebarTitle: "Rev.ai"
+---
+
+Rev.ai provides real-time streaming speech recognition with a focus on accuracy.
+
+**Provider identifier:** `revai`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | Rev.ai access token from [rev.ai/access_token](https://www.rev.ai/access_token) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get a Rev.ai access token">
+Sign in at [rev.ai](https://www.rev.ai) → **Access Tokens → Generate Access Token**.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **Rev.ai**, enter `key` = your access token.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **STT Provider**, select **Rev.ai**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `language` | `en` | Language code |
+| `metadata` | `call-session` | Optional metadata tag |
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Deepgram" icon="waveform" href="/opensource/services/assistant-api/stt/deepgram">
+    Alternative low-latency STT
+  </Card>
+  <Card title="STT Overview" icon="waveform" href="/opensource/services/assistant-api/stt/overview">
+    All STT providers
+  </Card>
+</CardGroup>

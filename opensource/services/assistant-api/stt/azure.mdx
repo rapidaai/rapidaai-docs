@@ -1,0 +1,54 @@
+---
+title: "Azure STT"
+description: "Configure Azure Cognitive Services Speech-to-Text in assistant-api."
+sidebarTitle: "Azure"
+---
+
+Azure Cognitive Services Speech provides real-time streaming transcription with Neural Speech models and support for 140+ languages.
+
+**Provider identifier:** `azure-speech-service`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | Azure Speech subscription key |
+| `region` | Azure region, e.g. `eastus`, `westeurope` |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Create an Azure Speech resource">
+In [Azure Portal](https://portal.azure.com) → **Create a resource → AI + Machine Learning → Speech**. Copy the **Key 1** and **Region**.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **Azure Speech**, enter `key` = subscription key and `region` = Azure region.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **STT Provider**, select **Azure Speech**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `language` | `en-US` | BCP-47 language code |
+| `model` | `latest` | Speech model version |
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Azure TTS" icon="volume" href="/opensource/services/assistant-api/tts/azure">
+    Azure Neural text-to-speech
+  </Card>
+  <Card title="STT Overview" icon="waveform" href="/opensource/services/assistant-api/stt/overview">
+    All STT providers
+  </Card>
+</CardGroup>

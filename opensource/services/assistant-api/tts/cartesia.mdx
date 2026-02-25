@@ -1,0 +1,54 @@
+---
+title: "Cartesia TTS"
+description: "Configure Cartesia ultra-low latency text-to-speech in assistant-api."
+sidebarTitle: "Cartesia"
+---
+
+Cartesia is designed for real-time voice applications, offering ultra-low latency streaming synthesis optimised for conversational AI.
+
+**Provider identifier:** `cartesia`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | Cartesia API key from [play.cartesia.ai](https://play.cartesia.ai) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get a Cartesia API key">
+Sign in at [play.cartesia.ai](https://play.cartesia.ai) → **API Keys**.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **Cartesia**, enter `key` = your API key.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **TTS Provider**, select **Cartesia**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `voice_id` | `a0e99841-438c-4a64-b679-ae501e7d6091` | Cartesia voice ID |
+| `model_id` | `sonic-english` | Model: `sonic-english`, `sonic-multilingual` |
+| `language` | `en` | Language code |
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="ElevenLabs" icon="volume" href="/opensource/services/assistant-api/tts/elevenlabs">
+    High-fidelity voice cloning
+  </Card>
+  <Card title="TTS Overview" icon="volume" href="/opensource/services/assistant-api/tts/overview">
+    All TTS providers
+  </Card>
+</CardGroup>

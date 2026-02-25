@@ -1,0 +1,108 @@
+---
+title: "Text-to-Speech — Overview"
+description: "TTS transformer interface, factory function, and supported providers in assistant-api."
+sidebarTitle: "Overview"
+---
+
+The `assistant-api` decouples speech synthesis from provider-specific logic through the same **transformer layer** as STT. Each TTS provider implements `Transformers[LLMPacket]` and is resolved at call time by the factory.
+
+---
+
+## Transformer Interface
+
+```go
+// api/assistant-api/internal/type/transformer.go
+type Transformers[IN any] interface {
+    Initialize() error
+    Transform(ctx context.Context, in IN) error
+    Close(ctx context.Context) error
+}
+
+// Type alias for TTS
+type TextToSpeechTransformer = Transformers[LLMPacket]
+```
+
+### LLMPacket Types
+
+The `LLMPacket` interface is satisfied by three packet types that TTS providers must handle:
+
+| Packet Type | Description | Action |
+|-------------|-------------|--------|
+| `LLMResponseDeltaPacket` | A text token from the LLM stream | Send token to TTS for synthesis |
+| `LLMResponseDonePacket` | End of LLM response | Flush/finalise synthesis |
+| `InterruptionPacket` | User started speaking — cancel TTS | Clear/cancel queued audio |
+
+```go
+// Example from Deepgram TTS:
+func (d *deepgramTTS) Transform(ctx context.Context, in LLMPacket) error {
+    switch pkt := in.(type) {
+    case InterruptionPacket:
+        return d.conn.WriteJSON(map[string]string{"type": "Clear"})
+    case LLMResponseDeltaPacket:
+        return d.conn.WriteJSON(map[string]string{"type": "Speak", "text": pkt.Text})
+    case LLMResponseDonePacket:
+        return d.conn.WriteJSON(map[string]string{"type": "Flush"})
+    }
+    return nil
+}
+```
+
+---
+
+## Factory Function
+
+```go
+// api/assistant-api/internal/transformer/transformer.go
+func GetTextToSpeechTransformer(
+    ctx        context.Context,
+    logger     commons.Logger,
+    provider   string,                     // AudioTransformer constant string
+    credential *protos.VaultCredential,    // decrypted vault credential
+    onPacket   func(AudioPacket),          // callback invoked with each synthesised audio chunk
+    opts       utils.Option,
+) (TextToSpeechTransformer, error)
+```
+
+---
+
+## Supported TTS Providers
+
+| Provider | Identifier | Streaming | Notes |
+|----------|-----------|-----------|-------|
+| **Deepgram Aura** | `deepgram` | ✅ | Low-latency WebSocket, `wss://api.deepgram.com/v1/speak` |
+| **ElevenLabs** | `elevenlabs` | ✅ | High-fidelity voice cloning |
+| **Cartesia** | `cartesia` | ✅ | Ultra-low latency streaming |
+| **Google Cloud TTS** | `google-speech-service` | ✅ | WaveNet / Neural2, 100+ voices |
+| **Azure Cognitive** | `azure-speech-service` | ✅ | Neural voices, 140+ languages |
+| **Sarvam AI** | `sarvamai` | ✅ | Indian languages |
+| **Resemble AI** | `resemble` | ✅ | Voice cloning |
+| **OpenAI TTS** | `openai` | ✅ | `tts-1`, `tts-1-hd` |
+| **AWS Polly** | `aws` | ✅ | Neural voices |
+
+---
+
+## Provider Pages
+
+<CardGroup cols={3}>
+  <Card title="Deepgram Aura" icon="waveform" href="/opensource/services/assistant-api/tts/deepgram">
+    Low-latency WebSocket synthesis
+  </Card>
+  <Card title="ElevenLabs" icon="volume" href="/opensource/services/assistant-api/tts/elevenlabs">
+    High-fidelity voice cloning
+  </Card>
+  <Card title="Cartesia" icon="bolt" href="/opensource/services/assistant-api/tts/cartesia">
+    Ultra-low latency
+  </Card>
+  <Card title="Google Cloud" icon="google" href="/opensource/services/assistant-api/tts/google">
+    WaveNet / Neural2
+  </Card>
+  <Card title="Azure" icon="microsoft" href="/opensource/services/assistant-api/tts/azure">
+    Neural voices, 140+ languages
+  </Card>
+  <Card title="Sarvam AI" icon="language" href="/opensource/services/assistant-api/tts/sarvamai">
+    Indian languages
+  </Card>
+  <Card title="Configure Your Own" icon="code" href="/opensource/services/assistant-api/tts/custom">
+    Implement the Transformers interface
+  </Card>
+</CardGroup>

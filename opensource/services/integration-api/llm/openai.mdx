@@ -1,0 +1,87 @@
+---
+title: "OpenAI"
+description: "Configure OpenAI GPT models in integration-api."
+sidebarTitle: "OpenAI"
+---
+
+The OpenAI caller uses the OpenAI Go SDK. Credentials are read from the vault. Streaming uses Server-Sent Events with per-token `onStream` callbacks.
+
+**Provider directory:** `api/integration-api/internal/caller/openai/`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | OpenAI API key from [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get an OpenAI API key">
+Sign in at [platform.openai.com](https://platform.openai.com) → **API Keys → Create new secret key**.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **OpenAI**, enter `key` = your API key.
+</Step>
+
+<Step title="Configure the assistant LLM">
+In the assistant settings → **LLM Provider**, select **OpenAI** and set model parameters:
+
+```json
+{
+  "model.name": "gpt-4o",
+  "model.temperature": 0.7,
+  "model.max_tokens": 200,
+  "model.tool_choice": "auto"
+}
+```
+</Step>
+
+</Steps>
+
+---
+
+## Supported Models
+
+| Model | Context | Notes |
+|-------|---------|-------|
+| `gpt-4o` | 128k | Best balance of speed and capability |
+| `gpt-4o-mini` | 128k | Fastest, lowest cost |
+| `gpt-4-turbo` | 128k | High-capability |
+| `gpt-4` | 8k | Legacy |
+| `gpt-3.5-turbo` | 16k | Low cost |
+
+---
+
+## Model Parameters
+
+| Key | Supported | Notes |
+|-----|-----------|-------|
+| `model.name` | ✅ | Required |
+| `model.temperature` | ✅ | 0.0–2.0 |
+| `model.max_tokens` | ✅ | |
+| `model.top_p` | ✅ | |
+| `model.stop` | ✅ | Array of stop sequences |
+| `model.tool_choice` | ✅ | `auto`, `none`, `required` |
+| `model.frequency_penalty` | ✅ | -2.0–2.0 |
+| `model.presence_penalty` | ✅ | -2.0–2.0 |
+| `model.seed` | ✅ | Deterministic output |
+| `model.response_format` | ✅ | `json_object`, `text` |
+| `model.reasoning_effort` | ✅ | `low`, `medium`, `high` (o-series models) |
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Anthropic" icon="robot" href="/opensource/services/integration-api/llm/anthropic">
+    Claude models
+  </Card>
+  <Card title="LLM Overview" icon="diagram-project" href="/opensource/services/integration-api/llm/overview">
+    All providers and ChatCompletionOptions
+  </Card>
+</CardGroup>

@@ -1,0 +1,144 @@
+---
+title: "Configure Your Own TTS Provider"
+description: "Implement the TextToSpeechTransformer interface to add a new TTS provider to assistant-api."
+sidebarTitle: "Configure Your Own"
+---
+
+Adding a new TTS provider follows the same pattern as STT. The key difference is that `Transform` receives `LLMPacket` variants and must handle interruptions.
+
+---
+
+## Directory Structure
+
+```
+api/assistant-api/internal/transformer/<provider>/
+├── <provider>.go   # Option struct — credential extraction, client config
+├── tts.go          # TextToSpeechTransformer implementation
+└── normalizer.go   # Optional — strip markdown, apply pronunciation dict
+```
+
+---
+
+## Step 1 — Add a Constant
+
+Open `api/assistant-api/internal/transformer/transformer.go`:
+
+```go
+const (
+    DEEPGRAM    AudioTransformer = "deepgram"
+    // ...
+    MY_PROVIDER AudioTransformer = "my-provider"  // add this
+)
+```
+
+---
+
+## Step 2 — Implement `TextToSpeechTransformer`
+
+```go
+// api/assistant-api/internal/transformer/myprovider/tts.go
+package myprovider
+
+type myProviderTTS struct {
+    opt      *myProviderOption
+    onPacket func(AudioPacket)  // callback invoked with each synthesised audio chunk
+    conn     *websocket.Conn    // or your provider's streaming client
+}
+
+func NewMyProviderTTS(opt *myProviderOption, onPacket func(AudioPacket)) *myProviderTTS {
+    return &myProviderTTS{opt: opt, onPacket: onPacket}
+}
+
+// Initialize opens the streaming connection to your provider.
+func (t *myProviderTTS) Initialize() error {
+    var err error
+    t.conn, _, err = websocket.DefaultDialer.Dial(t.opt.GetConnectionString(), nil)
+    if err != nil {
+        return err
+    }
+    // Start a goroutine to read audio chunks and call t.onPacket
+    go t.readAudioChunks()
+    return nil
+}
+
+// Transform handles three LLMPacket variants.
+func (t *myProviderTTS) Transform(ctx context.Context, in LLMPacket) error {
+    switch pkt := in.(type) {
+    case InterruptionPacket:
+        // User started speaking — cancel queued audio immediately
+        return t.conn.WriteJSON(map[string]string{"type": "cancel"})
+
+    case LLMResponseDeltaPacket:
+        // A text token arrived — stream to TTS
+        return t.conn.WriteJSON(map[string]interface{}{
+            "type": "synthesise",
+            "text": pkt.Text,
+        })
+
+    case LLMResponseDonePacket:
+        // LLM finished — flush/finalise synthesis
+        return t.conn.WriteJSON(map[string]string{"type": "flush"})
+    }
+    return nil
+}
+
+// Close tears down the connection.
+func (t *myProviderTTS) Close(ctx context.Context) error {
+    return t.conn.Close()
+}
+
+// readAudioChunks reads synthesised audio from the provider and calls onPacket.
+func (t *myProviderTTS) readAudioChunks() {
+    for {
+        _, data, err := t.conn.ReadMessage()
+        if err != nil {
+            return
+        }
+        t.onPacket(AudioPacket{Audio: data})
+    }
+}
+```
+
+**Critical:** `InterruptionPacket` must be handled immediately to stop playback — otherwise the user will hear the AI speaking over them.
+
+---
+
+## Step 3 — Register in the Factory
+
+```go
+// api/assistant-api/internal/transformer/transformer.go
+
+// In GetTextToSpeechTransformer switch:
+case MY_PROVIDER:
+    opt := myprovider.NewMyProviderOption(logger, credential, opts)
+    return myprovider.NewMyProviderTTS(opt, onPacket), nil
+```
+
+---
+
+## Step 4 — Rebuild
+
+```bash
+make rebuild-assistant
+```
+
+---
+
+## Reference: Deepgram Aura Implementation
+
+```
+api/assistant-api/internal/transformer/deepgram/tts.go
+```
+
+WebSocket to `wss://api.deepgram.com/v1/speak`, JSON control messages (`Speak`, `Flush`, `Clear`).
+
+---
+
+<CardGroup cols={2}>
+  <Card title="TTS Overview" icon="volume" href="/opensource/services/assistant-api/tts/overview">
+    Transformer interface and LLMPacket types
+  </Card>
+  <Card title="Configure Your Own STT" icon="waveform" href="/opensource/services/assistant-api/stt/custom">
+    Same pattern for speech-to-text
+  </Card>
+</CardGroup>

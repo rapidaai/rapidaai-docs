@@ -1,0 +1,73 @@
+---
+title: "Deepgram STT"
+description: "Configure Deepgram Nova-2/Nova-3 speech-to-text in assistant-api."
+sidebarTitle: "Deepgram"
+---
+
+Deepgram uses a persistent WebSocket connection via the Deepgram Go SDK. Audio is streamed continuously and transcripts are returned in real time.
+
+**Provider identifier:** `deepgram`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | Deepgram API key from [console.deepgram.com](https://console.deepgram.com) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get a Deepgram API key">
+Sign in at [console.deepgram.com](https://console.deepgram.com) → **API Keys → Create a new API key**.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **Deepgram**, enter `key` = your API key.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **STT Provider**, select **Deepgram**.
+
+Optional model parameters via assistant options:
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `language` | `en-US` | Language code |
+| `model` | `nova-3` | Model: `nova-2`, `nova-3`, `base`, `enhanced` |
+| `punctuate` | `true` | Add punctuation |
+| `diarize` | `true` | Speaker diarization |
+</Step>
+
+</Steps>
+
+---
+
+## How It Works
+
+```go
+// Initialize: opens WebSocket to Deepgram live transcription endpoint
+d.client = client.NewWSUsingCallback(liveTranscriptionOptions)
+d.client.Connect()
+
+// Transform: streams raw PCM bytes
+d.client.Stream(bufio.NewReader(bytes.NewReader(in.Audio)))
+
+// Close: graceful stop
+d.client.Stop()
+```
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Deepgram TTS" icon="volume" href="/opensource/services/assistant-api/tts/deepgram">
+    Deepgram Aura text-to-speech
+  </Card>
+  <Card title="STT Overview" icon="waveform" href="/opensource/services/assistant-api/stt/overview">
+    All STT providers and transformer interface
+  </Card>
+</CardGroup>

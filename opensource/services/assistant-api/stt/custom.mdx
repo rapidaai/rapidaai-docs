@@ -1,0 +1,148 @@
+---
+title: "Configure Your Own STT Provider"
+description: "Implement the SpeechToTextTransformer interface to add a new STT provider to assistant-api."
+sidebarTitle: "Configure Your Own"
+---
+
+Every STT provider implements three methods. Adding a new provider means creating the implementation, reading vault credentials, and registering in the factory.
+
+---
+
+## Directory Structure
+
+```
+api/assistant-api/internal/transformer/<provider>/
+├── <provider>.go   # Option struct — reads vault credentials, initialises client config
+├── stt.go          # SpeechToTextTransformer implementation
+└── normalizer.go   # Optional — text normalisation for transcripts
+```
+
+---
+
+## Step 1 — Add a Constant
+
+Open `api/assistant-api/internal/transformer/transformer.go`:
+
+```go
+const (
+    DEEPGRAM    AudioTransformer = "deepgram"
+    // ...
+    MY_PROVIDER AudioTransformer = "my-provider"  // add this
+)
+```
+
+---
+
+## Step 2 — Implement the Option Struct
+
+```go
+// api/assistant-api/internal/transformer/myprovider/myprovider.go
+package myprovider
+
+type myProviderOption struct {
+    apiKey  string
+    logger  commons.Logger
+    opts    utils.Option
+}
+
+func NewMyProviderOption(
+    logger          commons.Logger,
+    vaultCredential *protos.VaultCredential,
+    opts            utils.Option,
+) *myProviderOption {
+    credentials := vaultCredential.GetValue().AsMap()
+    return &myProviderOption{
+        apiKey: credentials["key"].(string),   // read the vault key
+        logger: logger,
+        opts:   opts,
+    }
+}
+```
+
+---
+
+## Step 3 — Implement `SpeechToTextTransformer`
+
+```go
+// api/assistant-api/internal/transformer/myprovider/stt.go
+package myprovider
+
+type myProviderSTT struct {
+    opt      *myProviderOption
+    onPacket func(STTPacket)  // callback invoked with each transcript
+    client   interface{}      // your provider's streaming client
+}
+
+func NewMyProviderSTT(opt *myProviderOption, onPacket func(STTPacket)) *myProviderSTT {
+    return &myProviderSTT{opt: opt, onPacket: onPacket}
+}
+
+// Initialize opens the streaming connection to your provider.
+func (s *myProviderSTT) Initialize() error {
+    // Connect to your provider's real-time STT endpoint
+    // Register s.onPacket to be called with each transcription result
+    return nil
+}
+
+// Transform sends one audio packet — in.Audio is raw PCM 16-bit mono 16kHz.
+func (s *myProviderSTT) Transform(ctx context.Context, in UserAudioPacket) error {
+    // Forward in.Audio bytes to your provider's streaming client
+    return nil
+}
+
+// Close tears down the connection.
+func (s *myProviderSTT) Close(ctx context.Context) error {
+    return nil
+}
+```
+
+**Input format:** `UserAudioPacket.Audio` = raw PCM 16-bit signed mono, 16000 Hz sample rate.
+
+---
+
+## Step 4 — Register in the Factory
+
+```go
+// api/assistant-api/internal/transformer/transformer.go
+
+// In GetSpeechToTextTransformer switch:
+case MY_PROVIDER:
+    opt := myprovider.NewMyProviderOption(logger, credential, opts)
+    return myprovider.NewMyProviderSTT(opt, onPacket), nil
+```
+
+---
+
+## Step 5 — Rebuild
+
+```bash
+make rebuild-assistant
+make logs-assistant
+```
+
+The new provider is now selectable in the assistant settings STT Provider dropdown.
+
+---
+
+## Reference: Deepgram Implementation
+
+The Deepgram transformer is the primary reference:
+
+```
+api/assistant-api/internal/transformer/deepgram/
+├── deepgram.go    # Option struct, credential extraction
+├── stt.go         # WebSocket streaming to Deepgram
+├── tts.go         # Deepgram Aura TTS
+└── normalizer.go  # Text normalisation
+```
+
+---
+
+<CardGroup cols={2}>
+  <Card title="STT Overview" icon="waveform" href="/opensource/services/assistant-api/stt/overview">
+    Transformer interface and factory reference
+  </Card>
+  <Card title="Configure Your Own TTS" icon="volume" href="/opensource/services/assistant-api/tts/custom">
+    Same pattern for text-to-speech
+  </Card>
+</CardGroup>

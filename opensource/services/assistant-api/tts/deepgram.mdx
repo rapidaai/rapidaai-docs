@@ -1,0 +1,72 @@
+---
+title: "Deepgram Aura TTS"
+description: "Configure Deepgram Aura text-to-speech in assistant-api."
+sidebarTitle: "Deepgram Aura"
+---
+
+Deepgram Aura delivers low-latency streaming synthesis over a persistent WebSocket at `wss://api.deepgram.com/v1/speak`.
+
+**Provider identifier:** `deepgram`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | Deepgram API key from [console.deepgram.com](https://console.deepgram.com) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get a Deepgram API key">
+Sign in at [console.deepgram.com](https://console.deepgram.com) → **API Keys → Create a new API key**.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **Deepgram**, enter `key` = your API key.
+
+The same credential is used for both STT (Deepgram Nova) and TTS (Deepgram Aura).
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **TTS Provider**, select **Deepgram**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `voice` | `aura-asteria-en` | Aura voice model |
+| `encoding` | `linear16` | Output encoding |
+| `sample_rate` | `16000` | Output sample rate |
+
+Available voices: `aura-asteria-en`, `aura-luna-en`, `aura-stella-en`, `aura-athena-en`, `aura-hera-en`, `aura-orion-en`, `aura-arcas-en`, `aura-perseus-en`, `aura-angus-en`, `aura-orpheus-en`, `aura-helios-en`, `aura-zeus-en`
+</Step>
+
+</Steps>
+
+---
+
+## How It Works
+
+```go
+// Initialize: connects to Deepgram Aura WebSocket
+wss://api.deepgram.com/v1/speak?encoding=linear16&sample_rate=16000&model=<voice>
+
+// Transform handles three packet types:
+InterruptionPacket    → {"type":"Clear"}          // cancel queued audio
+LLMResponseDeltaPacket → {"type":"Speak","text":"..."} // stream token
+LLMResponseDonePacket  → {"type":"Flush"}          // trigger final synthesis
+```
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Deepgram STT" icon="waveform" href="/opensource/services/assistant-api/stt/deepgram">
+    Deepgram Nova speech-to-text
+  </Card>
+  <Card title="TTS Overview" icon="volume" href="/opensource/services/assistant-api/tts/overview">
+    All TTS providers
+  </Card>
+</CardGroup>

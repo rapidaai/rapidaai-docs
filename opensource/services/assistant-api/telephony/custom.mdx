@@ -1,0 +1,210 @@
+---
+title: "Configure Your Own Telephony Provider"
+description: "Implement the Telephony and Streamer interfaces to add a new telephony provider to assistant-api."
+sidebarTitle: "Configure Your Own"
+---
+
+Every telephony provider in Rapida implements two Go interfaces. Adding a new one requires implementing both, registering them in the factory, and adding a provider constant.
+
+---
+
+## Directory Structure
+
+```
+api/assistant-api/internal/channel/telephony/internal/<provider>/
+├── telephony.go   # Telephony interface — webhook handling, outbound call origination
+└── websocket.go   # Streamer interface — bridges media stream to AI pipeline
+```
+
+---
+
+## Step 1 — Add the Provider Constant
+
+Open `api/assistant-api/internal/channel/telephony/telephony.go`:
+
+```go
+const (
+    Twilio     Telephony = "twilio"
+    // ... existing constants ...
+    MyProvider Telephony = "my-provider"  // add this
+)
+```
+
+This string becomes the provider identifier in all webhook URLs:
+`/v1/talk/my-provider/call/{assistantId}`
+
+---
+
+## Step 2 — Implement `internal_type.Telephony`
+
+```go
+// api/assistant-api/internal/channel/telephony/internal/myprovider/telephony.go
+package myprovider
+
+type myProviderTelephony struct {
+    cfg    interface{}
+    logger *zap.SugaredLogger
+}
+
+func NewMyProviderTelephony(cfg interface{}, logger *zap.SugaredLogger) internal_type.Telephony {
+    return &myProviderTelephony{cfg: cfg, logger: logger}
+}
+
+// ReceiveCall handles POST /v1/talk/my-provider/call/{assistantId}
+// Return StatusInfo containing contextId — Rapida stores it and generates the media URL.
+func (t *myProviderTelephony) ReceiveCall(c *gin.Context) (*internal_type.StatusInfo, error) {
+    assistantId := c.Param("assistantId")
+    from := c.Query("from")
+    // Build and return StatusInfo; Rapida handles contextId creation
+    _ = assistantId
+    _ = from
+    return nil, nil
+}
+
+// OutboundCall initiates a call to toPhone using the provider's API.
+// vaultCred contains the decrypted credential map from the Rapida vault.
+func (t *myProviderTelephony) OutboundCall(
+    auth, toPhone, fromPhone string,
+    cc internal_type.Communication,
+    vaultCred map[string]interface{},
+    opts internal_type.CallOptions,
+) (*internal_type.CallInfo, error) {
+    apiKey := vaultCred["key"].(string)
+    _ = apiKey
+    return nil, nil
+}
+
+// InboundCall handles the WebSocket upgrade at /v1/talk/my-provider/ctx/{contextId}
+func (t *myProviderTelephony) InboundCall(c *gin.Context, cc internal_type.Communication) error {
+    return nil
+}
+
+// StatusCallback handles POST /v1/talk/my-provider/ctx/{contextId}/event
+func (t *myProviderTelephony) StatusCallback(
+    c *gin.Context, cc internal_type.Communication,
+) (*internal_type.StatusInfo, error) {
+    return nil, nil
+}
+
+// CatchAllStatusCallback handles unmatched status events
+func (t *myProviderTelephony) CatchAllStatusCallback(c *gin.Context) (*internal_type.StatusInfo, error) {
+    return nil, nil
+}
+```
+
+---
+
+## Step 3 — Implement `internal_type.Streamer`
+
+```go
+// api/assistant-api/internal/channel/telephony/internal/myprovider/websocket.go
+package myprovider
+
+type myProviderStreamer struct {
+    conn      *websocket.Conn
+    cc        internal_type.Communication
+    vaultCred map[string]interface{}
+    logger    *zap.SugaredLogger
+}
+
+func NewMyProviderStreamer(
+    logger *zap.SugaredLogger,
+    conn *websocket.Conn,
+    cc internal_type.Communication,
+    vaultCred map[string]interface{},
+) internal_type.Streamer {
+    return &myProviderStreamer{conn: conn, cc: cc, vaultCred: vaultCred, logger: logger}
+}
+
+// Stream runs the bidirectional audio loop — blocks until the call ends.
+func (s *myProviderStreamer) Stream(ctx context.Context) error {
+    // 1. Read audio frames from s.conn (format depends on provider — JSON envelope or raw binary)
+    // 2. Decode audio to raw PCM (μ-law → PCM or base64 decode as needed)
+    // 3. Forward to s.cc.StreamAudio(ctx, audioBytes)
+    // 4. Listen on s.cc.OnResponse() for TTS audio and write back to s.conn
+    return nil
+}
+
+func (s *myProviderStreamer) Close() error {
+    return s.conn.Close()
+}
+```
+
+**Audio format notes:**
+- Rapida's STT pipeline expects raw PCM 16-bit mono
+- Twilio and Exotel send base64-encoded μ-law 8kHz in JSON envelopes — decode before forwarding
+- Vonage sends raw Linear PCM 16kHz binary frames
+
+---
+
+## Step 4 — Register in the Factory
+
+Open `api/assistant-api/internal/channel/telephony/telephony.go`:
+
+```go
+func GetTelephony(at Telephony, cfg, logger, opts) (internal_type.Telephony, error) {
+    switch at {
+    case Twilio:
+        return internal_twilio.NewTwilioTelephony(cfg, logger), nil
+    // ... existing cases ...
+    case MyProvider:
+        return internal_myprovider.NewMyProviderTelephony(cfg, logger), nil  // add this
+    default:
+        return nil, fmt.Errorf("unsupported telephony provider: %s", at)
+    }
+}
+
+func (at Telephony) NewStreamer(logger, cc, vaultCred, opt) (internal_type.Streamer, error) {
+    switch at {
+    case Twilio:
+        return internal_twilio.NewTwilioStreamer(logger, opt.WebSocketConn, cc, vaultCred), nil
+    // ... existing cases ...
+    case MyProvider:
+        return internal_myprovider.NewMyProviderStreamer(logger, opt.WebSocketConn, cc, vaultCred), nil  // add this
+    default:
+        return nil, fmt.Errorf("unsupported telephony streamer: %s", at)
+    }
+}
+```
+
+---
+
+## Step 5 — Rebuild
+
+```bash
+make rebuild-assistant
+make logs-assistant
+```
+
+The new provider's webhook is automatically registered at:
+```
+POST /v1/talk/my-provider/call/{assistantId}
+```
+
+---
+
+## Reference Implementations
+
+| Provider | Directory | Pattern |
+|----------|-----------|---------|
+| Twilio | `internal/twilio/` | JSON envelope, base64 μ-law, TwiML response |
+| Vonage | `internal/vonage/` | NCCO JSON, binary PCM frames |
+| Asterisk | `internal/asterisk/` | Two-phase HTTP + ARI outbound |
+| SIP | `internal/sip/` | Direct UDP, RTP media |
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Telephony Overview" icon="phone" href="/opensource/services/assistant-api/telephony/overview">
+    URL routing and provider comparison
+  </Card>
+  <Card title="Adding an STT Provider" icon="mic" href="/opensource/services/assistant-api/stt/custom">
+    Same interface pattern for speech-to-text
+  </Card>
+  <Card title="Configuration" icon="sliders" href="/opensource/services/assistant-api/configuration">
+    All assistant-api env vars
+  </Card>
+  <Card title="Architecture" icon="diagram-project" href="/opensource/architecture">
+    Full system topology
+  </Card>
+</CardGroup>

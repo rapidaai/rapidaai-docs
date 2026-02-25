@@ -1,0 +1,58 @@
+---
+title: "Azure TTS"
+description: "Configure Azure Cognitive Services Neural text-to-speech in assistant-api."
+sidebarTitle: "Azure"
+---
+
+Azure Cognitive Services Speech provides Neural voices across 140+ languages with SSML support.
+
+**Provider identifier:** `azure-speech-service`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | Azure Speech subscription key |
+| `region` | Azure region, e.g. `eastus`, `westeurope` |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Create an Azure Speech resource">
+In [Azure Portal](https://portal.azure.com) → **Create a resource → AI + Machine Learning → Speech**. Copy **Key 1** and **Region**.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **Azure Speech**, enter `key` = subscription key and `region` = Azure region.
+
+The same credential is used for both Azure STT and TTS.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **TTS Provider**, select **Azure Speech**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `voice_name` | `en-US-JennyNeural` | Azure Neural voice name — see [voice gallery](https://speech.microsoft.com/portal/voicegallery) |
+| `language` | `en-US` | Language code |
+| `speaking_rate` | `1.0` | Speed (0.5–2.0) |
+| `pitch` | `0` | Pitch in Hz or percentage |
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Azure STT" icon="waveform" href="/opensource/services/assistant-api/stt/azure">
+    Azure Neural speech-to-text
+  </Card>
+  <Card title="TTS Overview" icon="volume" href="/opensource/services/assistant-api/tts/overview">
+    All TTS providers
+  </Card>
+</CardGroup>

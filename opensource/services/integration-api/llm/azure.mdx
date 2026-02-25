@@ -1,0 +1,71 @@
+---
+title: "Azure OpenAI"
+description: "Configure Azure-hosted OpenAI deployments in integration-api."
+sidebarTitle: "Azure OpenAI"
+---
+
+The Azure caller uses the same OpenAI API surface but targets your Azure OpenAI resource endpoint. This is useful when data residency or enterprise compliance requirements prevent using OpenAI directly.
+
+**Provider directory:** `api/integration-api/internal/caller/azure/`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `subscription_key` | Azure OpenAI resource key (Key 1 or Key 2) |
+| `endpoint` | Azure OpenAI resource endpoint, e.g. `https://my-resource.openai.azure.com` |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Create an Azure OpenAI resource">
+In [Azure Portal](https://portal.azure.com) → **Create a resource → Azure OpenAI**. After creation, go to **Keys and Endpoint** to copy the key and endpoint.
+</Step>
+
+<Step title="Deploy a model">
+In [Azure OpenAI Studio](https://oai.azure.com) → **Deployments → Create new deployment**. Select a model (e.g. `gpt-4o`) and give it a deployment name.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **Azure OpenAI**, enter:
+- `subscription_key` = Key 1 from Azure
+- `endpoint` = resource endpoint URL
+</Step>
+
+<Step title="Configure the assistant LLM">
+In the assistant settings → **LLM Provider**, select **Azure OpenAI** and set the deployment name as the model:
+
+```json
+{
+  "model.name": "my-gpt4o-deployment",
+  "model.temperature": 0.7,
+  "model.max_tokens": 200
+}
+```
+
+`model.name` must match your Azure deployment name exactly.
+</Step>
+
+</Steps>
+
+---
+
+## Model Parameters
+
+Same as OpenAI — all `model.*` parameters are supported. See the [OpenAI page](/opensource/services/integration-api/llm/openai) for the full table.
+
+---
+
+<CardGroup cols={2}>
+  <Card title="OpenAI" icon="openai" href="/opensource/services/integration-api/llm/openai">
+    Direct OpenAI API
+  </Card>
+  <Card title="LLM Overview" icon="diagram-project" href="/opensource/services/integration-api/llm/overview">
+    All providers and ChatCompletionOptions
+  </Card>
+</CardGroup>

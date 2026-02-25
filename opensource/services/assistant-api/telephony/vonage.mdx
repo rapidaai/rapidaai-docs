@@ -1,0 +1,101 @@
+---
+title: "Vonage"
+description: "Run assistant-api with Vonage (Nexmo) for global PSTN voice calls using WebSocket and NCCO."
+sidebarTitle: "Vonage"
+---
+
+Vonage sends a webhook when a call arrives. Rapida responds with an NCCO (Nexmo Call Control Object) containing a `connect` action that opens a WebSocket carrying Linear PCM 16kHz audio — higher quality than Twilio's μ-law.
+
+---
+
+## Vault Credentials
+
+In the Rapida dashboard go to **Credentials → Create Credential**, select provider type **Vonage**:
+
+| Key | Description |
+|-----|-------------|
+| `api_key` | Vonage API key |
+| `api_secret` | Vonage API secret |
+| `application_id` | Vonage Application ID (required for JWT auth on outbound) |
+| `private_key` | Vonage Application private key — PEM string (required for JWT auth on outbound) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Set the required env var">
+```env
+# docker/assistant-api/.assistant.env
+PUBLIC_ASSISTANT_HOST=your-hostname.com
+```
+</Step>
+
+<Step title="Create a Vonage Voice Application">
+In the [Vonage Dashboard](https://dashboard.nexmo.com) → **Applications → Create a new application**, enable **Voice** capability and set:
+
+| Field | Value |
+|-------|-------|
+| **Answer URL** (POST) | `https://{PUBLIC_ASSISTANT_HOST}/v1/talk/vonage/call/{assistantId}` |
+| **Event URL** (POST) | `https://{PUBLIC_ASSISTANT_HOST}/v1/talk/vonage/ctx/{contextId}/event` |
+
+Download the private key and save it in the vault credential.
+</Step>
+
+<Step title="Link a Vonage number">
+In **Numbers**, assign a virtual number to the application.
+</Step>
+
+<Step title="Attach vault credential to the assistant">
+In the assistant's **Phone Deployment**, select the Vonage vault credential.
+</Step>
+
+<Step title="Test inbound call">
+Call your Vonage number. Rapida responds with:
+
+```json
+[{
+  "action": "connect",
+  "endpoint": [{
+    "type": "websocket",
+    "uri": "wss://{PUBLIC_ASSISTANT_HOST}/v1/talk/vonage/ctx/{contextId}",
+    "content-type": "audio/l16;rate=16000"
+  }]
+}]
+```
+</Step>
+
+</Steps>
+
+---
+
+## Audio Spec
+
+| Property | Value |
+|----------|-------|
+| Encoding | Linear PCM 16-bit |
+| Sample rate | 16000 Hz |
+| Channels | Mono |
+| Transport | Raw binary WebSocket frames |
+
+<Note>
+Vonage uses 16kHz Linear PCM — higher quality than Twilio's 8kHz μ-law. This can improve STT accuracy for providers that support 16kHz input.
+</Note>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="ngrok — Local Testing" icon="tunnel" href="/opensource/services/assistant-api/ngrok">
+    Expose localhost to Vonage for development
+  </Card>
+  <Card title="Twilio" icon="phone" href="/opensource/services/assistant-api/telephony/twilio">
+    Alternative global PSTN provider
+  </Card>
+  <Card title="Telephony Overview" icon="diagram-project" href="/opensource/services/assistant-api/telephony/overview">
+    All providers and URL routing reference
+  </Card>
+  <Card title="Configuration" icon="sliders" href="/opensource/services/assistant-api/configuration">
+    PUBLIC_ASSISTANT_HOST and other env vars
+  </Card>
+</CardGroup>

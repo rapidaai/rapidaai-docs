@@ -1,0 +1,141 @@
+---
+title: "Configure Your Own LLM Provider"
+description: "Implement the LargeLanguageCaller interface to add a new LLM provider to integration-api."
+sidebarTitle: "Configure Your Own"
+---
+
+Adding a new LLM provider means implementing the `LargeLanguageCaller` interface and registering it in the router.
+
+---
+
+## Directory Structure
+
+```
+api/integration-api/internal/caller/<provider>/
+├── llm.go      # LargeLanguageCaller implementation
+└── <provider>.go  # Optional — client initialisation helpers
+```
+
+---
+
+## Step 1 — Create the Provider Directory
+
+```bash
+mkdir api/integration-api/internal/caller/myprovider
+```
+
+---
+
+## Step 2 — Implement `LargeLanguageCaller`
+
+```go
+// api/integration-api/internal/caller/myprovider/llm.go
+package myprovider
+
+type myProviderCaller struct {
+    logger *zap.SugaredLogger
+}
+
+func NewMyProviderCaller(logger *zap.SugaredLogger) *myProviderCaller {
+    return &myProviderCaller{logger: logger}
+}
+
+// GetChatCompletion returns a complete (non-streaming) response.
+func (c *myProviderCaller) GetChatCompletion(
+    ctx         context.Context,
+    messages    []caller.ChatMessage,
+    opts        caller.ChatCompletionOptions,
+    credentials map[string]interface{},
+) (*caller.ChatCompletion, error) {
+    // Read credentials from the vault map
+    apiKey := credentials["key"].(string)
+
+    // Read model parameters
+    modelName, _ := opts.ModelParameter["model.name"].(string)
+    temperature, _ := opts.ModelParameter["model.temperature"].(float64)
+
+    // Call your provider API
+    // Return &caller.ChatCompletion{Content: "...", ...}
+    _ = apiKey
+    _ = modelName
+    _ = temperature
+    return nil, nil
+}
+
+// StreamChatCompletion streams tokens via callbacks.
+func (c *myProviderCaller) StreamChatCompletion(
+    ctx         context.Context,
+    messages    []caller.ChatMessage,
+    opts        caller.ChatCompletionOptions,
+    credentials map[string]interface{},
+    onStream    func(token string),          // call for each token
+    onMetrics   func(caller.LLMMetrics),     // call once at end with token counts
+    onError     func(err error),             // call on error
+) error {
+    apiKey := credentials["key"].(string)
+    modelName, _ := opts.ModelParameter["model.name"].(string)
+
+    // Stream tokens from your provider
+    // For each token: onStream(token)
+    // On completion: onMetrics(metrics)
+    // On error: onError(err)
+    _ = apiKey
+    _ = modelName
+    return nil
+}
+```
+
+**Credential convention:** use `credentials["key"]` for the primary API key. Add additional keys (`endpoint`, `region`, etc.) as needed and document them in your vault credential.
+
+---
+
+## Step 3 — Register in the Router / Factory
+
+Open `api/integration-api/internal/caller/callers.go` and add your provider to the factory switch:
+
+```go
+func GetLargeLanguageCaller(provider string, logger *zap.SugaredLogger) (LargeLanguageCaller, error) {
+    switch provider {
+    case "openai":
+        return openai.NewOpenAICaller(logger), nil
+    // ... existing cases ...
+    case "my-provider":
+        return myprovider.NewMyProviderCaller(logger), nil
+    default:
+        return nil, fmt.Errorf("unsupported LLM provider: %s", provider)
+    }
+}
+```
+
+---
+
+## Step 4 — Rebuild
+
+```bash
+make rebuild-integration
+make logs-integration
+```
+
+The new provider is now selectable in the assistant's LLM configuration.
+
+---
+
+## Reference Implementations
+
+| Provider | File | Pattern |
+|----------|------|---------|
+| OpenAI | `caller/openai/llm.go` | SSE streaming, tool calls, per-token `onStream` |
+| Anthropic | `caller/anthropic/llm.go` | `max_tokens` required, thinking mode |
+| Gemini | `caller/gemini/llm.go` | Google Gen AI SDK, content parts |
+| Azure | `caller/azure/llm.go` | Same as OpenAI but custom endpoint |
+
+---
+
+<CardGroup cols={2}>
+  <Card title="LLM Overview" icon="diagram-project" href="/opensource/services/integration-api/llm/overview">
+    LargeLanguageCaller interface and ChatCompletionOptions
+  </Card>
+  <Card title="Configure Your Own STT" icon="waveform" href="/opensource/services/assistant-api/stt/custom">
+    Same pattern in assistant-api
+  </Card>
+</CardGroup>

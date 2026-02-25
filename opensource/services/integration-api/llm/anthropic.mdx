@@ -1,0 +1,84 @@
+---
+title: "Anthropic"
+description: "Configure Anthropic Claude models in integration-api."
+sidebarTitle: "Anthropic"
+---
+
+The Anthropic caller uses the Anthropic Go SDK with streaming via `onStream` callbacks. Note that Claude requires `max_tokens` to be set explicitly.
+
+**Provider directory:** `api/integration-api/internal/caller/anthropic/`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | Anthropic API key from [console.anthropic.com](https://console.anthropic.com) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get an Anthropic API key">
+Sign in at [console.anthropic.com](https://console.anthropic.com) → **API Keys → Create Key**.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **Anthropic**, enter `key` = your API key.
+</Step>
+
+<Step title="Configure the assistant LLM">
+In the assistant settings → **LLM Provider**, select **Anthropic** and set model parameters:
+
+```json
+{
+  "model.name": "claude-sonnet-4-6",
+  "model.max_tokens": 1024,
+  "model.temperature": 0.7
+}
+```
+
+<Warning>
+`model.max_tokens` is **required** for Anthropic. The API will return an error if it is not set.
+</Warning>
+</Step>
+
+</Steps>
+
+---
+
+## Supported Models
+
+| Model | Context | Notes |
+|-------|---------|-------|
+| `claude-opus-4-6` | 200k | Most capable |
+| `claude-sonnet-4-6` | 200k | Best speed/capability balance (recommended) |
+| `claude-haiku-4-5-20251001` | 200k | Fastest, lowest cost |
+
+---
+
+## Model Parameters
+
+| Key | Supported | Notes |
+|-----|-----------|-------|
+| `model.name` | ✅ | Required |
+| `model.max_tokens` | ✅ | **Required** — no default |
+| `model.temperature` | ✅ | 0.0–1.0 |
+| `model.top_p` | ✅ | |
+| `model.top_k` | ✅ | Anthropic-specific |
+| `model.stop` | ✅ | Array of stop sequences |
+| `model.thinking` | ✅ | Extended thinking mode |
+
+---
+
+<CardGroup cols={2}>
+  <Card title="OpenAI" icon="openai" href="/opensource/services/integration-api/llm/openai">
+    GPT-4o models
+  </Card>
+  <Card title="LLM Overview" icon="diagram-project" href="/opensource/services/integration-api/llm/overview">
+    All providers and ChatCompletionOptions
+  </Card>
+</CardGroup>

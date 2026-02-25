@@ -1,0 +1,53 @@
+---
+title: "Google Cloud STT"
+description: "Configure Google Cloud Speech-to-Text in assistant-api."
+sidebarTitle: "Google Cloud"
+---
+
+Google Cloud Speech-to-Text provides real-time streaming transcription with support for 100+ languages.
+
+**Provider identifier:** `google-speech-service`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | Google Cloud service account JSON (or API key) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Create a Google Cloud service account">
+In [Google Cloud Console](https://console.cloud.google.com) → **IAM & Admin → Service Accounts**, create a service account with the **Cloud Speech-to-Text User** role. Download the JSON key file.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **Google**, paste the service account JSON as the value of `key`.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **STT Provider**, select **Google Speech**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `language` | `en-US` | BCP-47 language code |
+| `model` | `latest_long` | Model: `latest_short`, `latest_long`, `phone_call`, `video` |
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Google Cloud TTS" icon="volume" href="/opensource/services/assistant-api/tts/google">
+    Google Cloud text-to-speech
+  </Card>
+  <Card title="STT Overview" icon="waveform" href="/opensource/services/assistant-api/stt/overview">
+    All STT providers
+  </Card>
+</CardGroup>

@@ -1,0 +1,84 @@
+---
+title: "Google Gemini"
+description: "Configure Google Gemini models in integration-api."
+sidebarTitle: "Gemini"
+---
+
+The Gemini caller uses the Google Generative AI Go SDK with streaming support.
+
+**Provider directory:** `api/integration-api/internal/caller/gemini/`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | Google AI Studio API key from [aistudio.google.com](https://aistudio.google.com/app/apikey) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get a Gemini API key">
+Sign in at [aistudio.google.com](https://aistudio.google.com/app/apikey) → **Get API key**.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **Gemini**, enter `key` = your API key.
+</Step>
+
+<Step title="Configure the assistant LLM">
+In the assistant settings → **LLM Provider**, select **Gemini** and set model parameters:
+
+```json
+{
+  "model.name": "gemini-2.0-flash",
+  "model.temperature": 0.7,
+  "model.max_tokens": 512
+}
+```
+</Step>
+
+</Steps>
+
+---
+
+## Supported Models
+
+| Model | Context | Notes |
+|-------|---------|-------|
+| `gemini-2.0-flash` | 1M | Fastest, recommended for voice |
+| `gemini-1.5-pro` | 2M | Largest context window |
+| `gemini-1.5-flash` | 1M | Fast, low cost |
+| `gemini-pro` | 32k | Legacy |
+
+---
+
+## Model Parameters
+
+| Key | Supported | Notes |
+|-----|-----------|-------|
+| `model.name` | ✅ | Required |
+| `model.temperature` | ✅ | 0.0–2.0 |
+| `model.max_tokens` | ✅ | |
+| `model.top_p` | ✅ | |
+| `model.top_k` | ✅ | Gemini-specific |
+| `model.stop` | ✅ | |
+| `model.frequency_penalty` | ✅ | |
+| `model.presence_penalty` | ✅ | |
+| `model.seed` | ✅ | |
+| `model.response_format` | ✅ | MIME type: `application/json`, `text/plain` |
+
+---
+
+<CardGroup cols={2}>
+  <Card title="OpenAI" icon="openai" href="/opensource/services/integration-api/llm/openai">
+    GPT-4o models
+  </Card>
+  <Card title="LLM Overview" icon="diagram-project" href="/opensource/services/integration-api/llm/overview">
+    All providers and ChatCompletionOptions
+  </Card>
+</CardGroup>

@@ -1,0 +1,294 @@
+---
+title: "Adding a Telephony Provider"
+description: "Implement the Telephony interface and register a new provider in the assistant-api factory."
+sidebarTitle: "Developing Providers"
+---
+
+This page explains how to extend `assistant-api` with a new telephony provider. Read the [telephony overview](/opensource/services/assistant-api/telephony) first to understand how providers integrate into the call pipeline.
+
+---
+
+## Architecture
+
+Every telephony provider consists of two layers:
+
+```
+api/assistant-api/internal/channel/telephony/internal/<provider>/
+├── telephony.go   # Telephony interface — handles webhooks, outbound calls, status callbacks
+└── websocket.go   # Streamer interface — bridges the provider's media stream to the AI pipeline
+```
+
+The factory in `telephony/telephony.go` resolves which implementation to use at runtime based on the provider string constant.
+
+```mermaid
+graph LR
+    A[Inbound webhook] --> B[GetTelephony factory]
+    B --> C[Provider Telephony impl]
+    C --> D[Store CallContext in Postgres]
+    D --> E[Return TwiML / NCCO / XML]
+    E --> F[Provider opens WebSocket / TCP]
+    F --> G[NewStreamer factory]
+    G --> H[Provider Streamer impl]
+    H --> I[STT → LLM → TTS pipeline]
+```
+
+---
+
+## Step-by-Step Guide
+
+<Steps>
+
+<Step title="Add the provider constant">
+Open `api/assistant-api/internal/channel/telephony/telephony.go` and add a new constant:
+
+```go
+const (
+    Twilio      Telephony = "twilio"
+    Exotel      Telephony = "exotel"
+    Vonage      Telephony = "vonage"
+    Asterisk    Telephony = "asterisk"
+    SIP         Telephony = "sip"
+    MyProvider  Telephony = "my-provider"   // Add this
+)
+```
+
+This string becomes the provider identifier in all webhook URLs:
+`/v1/talk/my-provider/call/{assistantId}`
+</Step>
+
+<Step title="Create the provider directory">
+```bash
+mkdir api/assistant-api/internal/channel/telephony/internal/myprovider
+touch api/assistant-api/internal/channel/telephony/internal/myprovider/telephony.go
+touch api/assistant-api/internal/channel/telephony/internal/myprovider/websocket.go
+```
+</Step>
+
+<Step title="Implement the Telephony interface">
+`telephony.go` must implement the `internal_type.Telephony` interface:
+
+```go
+// api/assistant-api/internal/channel/telephony/internal/myprovider/telephony.go
+package myprovider
+
+import (
+    "github.com/gin-gonic/gin"
+    internal_type "github.com/rapidaai/voice-ai/api/assistant-api/internal/type"
+)
+
+type myProviderTelephony struct {
+    cfg    interface{}
+    logger *zap.SugaredLogger
+}
+
+func NewMyProviderTelephony(cfg interface{}, logger *zap.SugaredLogger) internal_type.Telephony {
+    return &myProviderTelephony{cfg: cfg, logger: logger}
+}
+
+// ReceiveCall handles the inbound webhook from your provider.
+// It should return a StatusInfo containing the contextId.
+func (t *myProviderTelephony) ReceiveCall(c *gin.Context) (*internal_type.StatusInfo, error) {
+    // 1. Parse provider-specific request (e.g. CallSid, From, To)
+    // 2. Extract assistantId from URL param: c.Param("assistantId")
+    // 3. Return StatusInfo — Rapida stores contextId and builds TwiML/NCCO/XML
+    return nil, nil
+}
+
+// OutboundCall initiates a call from Rapida to a phone number.
+func (t *myProviderTelephony) OutboundCall(
+    auth, toPhone, fromPhone string,
+    cc internal_type.Communication,
+    vaultCred map[string]interface{},
+    opts internal_type.CallOptions,
+) (*internal_type.CallInfo, error) {
+    // Use the provider's API to originate the call
+    // Vault credentials are passed as vaultCred map
+    return nil, nil
+}
+
+// InboundCall handles the media connection phase (e.g. WebSocket upgrade).
+func (t *myProviderTelephony) InboundCall(c *gin.Context, cc internal_type.Communication) error {
+    return nil
+}
+
+// StatusCallback handles lifecycle events (ringing, answered, completed).
+func (t *myProviderTelephony) StatusCallback(
+    c *gin.Context,
+    cc internal_type.Communication,
+) (*internal_type.StatusInfo, error) {
+    return nil, nil
+}
+
+// CatchAllStatusCallback handles any status events not matched above.
+func (t *myProviderTelephony) CatchAllStatusCallback(c *gin.Context) (*internal_type.StatusInfo, error) {
+    return nil, nil
+}
+```
+
+**Key points:**
+- Extract `assistantId` from `c.Param("assistantId")`
+- Return appropriate response format for your provider (TwiML XML, NCCO JSON, etc.)
+- Use `cc.GetContext()` to access conversation state
+</Step>
+
+<Step title="Implement the Streamer interface">
+`websocket.go` bridges the provider's audio stream to the AI pipeline:
+
+```go
+// api/assistant-api/internal/channel/telephony/internal/myprovider/websocket.go
+package myprovider
+
+import (
+    "github.com/gorilla/websocket"
+    internal_type "github.com/rapidaai/voice-ai/api/assistant-api/internal/type"
+)
+
+type myProviderStreamer struct {
+    conn      *websocket.Conn
+    cc        internal_type.Communication
+    vaultCred map[string]interface{}
+    logger    *zap.SugaredLogger
+}
+
+func NewMyProviderStreamer(
+    logger *zap.SugaredLogger,
+    conn *websocket.Conn,
+    cc internal_type.Communication,
+    vaultCred map[string]interface{},
+) internal_type.Streamer {
+    return &myProviderStreamer{
+        conn:      conn,
+        cc:        cc,
+        vaultCred: vaultCred,
+        logger:    logger,
+    }
+}
+
+// Stream starts the bidirectional audio exchange.
+// Read frames from the WebSocket, forward to STT.
+// Receive TTS output from the pipeline, write back to WebSocket.
+func (s *myProviderStreamer) Stream(ctx context.Context) error {
+    // 1. Read the provider's audio frames (may be JSON-wrapped or raw binary)
+    // 2. Decode audio (e.g. base64 μ-law, raw PCM)
+    // 3. Pass decoded audio to s.cc.StreamAudio(ctx, audioBytes)
+    // 4. Listen for s.cc.OnResponse() and write TTS audio back to the WebSocket
+    return nil
+}
+
+func (s *myProviderStreamer) Close() error {
+    return s.conn.Close()
+}
+```
+
+**Audio format notes:**
+- Twilio and Exotel send base64-encoded μ-law 8kHz in JSON envelopes
+- Vonage sends raw Linear PCM 16kHz binary frames
+- Rapida's STT pipeline expects 16kHz PCM — resample if needed
+</Step>
+
+<Step title="Register in the factory">
+Open `api/assistant-api/internal/channel/telephony/telephony.go` and add your provider to both factory functions:
+
+```go
+// GetTelephony returns a Telephony implementation for the given provider string.
+func GetTelephony(at Telephony, cfg interface{}, logger *zap.SugaredLogger, opts interface{}) (internal_type.Telephony, error) {
+    switch at {
+    case Twilio:
+        return internal_twilio.NewTwilioTelephony(cfg, logger), nil
+    // ... existing cases ...
+    case MyProvider:                                                          // Add this
+        return internal_myprovider.NewMyProviderTelephony(cfg, logger), nil  // Add this
+    default:
+        return nil, fmt.Errorf("unsupported telephony provider: %s", at)
+    }
+}
+
+// NewStreamer returns a Streamer implementation for the given provider.
+func (at Telephony) NewStreamer(
+    logger *zap.SugaredLogger,
+    cc internal_type.Communication,
+    vaultCred map[string]interface{},
+    opt internal_type.StreamerOptions,
+) (internal_type.Streamer, error) {
+    switch at {
+    case Twilio:
+        return internal_twilio.NewTwilioStreamer(logger, opt.WebSocketConn, cc, vaultCred), nil
+    // ... existing cases ...
+    case MyProvider:                                                                               // Add this
+        return internal_myprovider.NewMyProviderStreamer(logger, opt.WebSocketConn, cc, vaultCred), nil  // Add this
+    default:
+        return nil, fmt.Errorf("unsupported telephony streamer: %s", at)
+    }
+}
+```
+</Step>
+
+<Step title="Run and verify">
+```bash
+# Rebuild the assistant-api with the new provider
+make rebuild-assistant
+
+# Tail logs and test an inbound call
+make logs-assistant
+```
+
+The new provider's webhook endpoint is automatically registered at:
+```
+POST /v1/talk/my-provider/call/{assistantId}
+```
+</Step>
+
+</Steps>
+
+---
+
+## Interface Reference
+
+### `internal_type.Telephony`
+
+| Method | Called When |
+|--------|------------|
+| `ReceiveCall(c *gin.Context)` | Provider POSTs to `/v1/talk/{provider}/call/{assistantId}` |
+| `OutboundCall(auth, to, from, cc, vault, opts)` | SDK/API initiates an outbound call |
+| `InboundCall(c *gin.Context, cc)` | Provider WebSocket connection arrives at `/v1/talk/{provider}/ctx/{contextId}` |
+| `StatusCallback(c *gin.Context, cc)` | Provider POSTs a status event to `/v1/talk/{provider}/ctx/{contextId}/event` |
+| `CatchAllStatusCallback(c *gin.Context)` | Catch-all for unmatched status events |
+
+### `internal_type.Streamer`
+
+| Method | Purpose |
+|--------|---------|
+| `Stream(ctx context.Context) error` | Start bidirectional audio loop (blocks until call ends) |
+| `Close() error` | Clean up connections |
+
+---
+
+## Existing Implementations as Reference
+
+Study these for real-world examples:
+
+| Provider | Directory | Notable Pattern |
+|----------|-----------|-----------------|
+| Twilio | `internal/channel/telephony/internal/twilio/` | JSON envelope, base64 μ-law, TwiML response |
+| Vonage | `internal/channel/telephony/internal/vonage/` | NCCO JSON response, binary PCM frames |
+| Asterisk | `internal/channel/telephony/internal/asterisk/` | Two-phase: HTTP webhook + ARI outbound |
+| SIP | `internal/channel/telephony/internal/sip/` | Direct UDP, RTP media, no provider account |
+
+---
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Running with Providers" icon="play" href="/opensource/services/assistant-api/telephony-running">
+    Configure and run existing providers.
+  </Card>
+  <Card title="Adding an STT/TTS Provider" icon="mic" href="/opensource/services/assistant-api/stt-tts">
+    Same pattern — implement the Transformers interface for speech providers.
+  </Card>
+  <Card title="Telephony Overview" icon="phone" href="/opensource/services/assistant-api/telephony">
+    URL routing, inbound flow, and provider comparison.
+  </Card>
+  <Card title="Configuration" icon="sliders" href="/opensource/services/assistant-api/configuration">
+    All assistant-api env vars.
+  </Card>
+</CardGroup>

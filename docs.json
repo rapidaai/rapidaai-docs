@@ -21,15 +21,12 @@
                 "tab": "Documentation",
                 "groups": [
                     {
-                        "group": "Introduction",
-                        "icon": "book-open",
                         "pages": [
                             "introduction/overview"
                         ]
                     },
                     {
                         "group": "Assistants",
-                        "icon": "bot",
                         "pages": [
                             "assistants/overview",
                             "assistants/create-assistant",
@@ -232,9 +229,45 @@
                         "pages": [
                             "opensource/services/assistant-api/overview",
                             "opensource/services/assistant-api/configuration",
-                            "opensource/services/assistant-api/stt-tts",
-                            "opensource/services/assistant-api/telephony",
-                            "opensource/services/assistant-api/ngrok"
+                            "opensource/services/assistant-api/ngrok",
+                            {
+                                "group": "Telephony",
+                                "pages": [
+                                    "opensource/services/assistant-api/telephony/overview",
+                                    "opensource/services/assistant-api/telephony/twilio",
+                                    "opensource/services/assistant-api/telephony/vonage",
+                                    "opensource/services/assistant-api/telephony/exotel",
+                                    "opensource/services/assistant-api/telephony/asterisk",
+                                    "opensource/services/assistant-api/telephony/sip",
+                                    "opensource/services/assistant-api/telephony/custom"
+                                ]
+                            },
+                            {
+                                "group": "Speech-to-Text",
+                                "pages": [
+                                    "opensource/services/assistant-api/stt/overview",
+                                    "opensource/services/assistant-api/stt/deepgram",
+                                    "opensource/services/assistant-api/stt/google",
+                                    "opensource/services/assistant-api/stt/azure",
+                                    "opensource/services/assistant-api/stt/assemblyai",
+                                    "opensource/services/assistant-api/stt/revai",
+                                    "opensource/services/assistant-api/stt/sarvamai",
+                                    "opensource/services/assistant-api/stt/custom"
+                                ]
+                            },
+                            {
+                                "group": "Text-to-Speech",
+                                "pages": [
+                                    "opensource/services/assistant-api/tts/overview",
+                                    "opensource/services/assistant-api/tts/deepgram",
+                                    "opensource/services/assistant-api/tts/elevenlabs",
+                                    "opensource/services/assistant-api/tts/cartesia",
+                                    "opensource/services/assistant-api/tts/google",
+                                    "opensource/services/assistant-api/tts/azure",
+                                    "opensource/services/assistant-api/tts/sarvamai",
+                                    "opensource/services/assistant-api/tts/custom"
+                                ]
+                            }
                         ]
                     },
                     {
@@ -242,7 +275,17 @@
                         "pages": [
                             "opensource/services/integration-api/overview",
                             "opensource/services/integration-api/configuration",
-                            "opensource/services/integration-api/providers"
+                            {
+                                "group": "LLM Providers",
+                                "pages": [
+                                    "opensource/services/integration-api/llm/overview",
+                                    "opensource/services/integration-api/llm/openai",
+                                    "opensource/services/integration-api/llm/anthropic",
+                                    "opensource/services/integration-api/llm/gemini",
+                                    "opensource/services/integration-api/llm/azure",
+                                    "opensource/services/integration-api/llm/custom"
+                                ]
+                            }
                         ]
                     },
                     {
@@ -293,7 +336,6 @@
                     },
                     {
                         "group": "Assistant",
-                        "icon": "bot",
                         "pages": [
                             "api-reference/assistant/get-assistant",
                             "api-reference/assistant/get-all-assistant",

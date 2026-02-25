@@ -1,0 +1,57 @@
+---
+title: "ElevenLabs TTS"
+description: "Configure ElevenLabs text-to-speech with voice cloning in assistant-api."
+sidebarTitle: "ElevenLabs"
+---
+
+ElevenLabs provides high-fidelity streaming speech synthesis with voice cloning capabilities. Audio is streamed via WebSocket for low-latency delivery.
+
+**Provider identifier:** `elevenlabs`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | ElevenLabs API key from [elevenlabs.io](https://elevenlabs.io) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get an ElevenLabs API key">
+Sign in at [elevenlabs.io](https://elevenlabs.io) → **Profile → API Key**.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **ElevenLabs**, enter `key` = your API key.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **TTS Provider**, select **ElevenLabs**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `voice_id` | `21m00Tcm4TlvDq8ikWAM` | ElevenLabs voice ID |
+| `model_id` | `eleven_turbo_v2_5` | Model: `eleven_turbo_v2_5`, `eleven_multilingual_v2`, `eleven_flash_v2_5` |
+| `stability` | `0.5` | Voice stability (0.0–1.0) |
+| `similarity_boost` | `0.75` | Voice clarity (0.0–1.0) |
+
+Find voice IDs in the [ElevenLabs Voice Library](https://elevenlabs.io/voice-library).
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Cartesia" icon="bolt" href="/opensource/services/assistant-api/tts/cartesia">
+    Ultra-low latency alternative
+  </Card>
+  <Card title="TTS Overview" icon="volume" href="/opensource/services/assistant-api/tts/overview">
+    All TTS providers
+  </Card>
+</CardGroup>

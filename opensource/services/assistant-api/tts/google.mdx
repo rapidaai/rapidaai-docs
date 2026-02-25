@@ -1,0 +1,57 @@
+---
+title: "Google Cloud TTS"
+description: "Configure Google Cloud Text-to-Speech in assistant-api."
+sidebarTitle: "Google Cloud"
+---
+
+Google Cloud Text-to-Speech offers WaveNet and Neural2 voices across 100+ languages and variants.
+
+**Provider identifier:** `google-speech-service`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | Google Cloud service account JSON |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Create a Google Cloud service account">
+In [Google Cloud Console](https://console.cloud.google.com) → **IAM & Admin → Service Accounts**, create a service account with the **Cloud Text-to-Speech User** role. Download the JSON key file.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **Google**, paste the service account JSON as `key`.
+
+The same credential is used for both Google Cloud STT and TTS.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **TTS Provider**, select **Google Speech**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `language` | `en-US` | BCP-47 language code |
+| `voice_name` | `en-US-Neural2-A` | Voice name — see [voice list](https://cloud.google.com/text-to-speech/docs/voices) |
+| `speaking_rate` | `1.0` | Speed multiplier (0.25–4.0) |
+| `pitch` | `0.0` | Pitch adjustment in semitones (-20.0–20.0) |
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Google Cloud STT" icon="waveform" href="/opensource/services/assistant-api/stt/google">
+    Google Cloud speech-to-text
+  </Card>
+  <Card title="TTS Overview" icon="volume" href="/opensource/services/assistant-api/tts/overview">
+    All TTS providers
+  </Card>
+</CardGroup>

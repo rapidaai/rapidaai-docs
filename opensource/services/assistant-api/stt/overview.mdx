@@ -1,0 +1,114 @@
+---
+title: "Speech-to-Text — Overview"
+description: "STT transformer interface, factory functions, and supported providers in assistant-api."
+sidebarTitle: "Overview"
+---
+
+The `assistant-api` decouples audio transcription from provider-specific logic through a **transformer layer**. Every STT provider implements the same generic interface. The factory resolves the provider string at call time.
+
+---
+
+## Transformer Interface
+
+Every STT provider implements `Transformers[UserAudioPacket]`:
+
+```go
+// api/assistant-api/internal/type/transformer.go
+type Transformers[IN any] interface {
+    // Initialize sets up the provider connection (WebSocket, gRPC, HTTP client).
+    // Called once per call session before audio begins.
+    Initialize() error
+
+    // Transform sends one audio packet to the provider.
+    // Transcription results are delivered via the onPacket callback registered at construction.
+    Transform(ctx context.Context, in IN) error
+
+    // Close tears down the connection and releases resources.
+    Close(ctx context.Context) error
+}
+
+// Type alias for STT
+type SpeechToTextTransformer = Transformers[UserAudioPacket]
+```
+
+`UserAudioPacket.Audio` contains raw **PCM 16-bit mono 16kHz** bytes. All providers receive this same format — resampling from 8kHz telephony audio is handled upstream.
+
+---
+
+## Factory Function
+
+```go
+// api/assistant-api/internal/transformer/transformer.go
+func GetSpeechToTextTransformer(
+    ctx        context.Context,
+    logger     commons.Logger,
+    provider   string,                     // AudioTransformer constant string
+    credential *protos.VaultCredential,    // decrypted vault credential
+    onPacket   func(STTPacket),            // callback invoked with each transcript result
+    opts       utils.Option,               // assistant-level options (language, model, etc.)
+) (SpeechToTextTransformer, error)
+```
+
+The factory switches on the `provider` string. To add a new provider, add a case to this switch.
+
+---
+
+## Provider Identifiers
+
+```go
+// api/assistant-api/internal/transformer/transformer.go
+const (
+    DEEPGRAM              AudioTransformer = "deepgram"
+    GOOGLE_SPEECH_SERVICE AudioTransformer = "google-speech-service"
+    AZURE_SPEECH_SERVICE  AudioTransformer = "azure-speech-service"
+    CARTESIA              AudioTransformer = "cartesia"
+    REVAI                 AudioTransformer = "revai"
+    SARVAM                AudioTransformer = "sarvamai"
+    ELEVENLABS            AudioTransformer = "elevenlabs"
+    ASSEMBLYAI            AudioTransformer = "assemblyai"
+)
+```
+
+---
+
+## Supported STT Providers
+
+| Provider | Identifier | Streaming | Notes |
+|----------|-----------|-----------|-------|
+| **Deepgram** | `deepgram` | ✅ | Nova-2 / Nova-3, WebSocket SDK |
+| **Google Cloud STT** | `google-speech-service` | ✅ | 100+ languages |
+| **Azure Cognitive** | `azure-speech-service` | ✅ | Neural Speech, 140+ languages |
+| **AssemblyAI** | `assemblyai` | ✅ | Speaker diarization |
+| **Rev.ai** | `revai` | ✅ | Real-time |
+| **Sarvam AI** | `sarvamai` | ✅ | Indian languages |
+| **AWS Transcribe** | `aws` | ✅ | Real-time streaming |
+| **OpenAI Whisper** | `openai` | ✗ | Batch only |
+| **Speechmatics** | `speechmatics` | ✅ | Real-time |
+
+---
+
+## Provider Pages
+
+<CardGroup cols={3}>
+  <Card title="Deepgram" icon="waveform" href="/opensource/services/assistant-api/stt/deepgram">
+    Nova-2/Nova-3, WebSocket streaming
+  </Card>
+  <Card title="Google Cloud" icon="google" href="/opensource/services/assistant-api/stt/google">
+    100+ languages, Neural Speech
+  </Card>
+  <Card title="Azure" icon="microsoft" href="/opensource/services/assistant-api/stt/azure">
+    Neural Speech, 140+ languages
+  </Card>
+  <Card title="AssemblyAI" icon="waveform-lines" href="/opensource/services/assistant-api/stt/assemblyai">
+    Speaker diarization, real-time
+  </Card>
+  <Card title="Rev.ai" icon="waveform" href="/opensource/services/assistant-api/stt/revai">
+    Real-time streaming
+  </Card>
+  <Card title="Sarvam AI" icon="language" href="/opensource/services/assistant-api/stt/sarvamai">
+    Indian languages
+  </Card>
+  <Card title="Configure Your Own" icon="code" href="/opensource/services/assistant-api/stt/custom">
+    Implement the Transformers interface
+  </Card>
+</CardGroup>

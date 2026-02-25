@@ -1,0 +1,479 @@
+---
+title: "Running with Telephony Providers"
+description: "Step-by-step configuration to run assistant-api with Twilio, Vonage, Exotel, Asterisk AudioSocket, Asterisk WebSocket, and SIP."
+sidebarTitle: "Running Providers"
+---
+
+This page covers how to configure and run `assistant-api` with each supported telephony provider. Choose your provider below.
+
+<Info>
+For **Twilio, Vonage, and Exotel** you need a public HTTPS hostname — see the [ngrok guide](/opensource/services/assistant-api/ngrok) for local development.
+For **Asterisk** and **SIP**, your server connects out to Rapida, so no public URL is required on your end.
+</Info>
+
+---
+
+## Required Environment Variable
+
+All telephony providers (except SIP) require one shared env var:
+
+```env
+# docker/assistant-api/.assistant.env
+PUBLIC_ASSISTANT_HOST=your-public-hostname.com   # No https:// prefix
+```
+
+This is the hostname that Twilio, Vonage, and Exotel will call back and stream audio to. For local dev, replace it with your ngrok domain.
+
+---
+
+## Twilio
+
+<Steps>
+
+<Step title="Store vault credentials">
+In the Rapida dashboard go to **Credentials → Create Credential**, select provider type **Twilio**, and enter:
+
+| Key | Description |
+|-----|-------------|
+| `account_sid` | Your Twilio Account SID (`ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`) |
+| `account_token` | Your Twilio Auth Token |
+
+Credentials are encrypted at rest in the vault.
+</Step>
+
+<Step title="Configure the phone number webhook">
+In the [Twilio Console](https://console.twilio.com) → **Phone Numbers → Manage → Active numbers**, select your number and set:
+
+| Field | Value |
+|-------|-------|
+| **Voice webhook** (HTTP POST) | `https://{PUBLIC_ASSISTANT_HOST}/v1/talk/twilio/call/{assistantId}` |
+| **Status callback URL** | `https://{PUBLIC_ASSISTANT_HOST}/v1/talk/twilio/ctx/{contextId}/event` |
+
+Replace `{assistantId}` with the numeric assistant ID from the Rapida dashboard.
+</Step>
+
+<Step title="What Rapida returns">
+When Twilio hits the webhook, Rapida responds with TwiML that opens a bidirectional Media Stream:
+
+```xml
+<Response>
+  <Connect>
+    <Stream url="wss://{PUBLIC_ASSISTANT_HOST}/v1/talk/twilio/ctx/{contextId}"
+            name="{assistantId}__{conversationId}"
+            statusCallback="https://{PUBLIC_ASSISTANT_HOST}/v1/talk/twilio/ctx/{contextId}/event"
+            statusCallbackEvent="initiated ringing answered completed">
+      <Parameter name="assistant_id" value="{assistantId}"/>
+      <Parameter name="client_number" value="{callerNumber}"/>
+    </Stream>
+  </Connect>
+</Response>
+```
+
+Audio is μ-law 8kHz, base64-encoded per the Twilio Media Streams spec.
+</Step>
+
+<Step title="Verify">
+```bash
+# Confirm assistant-api is reachable and the webhook path responds
+curl -s -o /dev/null -w "%{http_code}" \
+  "https://{PUBLIC_ASSISTANT_HOST}/v1/talk/twilio/call/{assistantId}"
+# Expected: 200 or 422 (not 404/502)
+```
+</Step>
+
+</Steps>
+
+<Note>
+`PUBLIC_ASSISTANT_HOST` must be HTTPS — Twilio rejects plain HTTP webhooks.
+</Note>
+
+---
+
+## Vonage
+
+<Steps>
+
+<Step title="Store vault credentials">
+In **Credentials → Create Credential**, select provider type **Vonage**:
+
+| Key | Description |
+|-----|-------------|
+| `api_key` | Vonage API key |
+| `api_secret` | Vonage API secret |
+| `application_id` | Vonage Application ID (JWT auth) |
+| `private_key` | Vonage Application private key (PEM, JWT auth) |
+</Step>
+
+<Step title="Configure the Vonage application answer URL">
+In the [Vonage Dashboard](https://dashboard.nexmo.com) → **Applications**, open your voice application and set:
+
+| Field | Value |
+|-------|-------|
+| **Answer URL** (POST) | `https://{PUBLIC_ASSISTANT_HOST}/v1/talk/vonage/call/{assistantId}` |
+| **Event URL** (POST) | `https://{PUBLIC_ASSISTANT_HOST}/v1/talk/vonage/ctx/{contextId}/event` |
+</Step>
+
+<Step title="What Rapida returns">
+Rapida responds with an NCCO that connects a WebSocket:
+
+```json
+[{
+  "action": "connect",
+  "endpoint": [{
+    "type": "websocket",
+    "uri": "wss://{PUBLIC_ASSISTANT_HOST}/v1/talk/vonage/ctx/{contextId}",
+    "content-type": "audio/l16;rate=16000"
+  }]
+}]
+```
+
+Audio is Linear PCM 16kHz — higher quality than Twilio's μ-law.
+</Step>
+
+</Steps>
+
+---
+
+## Exotel
+
+<Steps>
+
+<Step title="Store vault credentials">
+In **Credentials → Create Credential**, select provider type **Exotel**:
+
+| Key | Description |
+|-----|-------------|
+| `api_key` | Exotel API key |
+| `api_secret` | Exotel API secret |
+| `account_sid` | Exotel Account SID |
+</Step>
+
+<Step title="Configure the ExoPhone app">
+In the [Exotel Dashboard](https://my.exotel.com) → **ExoPhones**, assign your ExoPhone an **App** and set the passthru URL to:
+
+```
+https://{PUBLIC_ASSISTANT_HOST}/v1/talk/exotel/call/{assistantId}
+```
+
+Rapida responds with Exotel passthru XML that opens a WebSocket stream.
+</Step>
+
+<Step title="What Rapida returns">
+Rapida returns passthru XML connecting a WebSocket at:
+
+```
+wss://{PUBLIC_ASSISTANT_HOST}/v1/talk/exotel/ctx/{contextId}
+```
+
+Audio is μ-law 8kHz, same format as Twilio.
+</Step>
+
+</Steps>
+
+<Note>
+Exotel operates in India and South-East Asia. Make sure `PUBLIC_ASSISTANT_HOST` is reachable from Exotel's servers (public HTTPS, not localhost).
+</Note>
+
+---
+
+## Asterisk — AudioSocket
+
+AudioSocket uses a native raw TCP protocol. Asterisk connects to Rapida over TCP port `4573` using the contextId as the session identifier.
+
+**When to use:** Asterisk 16+, private/LAN network, lowest latency.
+
+<Steps>
+
+<Step title="Confirm required env vars">
+```env
+# docker/assistant-api/.assistant.env
+PUBLIC_ASSISTANT_HOST=your-public-hostname.com
+AUDIOSOCKET__HOST=0.0.0.0
+AUDIOSOCKET__PORT=4573
+```
+
+The `assistant-api` binds a TCP AudioSocket server on `AUDIOSOCKET__PORT` at startup.
+</Step>
+
+<Step title="Verify the Asterisk module is loaded">
+```bash
+asterisk -rx "module show like audiosocket"
+# res_audiosocket.so — requires Asterisk 16+
+```
+
+If not loaded, add to `/etc/asterisk/modules.conf`:
+```ini
+[modules]
+load = res_audiosocket.so
+```
+</Step>
+
+<Step title="Configure the dialplan">
+```ini
+# /etc/asterisk/extensions.conf
+
+[globals]
+RAPIDA_API_KEY = rpd-xxx-your-api-key
+RAPIDA_HOST    = {PUBLIC_ASSISTANT_HOST}   ; HTTP/webhook host
+RAPIDA_AS_HOST = {PUBLIC_ASSISTANT_HOST}   ; AudioSocket TCP host (same server, different protocol)
+RAPIDA_PORT    = 4573
+ASSISTANT_ID   = 123456789
+
+[rapida-inbound]
+exten => _X.,1,Answer()
+ same => n,Set(CHANNEL(audioreadformat)=slin)
+ same => n,Set(CHANNEL(audiowriteformat)=slin)
+ ; Phase 1 — register the call and get a contextId
+ same => n,Set(CTX=${CURL(https://${RAPIDA_HOST}/v1/talk/asterisk/call/${ASSISTANT_ID}?from=${CALLERID(num)}&x-api-key=${RAPIDA_API_KEY})})
+ same => n,GotoIf($["${CTX}" = ""]?error)
+ ; Phase 2 — open AudioSocket TCP using the contextId as UUID
+ same => n,AudioSocket(${CTX},${RAPIDA_AS_HOST}:${RAPIDA_PORT})
+ same => n,Hangup()
+ same => n(error),Playback(an-error-has-occurred)
+ same => n,Hangup()
+```
+
+<Note>
+`CHANNEL(audioreadformat)=slin` and `CHANNEL(audiowriteformat)=slin` are required — AudioSocket expects signed 16-bit linear PCM.
+</Note>
+</Step>
+
+<Step title="Reload dialplan">
+```bash
+asterisk -rx "dialplan reload"
+```
+</Step>
+
+<Step title="Test connectivity">
+```bash
+# Verify AudioSocket port is reachable
+nc -zv {PUBLIC_ASSISTANT_HOST} 4573
+
+# Verify HTTPS webhook is reachable
+curl -I https://{PUBLIC_ASSISTANT_HOST}
+```
+</Step>
+
+</Steps>
+
+### Outbound calls via ARI (AudioSocket)
+
+For outbound calls, Rapida uses Asterisk's ARI to originate the call. The dialplan receives the `RAPIDA_CONTEXT_ID` channel variable set by ARI:
+
+```ini
+; /etc/asterisk/extensions.conf
+[rapida-outbound]
+exten => s,1,Set(CHANNEL(audioreadformat)=slin)
+ same => n,Set(CHANNEL(audiowriteformat)=slin)
+ ; RAPIDA_CONTEXT_ID is injected as a channel variable by Rapida ARI
+ same => n,AudioSocket(${RAPIDA_CONTEXT_ID},${RAPIDA_AS_HOST}:${RAPIDA_PORT})
+ same => n,Hangup()
+```
+
+ARI vault credential keys (store in Rapida credentials):
+
+| Key | Required | Description |
+|-----|----------|-------------|
+| `ari_url` | Yes | ARI base URL, e.g. `http://asterisk.local:8088` |
+| `ari_user` | Yes | ARI username |
+| `ari_password` | Yes | ARI password |
+| `endpoint_technology` | No | Channel technology — default `PJSIP` |
+| `trunk` | No | SIP trunk name, builds `PJSIP/trunk/number` |
+
+---
+
+## Asterisk — WebSocket
+
+WebSocket uses `chan_websocket` over standard HTTPS/WSS. No custom TCP port required.
+
+**When to use:** Asterisk 20+, cloud-hosted Asterisk, NAT traversal scenarios.
+
+<Steps>
+
+<Step title="Confirm required env vars">
+```env
+# docker/assistant-api/.assistant.env
+PUBLIC_ASSISTANT_HOST=your-public-hostname.com
+```
+
+No AudioSocket port needed — WebSocket uses the standard HTTPS port.
+</Step>
+
+<Step title="Verify the Asterisk module is loaded">
+```bash
+asterisk -rx "module show like chan_websocket"
+# chan_websocket.so — requires Asterisk 20+
+```
+
+If not loaded, add to `/etc/asterisk/modules.conf`:
+```ini
+[modules]
+load = chan_websocket.so
+```
+</Step>
+
+<Step title="Configure the dialplan">
+```ini
+# /etc/asterisk/extensions.conf
+
+[globals]
+RAPIDA_API_KEY = rpd-xxx-your-api-key
+RAPIDA_HOST    = {PUBLIC_ASSISTANT_HOST}
+ASSISTANT_ID   = 123456789
+
+[rapida-inbound-ws]
+exten => _X.,1,Answer()
+ ; Phase 1 — register the call and get a contextId
+ same => n,Set(CTX=${CURL(https://${RAPIDA_HOST}/v1/talk/asterisk/call/${ASSISTANT_ID}?from=${CALLERID(num)}&x-api-key=${RAPIDA_API_KEY})})
+ same => n,GotoIf($["${CTX}" = ""]?error)
+ ; Phase 2 — open WSS connection using contextId in the URL path
+ same => n,WebSocket(wss://${RAPIDA_HOST}/v1/talk/asterisk/ctx/${CTX})
+ same => n,Hangup()
+ same => n(error),Playback(an-error-has-occurred)
+ same => n,Hangup()
+```
+</Step>
+
+<Step title="Reload dialplan">
+```bash
+asterisk -rx "dialplan reload"
+```
+</Step>
+
+<Step title="Test connectivity">
+```bash
+# Verify HTTPS/WebSocket host is reachable
+curl -I https://{PUBLIC_ASSISTANT_HOST}
+```
+</Step>
+
+</Steps>
+
+### Outbound calls via ARI (WebSocket)
+
+```ini
+; /etc/asterisk/extensions.conf
+[rapida-outbound-ws]
+exten => s,1,NoOp(Outbound WebSocket call)
+ ; RAPIDA_CONTEXT_ID is injected by Rapida ARI
+ same => n,WebSocket(wss://${RAPIDA_HOST}/v1/talk/asterisk/ctx/${RAPIDA_CONTEXT_ID})
+ same => n,Hangup()
+```
+
+Same ARI vault credentials apply — see the AudioSocket section above.
+
+### AudioSocket vs WebSocket — Quick Comparison
+
+| | AudioSocket | WebSocket |
+|--|-------------|-----------|
+| Asterisk version | 16+ | 20+ |
+| Module | `res_audiosocket` | `chan_websocket` |
+| Protocol | Raw TCP port 4573 | WSS (HTTPS port) |
+| Firewall | TCP 4573 must be open | Standard HTTPS only |
+| Audio codec | SLIN 16-bit 8kHz | μ-law 8kHz |
+| Latency | Lowest | Slightly higher |
+| TLS built-in | No | Yes (native WSS) |
+
+---
+
+## SIP
+
+The `assistant-api` runs a built-in SIP server. Any SIP client can call it directly — no external provider account needed.
+
+<Steps>
+
+<Step title="Configure env vars">
+```env
+# docker/assistant-api/.assistant.env
+SIP__SERVER=0.0.0.0           # Bind address (listen on all interfaces)
+SIP__EXTERNAL_IP=203.0.113.10 # Your PUBLIC IP — advertised in SDP
+SIP__PORT=5090                 # SIP signalling port (UDP)
+SIP__RTP_PORT_RANGE_START=10000
+SIP__RTP_PORT_RANGE_END=20000
+```
+
+<Warning>
+`SIP__EXTERNAL_IP` must be your server's real public IP. If left as `0.0.0.0`, SDP will advertise a non-routable address and audio will not work.
+</Warning>
+</Step>
+
+<Step title="Open firewall ports">
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `5090` | UDP | SIP signalling |
+| `10000–20000` | UDP | RTP media |
+</Step>
+
+<Step title="Dial from any SIP client">
+Use this connection string from any SIP phone, softphone, or PBX:
+
+```
+sip:{assistantID}:{apiKey}@{SIP__EXTERNAL_IP}:{SIP__PORT}
+```
+
+| Field | Value |
+|-------|-------|
+| `assistantID` | Numeric assistant ID from the Rapida dashboard |
+| `apiKey` | Rapida API key scoped to the project (`rpd-xxx`) |
+| `SIP__EXTERNAL_IP` | Public IP set in env var |
+| `SIP__PORT` | `5090` (default) |
+</Step>
+
+<Step title="Connect Asterisk as a SIP trunk (optional)">
+To route calls from an Asterisk PBX through Rapida over SIP, configure `pjsip.conf`:
+
+```ini
+; /etc/asterisk/pjsip.conf
+[rapida-trunk]
+type=endpoint
+context=rapida-outbound
+disallow=all
+allow=ulaw
+aors=rapida-trunk-aor
+outbound_auth=rapida-trunk-auth
+
+[rapida-trunk-auth]
+type=auth
+auth_type=userpass
+username={assistantID}
+password={apiKey}
+
+[rapida-trunk-aor]
+type=aor
+contact=sip:{SIP__EXTERNAL_IP}:{SIP__PORT}
+
+[rapida-dialer]
+type=identify
+endpoint=rapida-trunk
+match={SIP__EXTERNAL_IP}
+```
+
+```ini
+; /etc/asterisk/extensions.conf
+[rapida-outbound]
+exten => _X.,1,NoOp(Route through Rapida SIP)
+ same => n,Dial(PJSIP/${EXTEN}@rapida-trunk)
+ same => n,Hangup()
+```
+</Step>
+
+</Steps>
+
+---
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="ngrok — Local Testing" icon="tunnel" href="/opensource/services/assistant-api/ngrok">
+    Use ngrok to test Twilio, Vonage, and Exotel webhooks from your local machine.
+  </Card>
+  <Card title="Adding a New Provider" icon="code" href="/opensource/services/assistant-api/telephony-developing">
+    Implement the Telephony interface to support a new provider.
+  </Card>
+  <Card title="Configuration" icon="sliders" href="/opensource/services/assistant-api/configuration">
+    Full env var reference for PUBLIC_ASSISTANT_HOST, SIP, and AudioSocket.
+  </Card>
+  <Card title="Telephony Overview" icon="phone" href="/opensource/services/assistant-api/telephony">
+    Provider comparison table and URL routing reference.
+  </Card>
+</CardGroup>

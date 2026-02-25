@@ -1,0 +1,56 @@
+---
+title: "Sarvam AI TTS"
+description: "Configure Sarvam AI text-to-speech for Indian languages in assistant-api."
+sidebarTitle: "Sarvam AI"
+---
+
+Sarvam AI provides natural-sounding synthesis for Indian languages — Hindi, Bengali, Telugu, Tamil, Kannada, Malayalam, Marathi, Gujarati, Punjabi, and more.
+
+**Provider identifier:** `sarvamai`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | Sarvam AI API key from [dashboard.sarvam.ai](https://dashboard.sarvam.ai) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get a Sarvam AI API key">
+Sign in at [dashboard.sarvam.ai](https://dashboard.sarvam.ai) → **API Keys**.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **Sarvam AI**, enter `key` = your API key.
+
+The same credential is used for both Sarvam AI STT and TTS.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **TTS Provider**, select **Sarvam AI**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `language` | `hi-IN` | BCP-47 language code |
+| `speaker` | `meera` | Voice: `meera`, `pavithra`, `maitreyi`, `arvind`, `amol`, `amartya` |
+| `model` | `bulbul:v1` | Sarvam TTS model |
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Sarvam AI STT" icon="waveform" href="/opensource/services/assistant-api/stt/sarvamai">
+    Sarvam AI speech-to-text
+  </Card>
+  <Card title="TTS Overview" icon="volume" href="/opensource/services/assistant-api/tts/overview">
+    All TTS providers
+  </Card>
+</CardGroup>

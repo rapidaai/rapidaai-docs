@@ -1,0 +1,216 @@
+---
+title: "Asterisk"
+description: "Run assistant-api with Asterisk PBX using AudioSocket (native TCP) or WebSocket transport."
+sidebarTitle: "Asterisk"
+---
+
+Asterisk integrates with Rapida using two transport methods. Choose based on your Asterisk version and network topology.
+
+## Transport Comparison
+
+| | AudioSocket | WebSocket |
+|--|-------------|-----------|
+| **Asterisk version** | 16+ | 20+ |
+| **Module** | `res_audiosocket` | `chan_websocket` |
+| **Protocol** | Raw TCP port 4573 | WSS (standard HTTPS port) |
+| **Firewall** | TCP 4573 must be open outbound | Standard HTTPS only |
+| **Audio codec** | SLIN 16-bit 8kHz | μ-law 8kHz |
+| **Latency** | Lowest | Slightly higher |
+| **TLS** | No | Yes (native WSS) |
+| **Best for** | LAN / private network | Cloud / NAT traversal |
+
+---
+
+## AudioSocket
+
+<Steps>
+
+<Step title="Configure env vars">
+```env
+# docker/assistant-api/.assistant.env
+PUBLIC_ASSISTANT_HOST=your-hostname.com
+AUDIOSOCKET__HOST=0.0.0.0
+AUDIOSOCKET__PORT=4573
+```
+
+`assistant-api` binds a TCP AudioSocket server on `AUDIOSOCKET__PORT` at startup.
+</Step>
+
+<Step title="Verify the module is loaded">
+```bash
+asterisk -rx "module show like audiosocket"
+# Expected: res_audiosocket.so
+```
+
+If not loaded, add to `/etc/asterisk/modules.conf`:
+```ini
+[modules]
+load = res_audiosocket.so
+```
+</Step>
+
+<Step title="Configure the dialplan">
+```ini
+# /etc/asterisk/extensions.conf
+
+[globals]
+RAPIDA_API_KEY = rpd-xxx-your-api-key
+RAPIDA_HOST    = {PUBLIC_ASSISTANT_HOST}   ; HTTP/webhook host (HTTPS)
+RAPIDA_AS_HOST = {PUBLIC_ASSISTANT_HOST}   ; AudioSocket TCP host
+RAPIDA_PORT    = 4573
+ASSISTANT_ID   = 123456789
+
+[rapida-inbound]
+exten => _X.,1,Answer()
+ same => n,Set(CHANNEL(audioreadformat)=slin)
+ same => n,Set(CHANNEL(audiowriteformat)=slin)
+ ; Phase 1 — register the call and get a contextId
+ same => n,Set(CTX=${CURL(https://${RAPIDA_HOST}/v1/talk/asterisk/call/${ASSISTANT_ID}?from=${CALLERID(num)}&x-api-key=${RAPIDA_API_KEY})})
+ same => n,GotoIf($["${CTX}" = ""]?error)
+ ; Phase 2 — open AudioSocket TCP using contextId as UUID
+ same => n,AudioSocket(${CTX},${RAPIDA_AS_HOST}:${RAPIDA_PORT})
+ same => n,Hangup()
+ same => n(error),Playback(an-error-has-occurred)
+ same => n,Hangup()
+```
+
+<Warning>
+`CHANNEL(audioreadformat)=slin` and `CHANNEL(audiowriteformat)=slin` are required. AudioSocket expects SLIN (signed linear PCM) — without this Asterisk will not convert the audio format.
+</Warning>
+</Step>
+
+<Step title="Reload and test">
+```bash
+asterisk -rx "dialplan reload"
+
+# Verify connectivity
+nc -zv {RAPIDA_AS_HOST} 4573    # AudioSocket TCP
+curl -I https://{RAPIDA_HOST}   # HTTPS webhook
+```
+</Step>
+
+</Steps>
+
+### Outbound via ARI (AudioSocket)
+
+For outbound calls, Rapida uses Asterisk's ARI to originate the channel. The `RAPIDA_CONTEXT_ID` channel variable is injected by Rapida ARI automatically:
+
+```ini
+; /etc/asterisk/extensions.conf
+[rapida-outbound]
+exten => s,1,Set(CHANNEL(audioreadformat)=slin)
+ same => n,Set(CHANNEL(audiowriteformat)=slin)
+ ; RAPIDA_CONTEXT_ID is set by Rapida ARI when originating the call
+ same => n,AudioSocket(${RAPIDA_CONTEXT_ID},${RAPIDA_AS_HOST}:${RAPIDA_PORT})
+ same => n,Hangup()
+```
+
+**ARI vault credential keys** (store in Rapida vault, provider type **Asterisk**):
+
+| Key | Required | Description |
+|-----|----------|-------------|
+| `ari_url` | Yes | ARI base URL, e.g. `http://asterisk.local:8088` |
+| `ari_user` | Yes | ARI username |
+| `ari_password` | Yes | ARI password |
+| `endpoint_technology` | No | Channel technology — default `PJSIP` |
+| `trunk` | No | SIP trunk name — builds `PJSIP/trunk/number` |
+
+---
+
+## WebSocket
+
+<Steps>
+
+<Step title="Configure env vars">
+```env
+# docker/assistant-api/.assistant.env
+PUBLIC_ASSISTANT_HOST=your-hostname.com
+# No AudioSocket port needed — WebSocket uses standard HTTPS
+```
+</Step>
+
+<Step title="Verify the module is loaded">
+```bash
+asterisk -rx "module show like chan_websocket"
+# Expected: chan_websocket.so — requires Asterisk 20+
+```
+
+If not loaded, add to `/etc/asterisk/modules.conf`:
+```ini
+[modules]
+load = chan_websocket.so
+```
+</Step>
+
+<Step title="Configure the dialplan">
+```ini
+# /etc/asterisk/extensions.conf
+
+[globals]
+RAPIDA_API_KEY = rpd-xxx-your-api-key
+RAPIDA_HOST    = {PUBLIC_ASSISTANT_HOST}
+ASSISTANT_ID   = 123456789
+
+[rapida-inbound-ws]
+exten => _X.,1,Answer()
+ ; Phase 1 — register the call and get a contextId
+ same => n,Set(CTX=${CURL(https://${RAPIDA_HOST}/v1/talk/asterisk/call/${ASSISTANT_ID}?from=${CALLERID(num)}&x-api-key=${RAPIDA_API_KEY})})
+ same => n,GotoIf($["${CTX}" = ""]?error)
+ ; Phase 2 — open WSS connection with contextId in the URL path
+ same => n,WebSocket(wss://${RAPIDA_HOST}/v1/talk/asterisk/ctx/${CTX})
+ same => n,Hangup()
+ same => n(error),Playback(an-error-has-occurred)
+ same => n,Hangup()
+```
+</Step>
+
+<Step title="Reload and test">
+```bash
+asterisk -rx "dialplan reload"
+curl -I https://{RAPIDA_HOST}
+```
+</Step>
+
+</Steps>
+
+### Outbound via ARI (WebSocket)
+
+```ini
+; /etc/asterisk/extensions.conf
+[rapida-outbound-ws]
+exten => s,1,NoOp(Outbound WebSocket call)
+ ; RAPIDA_CONTEXT_ID is set by Rapida ARI
+ same => n,WebSocket(wss://${RAPIDA_HOST}/v1/talk/asterisk/ctx/${RAPIDA_CONTEXT_ID})
+ same => n,Hangup()
+```
+
+Same ARI vault credentials apply — see the AudioSocket section.
+
+---
+
+## Production URLs
+
+For Rapida SaaS:
+
+| Variable | Value |
+|----------|-------|
+| `RAPIDA_HOST` (HTTP/WebSocket) | `websocket-01.in.rapida.ai` |
+| `RAPIDA_AS_HOST` (AudioSocket TCP) | `socket-01.in.rapida.ai` |
+| `RAPIDA_PORT` | `4573` |
+
+---
+
+<CardGroup cols={2}>
+  <Card title="SIP" icon="signal" href="/opensource/services/assistant-api/telephony/sip">
+    Built-in SIP server for direct SIP connectivity
+  </Card>
+  <Card title="Configure Your Own" icon="code" href="/opensource/services/assistant-api/telephony/custom">
+    Add a new telephony provider
+  </Card>
+  <Card title="Configuration" icon="sliders" href="/opensource/services/assistant-api/configuration">
+    AUDIOSOCKET env vars reference
+  </Card>
+  <Card title="Telephony Overview" icon="diagram-project" href="/opensource/services/assistant-api/telephony/overview">
+    All providers comparison
+  </Card>
+</CardGroup>

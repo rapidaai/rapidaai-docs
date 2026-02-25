@@ -1,0 +1,53 @@
+---
+title: "AssemblyAI STT"
+description: "Configure AssemblyAI real-time speech-to-text with speaker diarization in assistant-api."
+sidebarTitle: "AssemblyAI"
+---
+
+AssemblyAI provides real-time streaming transcription with optional speaker diarization — useful for call center and multi-speaker scenarios.
+
+**Provider identifier:** `assemblyai`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | AssemblyAI API key from [app.assemblyai.com](https://app.assemblyai.com) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get an AssemblyAI API key">
+Sign in at [app.assemblyai.com](https://app.assemblyai.com) → **API Keys**.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **AssemblyAI**, enter `key` = your API key.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **STT Provider**, select **AssemblyAI**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `language` | `en` | Language code |
+| `speaker_labels` | `true` | Enable speaker diarization |
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Deepgram" icon="waveform" href="/opensource/services/assistant-api/stt/deepgram">
+    Alternative STT provider with Nova-3
+  </Card>
+  <Card title="STT Overview" icon="waveform" href="/opensource/services/assistant-api/stt/overview">
+    All STT providers
+  </Card>
+</CardGroup>

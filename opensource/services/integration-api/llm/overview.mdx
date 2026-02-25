@@ -1,0 +1,115 @@
+---
+title: "LLM Providers — Overview"
+description: "LargeLanguageCaller interface, ChatCompletionOptions, and supported LLM providers in integration-api."
+sidebarTitle: "Overview"
+---
+
+The `integration-api` abstracts all LLM providers behind a single `LargeLanguageCaller` interface. Provider credentials are encrypted at rest using `INTEGRATION_CRYPTO_KEY`. The `assistant-api` calls integration-api via gRPC to execute LLM inference.
+
+---
+
+## `LargeLanguageCaller` Interface
+
+Every LLM provider implements:
+
+```go
+// api/integration-api/internal/caller/
+type LargeLanguageCaller interface {
+    // GetChatCompletion returns a complete response (non-streaming).
+    GetChatCompletion(
+        ctx         context.Context,
+        messages    []ChatMessage,
+        opts        ChatCompletionOptions,
+        credentials map[string]interface{},
+    ) (*ChatCompletion, error)
+
+    // StreamChatCompletion streams tokens via callbacks.
+    StreamChatCompletion(
+        ctx         context.Context,
+        messages    []ChatMessage,
+        opts        ChatCompletionOptions,
+        credentials map[string]interface{},
+        onStream    func(token string),              // called per token
+        onMetrics   func(metrics LLMMetrics),        // called on completion with token counts
+        onError     func(err error),                 // called on error
+    ) error
+}
+```
+
+---
+
+## `ChatCompletionOptions`
+
+Model behaviour is controlled via the `ModelParameter` map:
+
+```go
+type ChatCompletionOptions struct {
+    ModelParameter map[string]interface{}  // keyed by "model.*"
+    Tools          []ToolDefinition
+}
+```
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `model.name` | `string` | Model ID (e.g. `gpt-4o`, `claude-sonnet-4-6`) |
+| `model.temperature` | `float` | Sampling temperature (0.0–2.0) |
+| `model.max_tokens` | `int` | Maximum tokens in the response |
+| `model.top_p` | `float` | Nucleus sampling threshold |
+| `model.stop` | `[]string` | Stop sequences |
+| `model.tool_choice` | `string` | Tool usage: `auto`, `none`, `required` |
+| `model.frequency_penalty` | `float` | Repeat penalty (OpenAI / Gemini) |
+| `model.presence_penalty` | `float` | Topic penalty (OpenAI / Gemini) |
+| `model.seed` | `int` | Deterministic sampling seed |
+| `model.response_format` | `string` | Output format (e.g. `json_object`) |
+
+Not all providers support all keys — unsupported keys are silently ignored.
+
+---
+
+## Supported LLM Providers
+
+| Provider | Directory | Notes |
+|----------|-----------|-------|
+| **OpenAI** | `caller/openai/` | GPT-4o, GPT-4o-mini, GPT-4-turbo |
+| **Anthropic** | `caller/anthropic/` | Claude Opus/Sonnet/Haiku |
+| **Google Gemini** | `caller/gemini/` | Gemini 2.0, 1.5 Pro |
+| **Azure OpenAI** | `caller/azure/` | Azure-hosted OpenAI deployments |
+| **Mistral** | `caller/mistral/` | Mistral Large, Small, Nemo |
+| **Cohere** | `caller/cohere/` | Command R, Command R+ |
+| **Vertex AI** | `caller/vertexai/` | Google Vertex AI models |
+| **HuggingFace** | `caller/huggingface/` | HuggingFace Inference API |
+| **Replicate** | `caller/replicate/` | Replicate hosted models |
+| **Voyage AI** | `caller/voyageai/` | Embedding and reranking |
+
+---
+
+## Credential Encryption
+
+All vault credentials are encrypted with `INTEGRATION_CRYPTO_KEY` before storage. Never commit this key or expose it in logs.
+
+```env
+# docker/integration-api/.integration.env
+INTEGRATION_CRYPTO_KEY=32-char-random-string
+```
+
+---
+
+## Provider Pages
+
+<CardGroup cols={3}>
+  <Card title="OpenAI" icon="openai" href="/opensource/services/integration-api/llm/openai">
+    GPT-4o, GPT-4o-mini
+  </Card>
+  <Card title="Anthropic" icon="robot" href="/opensource/services/integration-api/llm/anthropic">
+    Claude Opus, Sonnet, Haiku
+  </Card>
+  <Card title="Gemini" icon="google" href="/opensource/services/integration-api/llm/gemini">
+    Gemini 2.0 Flash, 1.5 Pro
+  </Card>
+  <Card title="Azure OpenAI" icon="microsoft" href="/opensource/services/integration-api/llm/azure">
+    Azure-hosted OpenAI deployments
+  </Card>
+  <Card title="Configure Your Own" icon="code" href="/opensource/services/integration-api/llm/custom">
+    Implement the LargeLanguageCaller interface
+  </Card>
+</CardGroup>

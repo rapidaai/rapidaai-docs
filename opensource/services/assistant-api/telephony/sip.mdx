@@ -1,0 +1,127 @@
+---
+title: "SIP"
+description: "Run assistant-api with the built-in SIP server for direct SIP connectivity."
+sidebarTitle: "SIP"
+---
+
+The `assistant-api` includes a built-in SIP server. Any SIP client, softphone, or PBX can call it directly — no external telephony account is required.
+
+---
+
+## Required Configuration
+
+```env
+# docker/assistant-api/.assistant.env
+SIP__SERVER=0.0.0.0            # Bind address (listen on all interfaces)
+SIP__EXTERNAL_IP=203.0.113.10  # Your server's PUBLIC IP — advertised in SDP
+SIP__PORT=5090                  # SIP signalling port (UDP)
+SIP__RTP_PORT_RANGE_START=10000
+SIP__RTP_PORT_RANGE_END=20000
+```
+
+<Warning>
+`SIP__EXTERNAL_IP` must be your server's real public IP. If left as `0.0.0.0`, SDP will advertise a non-routable address, breaking the RTP media path — callers will hear silence.
+</Warning>
+
+---
+
+## Firewall Ports
+
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `5090` | UDP | SIP signalling |
+| `10000–20000` | UDP | RTP media |
+
+---
+
+## Connecting a SIP Client
+
+Use this connection string from any SIP phone, softphone (e.g. Zoiper, Linphone), or PBX:
+
+```
+sip:{assistantID}:{apiKey}@{SIP__EXTERNAL_IP}:{SIP__PORT}
+```
+
+| Field | Value |
+|-------|-------|
+| `assistantID` | Numeric assistant ID from the Rapida dashboard |
+| `apiKey` | Rapida API key for the project (`rpd-xxx`) |
+| `SIP__EXTERNAL_IP` | Public IP set in env var |
+| `SIP__PORT` | `5090` (default) |
+
+**Example:**
+```
+sip:123456789:rpd-abc123@203.0.113.10:5090
+```
+
+---
+
+## Asterisk SIP Trunk (Optional)
+
+To route calls from Asterisk through Rapida over SIP:
+
+<Tabs>
+  <Tab title="pjsip.conf">
+    ```ini
+    ; /etc/asterisk/pjsip.conf
+    [rapida-trunk]
+    type=endpoint
+    context=rapida-outbound
+    disallow=all
+    allow=ulaw
+    aors=rapida-trunk-aor
+    outbound_auth=rapida-trunk-auth
+
+    [rapida-trunk-auth]
+    type=auth
+    auth_type=userpass
+    username={assistantID}
+    password={apiKey}
+
+    [rapida-trunk-aor]
+    type=aor
+    contact=sip:{SIP__EXTERNAL_IP}:{SIP__PORT}
+
+    [rapida-dialer]
+    type=identify
+    endpoint=rapida-trunk
+    match={SIP__EXTERNAL_IP}
+    ```
+  </Tab>
+  <Tab title="extensions.conf">
+    ```ini
+    ; /etc/asterisk/extensions.conf
+    [rapida-outbound]
+    exten => _X.,1,NoOp(Route through Rapida SIP)
+     same => n,Dial(PJSIP/${EXTEN}@rapida-trunk)
+     same => n,Hangup()
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Rapida SaaS SIP Endpoint
+
+For Rapida SaaS, the production SIP server is:
+
+```
+sip:{assistantID}:{apiKey}@sip-01.in.rapida.ai:5060
+```
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Asterisk" icon="server" href="/opensource/services/assistant-api/telephony/asterisk">
+    Asterisk AudioSocket and WebSocket transports
+  </Card>
+  <Card title="Configuration" icon="sliders" href="/opensource/services/assistant-api/configuration">
+    SIP__EXTERNAL_IP and other SIP env vars
+  </Card>
+  <Card title="Telephony Overview" icon="diagram-project" href="/opensource/services/assistant-api/telephony/overview">
+    All providers comparison
+  </Card>
+  <Card title="Configure Your Own" icon="code" href="/opensource/services/assistant-api/telephony/custom">
+    Add a new telephony provider
+  </Card>
+</CardGroup>
