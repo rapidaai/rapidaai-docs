@@ -1,0 +1,241 @@
+---
+title: "Assistant API — Configuration"
+description: "Complete environment variable reference for the assistant-api service."
+sidebarTitle: "Configuration"
+---
+
+## Configuration File
+
+Edit `docker/assistant-api/.assistant.env` before starting the service.
+
+For local development (without Docker), export the variables and override the Docker hostnames shown in the table below.
+
+---
+
+## Required Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SECRET` | `rpd_pks` | JWT signing secret — must be identical across all services |
+| `POSTGRES__HOST` | `postgres` | PostgreSQL host |
+| `POSTGRES__DB_NAME` | `assistant_db` | Database name |
+| `POSTGRES__AUTH__USER` | `rapida_user` | Database user |
+| `POSTGRES__AUTH__PASSWORD` | `rapida_db_password` | Database password |
+| `REDIS__HOST` | `redis` | Redis host |
+| `OPENSEARCH__HOST` | `opensearch` | OpenSearch host |
+| `INTEGRATION_HOST` | `integration-api:9004` | integration-api gRPC address |
+| `ENDPOINT_HOST` | `endpoint-api:9005` | endpoint-api gRPC address |
+| `WEB_HOST` | `web-api:9001` | web-api gRPC address |
+| `DOCUMENT_HOST` | `http://document-api:9010` | document-api HTTP address |
+| `PUBLIC_ASSISTANT_HOST` | — | **Publicly reachable hostname** for telephony callbacks and WebSocket media |
+
+<Warning>
+  `PUBLIC_ASSISTANT_HOST` must resolve from the public internet. Twilio, Vonage, and Exotel connect WebSocket media streams to `wss://PUBLIC_ASSISTANT_HOST/v1/talk/{provider}/ctx/{contextId}`. For local testing, use an ngrok tunnel and set this to your ngrok hostname (e.g. `abc123.ngrok.io`).
+</Warning>
+
+---
+
+## Service Identity
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SERVICE_NAME` | `workflow-api` | Internal service name label |
+| `HOST` | `0.0.0.0` | Bind address |
+| `PORT` | `9007` | HTTP / gRPC / WebSocket port (cmux) |
+| `LOG_LEVEL` | `debug` | `debug` · `info` · `warn` · `error` |
+| `ENV` | `development` | `development` · `staging` · `production` |
+
+---
+
+## PostgreSQL
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `POSTGRES__HOST` | `postgres` | Host (`localhost` for local dev) |
+| `POSTGRES__PORT` | `5432` | Port |
+| `POSTGRES__DB_NAME` | `assistant_db` | Database name |
+| `POSTGRES__AUTH__USER` | `rapida_user` | User |
+| `POSTGRES__AUTH__PASSWORD` | `rapida_db_password` | Password |
+| `POSTGRES__MAX_OPEN_CONNECTION` | `50` | Connection pool size |
+| `POSTGRES__MAX_IDEAL_CONNECTION` | `25` | Idle connections |
+| `POSTGRES__SSL_MODE` | `disable` | `disable` · `require` · `verify-full` |
+| `POSTGRES__SLC_CACHE__HOST` | `redis` | Redis host for second-level GORM cache |
+| `POSTGRES__SLC_CACHE__PORT` | `6379` | Redis port for GORM cache |
+| `POSTGRES__SLC_CACHE__DB` | `1` | Redis DB index for GORM cache |
+| `POSTGRES__SLC_CACHE__MAX_CONNECTION` | `10` | Redis pool size |
+
+---
+
+## Redis
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `REDIS__HOST` | `redis` | Redis host (`localhost` for local dev) |
+| `REDIS__PORT` | `6379` | Redis port |
+| `REDIS__MAX_CONNECTION` | `10` | Connection pool size |
+| `REDIS__MAX_DB` | `0` | Redis DB index |
+
+---
+
+## OpenSearch
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OPENSEARCH__SCHEMA` | `http` | `http` · `https` |
+| `OPENSEARCH__HOST` | `opensearch` | OpenSearch host (`localhost` for local dev) |
+| `OPENSEARCH__PORT` | `9200` | OpenSearch port |
+| `OPENSEARCH__MAX_RETRIES` | `3` | Request retry count |
+| `OPENSEARCH__MAX_CONNECTION` | `10` | Connection pool size |
+
+---
+
+## Asset Storage
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ASSET_STORE__STORAGE_TYPE` | `local` | `local` · `s3` · `azure` |
+| `ASSET_STORE__STORAGE_PATH_PREFIX` | `/app/rapida-data/assets/workflow` | Path for local storage |
+| `ASSET_STORE__PUBLIC_URL_PREFIX` | `http://localhost:8080/rapida-data/assets/workflow` | Public URL for serving stored assets |
+
+---
+
+## Asterisk AudioSocket
+
+The AudioSocket server binds on a separate TCP port. Asterisk dials into this port directly.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AUDIOSOCKET__HOST` | `0.0.0.0` | Bind address for the AudioSocket TCP server |
+| `AUDIOSOCKET__PORT` | `4573` | TCP port for AudioSocket connections |
+
+**Asterisk dialplan usage:**
+
+```
+same = n,AudioSocket(${RAPIDA_CONTEXT_ID},assistant-api-host:4573)
+```
+
+---
+
+## SIP Server
+
+The built-in SIP server handles direct SIP INVITE connections and Asterisk SIP trunk connections.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SIP__SERVER` | `0.0.0.0` | Bind address for SIP |
+| `SIP__EXTERNAL_IP` | `0.0.0.0` | **Public IP** advertised in SDP and SIP Contact headers — must be your server's public IP |
+| `SIP__PORT` | `5090` | SIP signalling port (UDP) |
+| `SIP__TRANSPORT` | `udp` | `udp` · `tcp` |
+| `SIP__RTP_PORT_RANGE_START` | `10000` | RTP media port range start |
+| `SIP__RTP_PORT_RANGE_END` | `20000` | RTP media port range end |
+
+<Warning>
+  Set `SIP__EXTERNAL_IP` to your server's public IP address. If this is set to `0.0.0.0`, SDP answers will advertise the wrong address and media will not flow for callers outside the local network.
+</Warning>
+
+**SIP connection string:**
+
+```
+sip:{assistantID}:{apiKey}@{SIP__EXTERNAL_IP}:{SIP__PORT}
+```
+
+---
+
+## Full Environment File
+
+```env
+# ── Service identity ──────────────────────────────────────────────
+SERVICE_NAME=workflow-api
+HOST=0.0.0.0
+PORT=9007
+LOG_LEVEL=debug
+SECRET=rpd_pks
+ENV=development
+
+# ── Asset storage ─────────────────────────────────────────────────
+ASSET_STORE__STORAGE_TYPE=local
+ASSET_STORE__STORAGE_PATH_PREFIX=/app/rapida-data/assets/workflow
+ASSET_STORE__PUBLIC_URL_PREFIX=http://localhost:8080/rapida-data/assets/workflow
+
+# ── PostgreSQL ────────────────────────────────────────────────────
+POSTGRES__HOST=postgres
+POSTGRES__DB_NAME=assistant_db
+POSTGRES__AUTH__USER=rapida_user
+POSTGRES__AUTH__PASSWORD=rapida_db_password
+POSTGRES__PORT=5432
+POSTGRES__MAX_OPEN_CONNECTION=50
+POSTGRES__MAX_IDEAL_CONNECTION=25
+POSTGRES__SSL_MODE=disable
+POSTGRES__SLC_CACHE__HOST=redis
+POSTGRES__SLC_CACHE__PORT=6379
+POSTGRES__SLC_CACHE__MAX_CONNECTION=10
+POSTGRES__SLC_CACHE__DB=1
+
+# ── Redis ─────────────────────────────────────────────────────────
+REDIS__HOST=redis
+REDIS__PORT=6379
+REDIS__MAX_CONNECTION=10
+REDIS__MAX_DB=0
+
+# ── OpenSearch ────────────────────────────────────────────────────
+OPENSEARCH__SCHEMA=http
+OPENSEARCH__HOST=opensearch
+OPENSEARCH__PORT=9200
+OPENSEARCH__MAX_RETRIES=3
+OPENSEARCH__MAX_CONNECTION=10
+
+# ── Internal service addresses ────────────────────────────────────
+INTEGRATION_HOST=integration-api:9004
+ENDPOINT_HOST=endpoint-api:9005
+ASSISTANT_HOST=assistant-api:9007
+WEB_HOST=web-api:9001
+DOCUMENT_HOST=http://document-api:9010
+UI_HOST=https://localhost:3000
+
+# ── Public hostname (required for telephony) ──────────────────────
+PUBLIC_ASSISTANT_HOST=your-public-hostname.example.com
+
+# ── Asterisk AudioSocket ──────────────────────────────────────────
+AUDIOSOCKET__HOST=0.0.0.0
+AUDIOSOCKET__PORT=4573
+
+# ── SIP Server ────────────────────────────────────────────────────
+SIP__SERVER=0.0.0.0
+SIP__EXTERNAL_IP=0.0.0.0
+SIP__PORT=5090
+SIP__TRANSPORT=udp
+SIP__RTP_PORT_RANGE_START=10000
+SIP__RTP_PORT_RANGE_END=20000
+```
+
+---
+
+## Local Development Overrides
+
+When running from source, override Docker hostnames:
+
+```bash
+export $(grep -v '^#' docker/assistant-api/.assistant.env | xargs)
+export POSTGRES__HOST=localhost
+export REDIS__HOST=localhost
+export OPENSEARCH__HOST=localhost
+export INTEGRATION_HOST=localhost:9004
+export ENDPOINT_HOST=localhost:9005
+export WEB_HOST=localhost:9001
+export DOCUMENT_HOST=http://localhost:9010
+
+go run cmd/assistant/assistant.go
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="STT / TTS Providers" icon="mic" href="/opensource/services/assistant-api/stt-tts">
+    Configure and add speech recognition and synthesis providers.
+  </Card>
+  <Card title="Telephony" icon="phone" href="/opensource/services/assistant-api/telephony">
+    Twilio, Asterisk, SIP, and other telephony provider setup.
+  </Card>
+</CardGroup>

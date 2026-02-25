@@ -150,11 +150,11 @@ In your PBX admin panel (FreeSWITCH, Asterisk, Kamailio, or hosted provider), cr
 
 **Rapida SIP Server:**
 ```
-sip:sip.rapida.ai:5060
+sip:sip-01.in.rapida.ai:5060
 ```
 
 Configure your trunk with:
-- **Outbound Proxy**: `sip.rapida.ai:5060`
+- **Outbound Proxy**: `sip-01.in.rapida.ai:5060`
 - **Transport**: UDP or TCP
 - **Codec**: G.711 μ-law (PCMU) preferred, G.711 A-law (PCMA) supported
 </Step>
@@ -166,7 +166,7 @@ Add a dial plan entry that routes specific numbers or patterns to the Rapida SIP
 ```xml
 <extension name="rapida-ai">
   <condition field="destination_number" expression="^(5551234567)$">
-    <action application="bridge" data="sofia/external/sip:sip.rapida.ai:5060"/>
+    <action application="bridge" data="sofia/external/sip:sip-01.in.rapida.ai:5060"/>
   </condition>
 </extension>
 ```
@@ -277,7 +277,7 @@ If you're using Twilio, Vonage, Exotel, or Asterisk, consider using the dedicate
 <AccordionGroup>
   <Accordion title="SIP INVITE rejected or no response">
     - Verify the SIP URI in your credential is correct and reachable
-    - Check that your PBX can route to `sip.rapida.ai:5060` (firewall/NAT rules)
+    - Check that your PBX can route to `sip-01.in.rapida.ai:5060` (firewall/NAT rules)
     - If using authentication, ensure username and password are correct
     - Try both UDP and TCP transport if one doesn't work
   </Accordion>

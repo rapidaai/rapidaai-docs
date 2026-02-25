@@ -1,0 +1,389 @@
+---
+title: "STT / TTS Providers"
+description: "How speech-to-text and text-to-speech transformers work in assistant-api, and how to add a new provider."
+sidebarTitle: "STT / TTS Providers"
+---
+
+## Architecture
+
+The `assistant-api` decouples audio I/O from provider-specific logic through a **transformer layer**. Each provider implements the same generic interface. The factory functions resolve the provider string at call time.
+
+```
+assistant-api
+└── internal/transformer/
+    ├── transformer.go          ← interface + factory functions
+    ├── deepgram/               ← deepgram.go, stt.go, tts.go, normalizer.go
+    ├── elevenlabs/
+    ├── google/
+    ├── azure/
+    ├── cartesia/
+    ├── assembly-ai/
+    ├── revai/
+    ├── sarvam/
+    ├── openai/
+    ├── resemble/
+    ├── aws/
+    └── speechmatics/
+```
+
+---
+
+## Transformer Interface
+
+Every STT and TTS provider implements the same `Transformers[IN]` generic interface:
+
+```go
+// api/assistant-api/internal/type/transformer.go
+type Transformers[IN any] interface {
+    // Initialize sets up the provider connection (WebSocket, HTTP client, etc.)
+    // Called once per call session before audio begins.
+    Initialize() error
+
+    // Transform sends one audio packet (STT) or one LLM text packet (TTS)
+    // to the provider. Results are delivered via the onPacket callback
+    // registered at construction time.
+    Transform(context.Context, IN) error
+
+    // Close tears down the connection and releases resources.
+    Close(context.Context) error
+}
+```
+
+Type aliases used in practice:
+
+```go
+type SpeechToTextTransformer = Transformers[UserAudioPacket]
+type TextToSpeechTransformer  = Transformers[LLMPacket]
+```
+
+---
+
+## Provider Identifiers
+
+Provider strings are defined as `AudioTransformer` constants in `api/assistant-api/internal/transformer/transformer.go`:
+
+```go
+const (
+    DEEPGRAM              AudioTransformer = "deepgram"
+    GOOGLE_SPEECH_SERVICE AudioTransformer = "google-speech-service"
+    AZURE_SPEECH_SERVICE  AudioTransformer = "azure-speech-service"
+    CARTESIA              AudioTransformer = "cartesia"
+    REVAI                 AudioTransformer = "revai"
+    SARVAM                AudioTransformer = "sarvamai"
+    ELEVENLABS            AudioTransformer = "elevenlabs"
+    ASSEMBLYAI            AudioTransformer = "assemblyai"
+)
+```
+
+These strings are stored in the assistant's configuration and resolved at call time by the factory functions.
+
+---
+
+## Factory Functions
+
+The factory functions accept the provider string and return the correct implementation:
+
+```go
+// api/assistant-api/internal/transformer/transformer.go
+
+func GetSpeechToTextTransformer(
+    ctx        context.Context,
+    logger     commons.Logger,
+    provider   string,
+    credential *protos.VaultCredential,
+    onPacket   func(STTPacket),
+    opts       utils.Option,
+) (SpeechToTextTransformer, error)
+
+func GetTextToSpeechTransformer(
+    ctx        context.Context,
+    logger     commons.Logger,
+    provider   string,
+    credential *protos.VaultCredential,
+    onPacket   func(AudioPacket),
+    opts       utils.Option,
+) (TextToSpeechTransformer, error)
+```
+
+Both functions use a `switch` on `AudioTransformer(provider)`. Adding a new provider means adding a case to each switch.
+
+---
+
+## Supported Providers
+
+<Tabs>
+
+<Tab title="STT">
+
+| Provider | Identifier | Streaming | Notes |
+|----------|-----------|-----------|-------|
+| Deepgram | `deepgram` | ✅ | Nova-2 / Nova-3; WebSocket SDK |
+| Google Cloud STT | `google-speech-service` | ✅ | 100+ languages |
+| Azure Cognitive Services | `azure-speech-service` | ✅ | Neural Speech |
+| Cartesia | `cartesia` | ✅ | Low latency |
+| AssemblyAI | `assemblyai` | ✅ | Speaker diarization |
+| Rev.ai | `revai` | ✅ | Real-time |
+| Sarvam AI | `sarvamai` | ✅ | Indian languages |
+| AWS Transcribe | (aws) | ✅ | Real-time streaming |
+| OpenAI Whisper | (openai) | ✗ | Batch only |
+| Speechmatics | (speechmatics) | ✅ | Real-time |
+
+</Tab>
+
+<Tab title="TTS">
+
+| Provider | Identifier | Streaming | Notes |
+|----------|-----------|-----------|-------|
+| Deepgram Aura | `deepgram` | ✅ | Low-latency synthesis; `wss://api.deepgram.com/v1/speak` |
+| ElevenLabs | `elevenlabs` | ✅ | High-fidelity voice cloning |
+| Google Cloud TTS | `google-speech-service` | ✅ | WaveNet / Neural2 |
+| Azure Cognitive Services | `azure-speech-service` | ✅ | Neural voices, 140+ languages |
+| Cartesia | `cartesia` | ✅ | Streaming synthesis |
+| Sarvam AI | `sarvamai` | ✅ | Indian languages |
+| Resemble AI | (resemble) | ✅ | Voice cloning |
+| OpenAI TTS | (openai) | ✅ | `tts-1`, `tts-1-hd` |
+| AWS Polly | (aws) | ✅ | Neural voices |
+
+</Tab>
+
+</Tabs>
+
+---
+
+## Reference Implementation — Deepgram
+
+The Deepgram transformer is the reference implementation. Its structure is the same for every provider.
+
+<AccordionGroup>
+
+<Accordion title="Option struct (deepgram.go)">
+
+```go
+// api/assistant-api/internal/transformer/deepgram/deepgram.go
+
+type deepgramOption struct {
+    key    string          // API key from vault credential
+    logger commons.Logger
+    mdlOpts utils.Option  // assistant-level options (language, model, etc.)
+}
+
+func NewDeepgramOption(
+    logger          commons.Logger,
+    vaultCredential *protos.VaultCredential,
+    opts            utils.Option,
+) *deepgramOption {
+    credentials := vaultCredential.GetValue().AsMap()
+    return &deepgramOption{
+        key:     credentials["key"].(string),  // vault credential key
+        logger:  logger,
+        mdlOpts: opts,
+    }
+}
+```
+
+Provider-specific options are read from the vault credential map. The key name (`"key"`) matches what is stored in the credential vault.
+
+</Accordion>
+
+<Accordion title="STT implementation (stt.go)">
+
+```go
+// api/assistant-api/internal/transformer/deepgram/stt.go
+
+type deepgramSTT struct {
+    opt      *deepgramOption
+    onPacket func(STTPacket)        // callback when transcription arrives
+    client   *client.WSUsingCallback
+}
+
+func (d *deepgramSTT) Initialize() error {
+    // Builds LiveTranscriptionOptions from deepgramOption.SpeechToTextOptions()
+    // Creates a WebSocket connection using the Deepgram SDK
+    // Registers onPacket as the transcript callback
+    d.client = client.NewWSUsingCallback(...)
+    return d.client.Connect()
+}
+
+func (d *deepgramSTT) Transform(ctx context.Context, in UserAudioPacket) error {
+    // Streams raw audio bytes to Deepgram over the WebSocket
+    return d.client.Stream(bufio.NewReader(bytes.NewReader(in.Audio)))
+}
+
+func (d *deepgramSTT) Close(ctx context.Context) error {
+    // Cancels context and stops the WebSocket client
+    return d.client.Stop()
+}
+```
+
+`UserAudioPacket.Audio` contains raw PCM 16-bit 16kHz audio bytes.
+
+</Accordion>
+
+<Accordion title="TTS implementation (tts.go)">
+
+```go
+// api/assistant-api/internal/transformer/deepgram/tts.go
+
+func (d *deepgramTTS) Initialize() error {
+    // Connects to: wss://api.deepgram.com/v1/speak?encoding=linear16&sample_rate=16000&model=<voice>
+    d.conn, _, err = websocket.DefaultDialer.Dial(d.opt.GetTextToSpeechConnectionString(), headers)
+    // Starts goroutine to read audio chunks and call onPacket
+    go d.readAudioChunks()
+    return err
+}
+
+func (d *deepgramTTS) Transform(ctx context.Context, in LLMPacket) error {
+    switch pkt := in.(type) {
+    case InterruptionPacket:
+        // Send {"type":"Clear"} to cancel queued audio
+        return d.conn.WriteJSON(map[string]string{"type": "Clear"})
+    case LLMResponseDeltaPacket:
+        // Send {"type":"Speak","text":"..."} for each token
+        return d.conn.WriteJSON(map[string]string{"type": "Speak", "text": pkt.Text})
+    case LLMResponseDonePacket:
+        // Send {"type":"Flush"} to trigger final synthesis
+        return d.conn.WriteJSON(map[string]string{"type": "Flush"})
+    }
+    return nil
+}
+```
+
+The `onPacket` callback is called with each synthesized audio chunk, which is sent directly to the client.
+
+</Accordion>
+
+</AccordionGroup>
+
+---
+
+## Adding a New Provider
+
+Follow these steps to add a new STT or TTS provider.
+
+<Steps>
+
+<Step title="Create the provider directory">
+
+```bash
+mkdir api/assistant-api/internal/transformer/<provider>
+```
+
+Create these files inside the directory:
+
+| File | Purpose |
+|------|---------|
+| `<provider>.go` | Option struct, credential extraction, client initialization |
+| `stt.go` | STT implementation (omit if TTS-only) |
+| `tts.go` | TTS implementation (omit if STT-only) |
+| `normalizer.go` | Text normalizer for TTS (strip markdown, apply pronunciation dict) |
+
+</Step>
+
+<Step title="Implement the Option struct">
+
+```go
+// <provider>.go
+type myProviderOption struct {
+    apiKey  string
+    logger  commons.Logger
+    opts    utils.Option
+}
+
+func NewMyProviderOption(
+    logger          commons.Logger,
+    vaultCredential *protos.VaultCredential,
+    opts            utils.Option,
+) *myProviderOption {
+    credentials := vaultCredential.GetValue().AsMap()
+    return &myProviderOption{
+        apiKey: credentials["key"].(string),
+        logger: logger,
+        opts:   opts,
+    }
+}
+```
+
+</Step>
+
+<Step title="Implement SpeechToTextTransformer (stt.go)">
+
+```go
+// stt.go
+type myProviderSTT struct {
+    opt      *myProviderOption
+    onPacket func(STTPacket)
+    // provider-specific client
+}
+
+func NewMyProviderSTT(opt *myProviderOption, onPacket func(STTPacket)) *myProviderSTT {
+    return &myProviderSTT{opt: opt, onPacket: onPacket}
+}
+
+func (s *myProviderSTT) Initialize() error {
+    // Connect to provider STT endpoint
+    // Register s.onPacket to be called with transcript results
+    return nil
+}
+
+func (s *myProviderSTT) Transform(ctx context.Context, in UserAudioPacket) error {
+    // Send in.Audio (raw PCM 16-bit 16kHz bytes) to the provider
+    return nil
+}
+
+func (s *myProviderSTT) Close(ctx context.Context) error {
+    // Close connection, cancel context
+    return nil
+}
+```
+
+</Step>
+
+<Step title="Register in the factory (transformer.go)">
+
+Add a case to both factory functions in `api/assistant-api/internal/transformer/transformer.go`:
+
+```go
+// Add constant
+const MY_PROVIDER AudioTransformer = "my-provider"
+
+// In GetSpeechToTextTransformer:
+case MY_PROVIDER:
+    opt := myprovider.NewMyProviderOption(logger, credential, opts)
+    return myprovider.NewMyProviderSTT(opt, onPacket), nil
+
+// In GetTextToSpeechTransformer:
+case MY_PROVIDER:
+    opt := myprovider.NewMyProviderOption(logger, credential, opts)
+    return myprovider.NewMyProviderTTS(opt, onPacket), nil
+```
+
+No changes to any other service are needed.
+
+</Step>
+
+<Step title="Add the credential to the vault">
+
+In the dashboard under **Settings → Integrations**, add the provider API key. The credential map key must match what your option struct reads from `vaultCredential.GetValue().AsMap()`.
+
+</Step>
+
+</Steps>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Telephony" icon="phone" href="/opensource/services/assistant-api/telephony">
+    Connect Twilio, Vonage, Asterisk, and SIP.
+  </Card>
+  <Card title="Configuration" icon="sliders" href="/opensource/services/assistant-api/configuration">
+    Environment variable reference.
+  </Card>
+  <Card title="Integration API" icon="plug" href="/opensource/services/integration-api/overview">
+    LLM provider execution — how assistant-api calls integration-api.
+  </Card>
+  <Card title="Architecture" icon="diagram-project" href="/opensource/architecture">
+    Full system topology and data flow.
+  </Card>
+</CardGroup>

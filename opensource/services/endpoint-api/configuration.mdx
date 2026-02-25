@@ -1,0 +1,118 @@
+---
+title: "Endpoint API — Configuration"
+description: "Complete environment variable reference for the endpoint-api service."
+sidebarTitle: "Configuration"
+---
+
+## Configuration File
+
+Edit `docker/endpoint-api/.endpoint.env` before starting the service.
+
+---
+
+## Required Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SECRET` | `rpd_pks` | JWT signing secret — must be identical across all services |
+| `POSTGRES__HOST` | `postgres` | PostgreSQL host |
+| `POSTGRES__DB_NAME` | `endpoint_db` | Database name |
+| `POSTGRES__AUTH__USER` | `rapida_user` | Database user |
+| `POSTGRES__AUTH__PASSWORD` | — | Database password |
+| `REDIS__HOST` | `redis` | Redis host (job queue for retries) |
+
+---
+
+## Service Identity
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SERVICE_NAME` | `endpoint-api` | Internal service label |
+| `HOST` | `0.0.0.0` | Bind address |
+| `PORT` | `9005` | HTTP / gRPC port |
+| `LOG_LEVEL` | `debug` | `debug` · `info` · `warn` · `error` |
+| `ENV` | `development` | `development` · `staging` · `production` |
+
+---
+
+## PostgreSQL
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `POSTGRES__HOST` | `postgres` | Host (`localhost` for local dev) |
+| `POSTGRES__PORT` | `5432` | Port |
+| `POSTGRES__DB_NAME` | `endpoint_db` | Database name |
+| `POSTGRES__AUTH__USER` | `rapida_user` | User |
+| `POSTGRES__AUTH__PASSWORD` | `rapida_db_password` | Password |
+| `POSTGRES__MAX_OPEN_CONNECTION` | `15` | Connection pool size |
+| `POSTGRES__MAX_IDEAL_CONNECTION` | `8` | Idle connections |
+| `POSTGRES__SSL_MODE` | `disable` | `disable` · `require` · `verify-full` |
+
+---
+
+## Redis
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `REDIS__HOST` | `redis` | Redis host (`localhost` for local dev) |
+| `REDIS__PORT` | `6379` | Redis port |
+| `REDIS__DB` | `2` | Redis DB index |
+| `REDIS__MAX_CONNECTION` | `10` | Connection pool size |
+
+---
+
+## Webhook Delivery Settings
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `WEBHOOK_MAX_RETRIES` | `5` | Maximum delivery attempts per event |
+| `WEBHOOK_RETRY_DELAY` | `5000` | Initial retry delay in milliseconds |
+| `WEBHOOK_TIMEOUT` | `30000` | HTTP delivery timeout in milliseconds |
+
+---
+
+## Full Environment File
+
+```env
+# ── Service identity ──────────────────────────────────────────────
+SERVICE_NAME=endpoint-api
+HOST=0.0.0.0
+PORT=9005
+LOG_LEVEL=debug
+SECRET=rpd_pks
+ENV=development
+
+# ── PostgreSQL ────────────────────────────────────────────────────
+POSTGRES__HOST=postgres
+POSTGRES__PORT=5432
+POSTGRES__DB_NAME=endpoint_db
+POSTGRES__AUTH__USER=rapida_user
+POSTGRES__AUTH__PASSWORD=rapida_db_password
+POSTGRES__MAX_OPEN_CONNECTION=15
+POSTGRES__MAX_IDEAL_CONNECTION=8
+POSTGRES__SSL_MODE=disable
+
+# ── Redis (retry job queue) ───────────────────────────────────────
+REDIS__HOST=redis
+REDIS__PORT=6379
+REDIS__DB=2
+REDIS__MAX_CONNECTION=10
+
+# ── Webhook delivery settings ─────────────────────────────────────
+WEBHOOK_MAX_RETRIES=5
+WEBHOOK_RETRY_DELAY=5000
+WEBHOOK_TIMEOUT=30000
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Overview" icon="server" href="/opensource/services/endpoint-api/overview">
+    Endpoint API purpose, event routing, and retry strategy.
+  </Card>
+  <Card title="Configuration Reference" icon="sliders" href="/opensource/configuration">
+    Cross-service configuration reference.
+  </Card>
+</CardGroup>

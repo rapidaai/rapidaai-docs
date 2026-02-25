@@ -1,0 +1,126 @@
+---
+title: "Integration API — Configuration"
+description: "Complete environment variable reference for the integration-api service."
+sidebarTitle: "Configuration"
+---
+
+## Configuration File
+
+Edit `docker/integration-api/.integration.env` before starting the service.
+
+---
+
+## Required Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SECRET` | `rpd_pks` | JWT signing secret — must be identical across all services |
+| `POSTGRES__HOST` | `postgres` | PostgreSQL host |
+| `POSTGRES__DB_NAME` | `integration_db` | Database name |
+| `POSTGRES__AUTH__USER` | `rapida_user` | Database user |
+| `POSTGRES__AUTH__PASSWORD` | — | Database password |
+| `REDIS__HOST` | `redis` | Redis host |
+| `INTEGRATION_CRYPTO_KEY` | — | **AES-256-GCM encryption key** for provider credentials |
+| `WEB_HOST` | `web-api:9001` | web-api gRPC address |
+
+<Warning>
+  `INTEGRATION_CRYPTO_KEY` protects all stored provider credentials. If this key is rotated or lost, all stored credentials become unreadable and must be re-entered through the dashboard. Store it in a secret manager (AWS Secrets Manager, HashiCorp Vault, Kubernetes Secrets) — never commit it to version control.
+
+  Generate a key: `openssl rand -hex 32`
+</Warning>
+
+---
+
+## Service Identity
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SERVICE_NAME` | `integration-api` | Internal service label |
+| `HOST` | `0.0.0.0` | Bind address |
+| `PORT` | `9004` | HTTP / gRPC port |
+| `LOG_LEVEL` | `debug` | `debug` · `info` · `warn` · `error` |
+| `ENV` | `development` | `development` · `staging` · `production` |
+
+---
+
+## PostgreSQL
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `POSTGRES__HOST` | `postgres` | Host (`localhost` for local dev) |
+| `POSTGRES__PORT` | `5432` | Port |
+| `POSTGRES__DB_NAME` | `integration_db` | Database name |
+| `POSTGRES__AUTH__USER` | `rapida_user` | User |
+| `POSTGRES__AUTH__PASSWORD` | `rapida_db_password` | Password |
+| `POSTGRES__MAX_OPEN_CONNECTION` | `10` | Connection pool size |
+| `POSTGRES__SSL_MODE` | `disable` | `disable` · `require` · `verify-full` |
+
+---
+
+## Redis
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `REDIS__HOST` | `redis` | Redis host (`localhost` for local dev) |
+| `REDIS__PORT` | `6379` | Redis port |
+
+---
+
+## Optional OAuth Variables
+
+Used when provider OAuth flows are enabled (Google, GitHub):
+
+| Variable | Description |
+|----------|-------------|
+| `OAUTH_CALLBACK_URL` | OAuth redirect URI |
+| `GOOGLE_OAUTH_CLIENT_ID` | Google OAuth app client ID |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | Google OAuth app client secret |
+| `GITHUB_OAUTH_CLIENT_ID` | GitHub OAuth app client ID |
+| `GITHUB_OAUTH_CLIENT_SECRET` | GitHub OAuth app client secret |
+
+---
+
+## Full Environment File
+
+```env
+# ── Service identity ──────────────────────────────────────────────
+SERVICE_NAME=integration-api
+HOST=0.0.0.0
+PORT=9004
+LOG_LEVEL=debug
+SECRET=rpd_pks
+ENV=development
+
+# ── PostgreSQL ────────────────────────────────────────────────────
+POSTGRES__HOST=postgres
+POSTGRES__PORT=5432
+POSTGRES__DB_NAME=integration_db
+POSTGRES__AUTH__USER=rapida_user
+POSTGRES__AUTH__PASSWORD=rapida_db_password
+POSTGRES__MAX_OPEN_CONNECTION=10
+POSTGRES__SSL_MODE=disable
+
+# ── Redis ─────────────────────────────────────────────────────────
+REDIS__HOST=redis
+REDIS__PORT=6379
+
+# ── Credential encryption ─────────────────────────────────────────
+# Generate: openssl rand -hex 32
+INTEGRATION_CRYPTO_KEY=your_32_char_encryption_key_here
+
+# ── Internal service addresses ────────────────────────────────────
+WEB_HOST=web-api:9001
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Adding Providers" icon="plug" href="/opensource/services/integration-api/providers">
+    How to implement the LargeLanguageCaller interface.
+  </Card>
+  <Card title="Overview" icon="server" href="/opensource/services/integration-api/overview">
+    Integration API purpose and credential encryption.
+  </Card>
+</CardGroup>

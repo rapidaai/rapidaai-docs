@@ -1,6 +1,6 @@
 {
     "$schema": "https://mintlify.com/docs.json",
-    "theme": "willow",
+    "theme": "mint",
     "name": "rapida.ai documentation",
     "colors": {
         "primary": "#2463eb",
@@ -215,14 +215,48 @@
                         ]
                     },
                     {
-                        "group": "Services",
+                        "group": "Dashboard (UI)",
                         "pages": [
-                            "opensource/services/web-console",
-                            "opensource/services/web-api",
-                            "opensource/services/assistant-api",
-                            "opensource/services/endpoint-api",
-                            "opensource/services/document-api",
-                            "opensource/services/integration-api"
+                            "opensource/services/web-console"
+                        ]
+                    },
+                    {
+                        "group": "Web API",
+                        "pages": [
+                            "opensource/services/web-api/overview",
+                            "opensource/services/web-api/configuration"
+                        ]
+                    },
+                    {
+                        "group": "Assistant API",
+                        "pages": [
+                            "opensource/services/assistant-api/overview",
+                            "opensource/services/assistant-api/configuration",
+                            "opensource/services/assistant-api/stt-tts",
+                            "opensource/services/assistant-api/telephony",
+                            "opensource/services/assistant-api/ngrok"
+                        ]
+                    },
+                    {
+                        "group": "Integration API",
+                        "pages": [
+                            "opensource/services/integration-api/overview",
+                            "opensource/services/integration-api/configuration",
+                            "opensource/services/integration-api/providers"
+                        ]
+                    },
+                    {
+                        "group": "Endpoint API",
+                        "pages": [
+                            "opensource/services/endpoint-api/overview",
+                            "opensource/services/endpoint-api/configuration"
+                        ]
+                    },
+                    {
+                        "group": "Document API",
+                        "pages": [
+                            "opensource/services/document-api/overview",
+                            "opensource/services/document-api/configuration"
                         ]
                     }
                 ]

@@ -1,0 +1,153 @@
+---
+title: "Web API — Configuration"
+description: "Complete environment variable reference for the web-api service."
+sidebarTitle: "Configuration"
+---
+
+## Configuration File
+
+Edit `docker/web-api/.web.env` before starting the service.
+
+---
+
+## Required Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SECRET` | `rpd_pks` | JWT signing secret — must be identical across all services |
+| `POSTGRES__HOST` | `postgres` | PostgreSQL host |
+| `POSTGRES__DB_NAME` | `web_db` | Database name |
+| `POSTGRES__AUTH__USER` | `rapida_user` | Database user |
+| `POSTGRES__AUTH__PASSWORD` | — | Database password |
+| `REDIS__HOST` | `redis` | Redis host |
+| `INTEGRATION_HOST` | `integration-api:9004` | integration-api gRPC address |
+| `ENDPOINT_HOST` | `endpoint-api:9005` | endpoint-api gRPC address |
+| `ASSISTANT_HOST` | `assistant-api:9007` | assistant-api gRPC address |
+| `DOCUMENT_HOST` | `http://document-api:9010` | document-api HTTP address |
+
+<Warning>
+  `SECRET` is used for both JWT signing and credential vault encryption. All services must share the same value. Changing it in production will invalidate all active sessions and make stored vault credentials unreadable. Rotate carefully.
+</Warning>
+
+---
+
+## Service Identity
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SERVICE_NAME` | `web-api` | Internal service label |
+| `HOST` | `0.0.0.0` | Bind address |
+| `PORT` | `9001` | HTTP / gRPC / gRPC-web port |
+| `LOG_LEVEL` | `debug` | `debug` · `info` · `warn` · `error` |
+| `ENV` | `development` | `development` · `staging` · `production` |
+
+---
+
+## PostgreSQL
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `POSTGRES__HOST` | `postgres` | Host (`localhost` for local dev) |
+| `POSTGRES__PORT` | `5432` | Port |
+| `POSTGRES__DB_NAME` | `web_db` | Database name |
+| `POSTGRES__AUTH__USER` | `rapida_user` | User |
+| `POSTGRES__AUTH__PASSWORD` | `rapida_db_password` | Password |
+| `POSTGRES__MAX_OPEN_CONNECTION` | `10` | Connection pool size |
+| `POSTGRES__MAX_IDEAL_CONNECTION` | `10` | Idle connections |
+| `POSTGRES__SSL_MODE` | `disable` | `disable` · `require` · `verify-full` |
+| `POSTGRES__SLC_CACHE__HOST` | `redis` | Redis host for second-level GORM cache |
+| `POSTGRES__SLC_CACHE__PORT` | `6379` | Redis port for GORM cache |
+| `POSTGRES__SLC_CACHE__DB` | `1` | Redis DB index for GORM cache |
+| `POSTGRES__SLC_CACHE__MAX_CONNECTION` | `10` | Redis pool size |
+
+---
+
+## Redis
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `REDIS__HOST` | `redis` | Redis host (`localhost` for local dev) |
+| `REDIS__PORT` | `6379` | Redis port |
+| `REDIS__MAX_CONNECTION` | `5` | Connection pool size |
+
+---
+
+## Asset Storage
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ASSET_STORE__STORAGE_TYPE` | `local` | `local` · `s3` · `azure` |
+| `ASSET_STORE__STORAGE_PATH_PREFIX` | `/app/rapida-data/assets/web` | Path for local storage |
+
+---
+
+## Internal Service Addresses
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `INTEGRATION_HOST` | `integration-api:9004` | integration-api gRPC (`localhost:9004` for local dev) |
+| `ENDPOINT_HOST` | `endpoint-api:9005` | endpoint-api gRPC (`localhost:9005` for local dev) |
+| `ASSISTANT_HOST` | `assistant-api:9007` | assistant-api gRPC (`localhost:9007` for local dev) |
+| `WEB_HOST` | `web-api:9001` | Self-reference for intra-service gRPC |
+| `DOCUMENT_HOST` | `http://document-api:9010` | document-api HTTP (`http://localhost:9010` for local dev) |
+| `UI_HOST` | `https://localhost:3000` | Dashboard UI origin (used for OAuth redirect validation) |
+
+---
+
+## Full Environment File
+
+```env
+# ── Service identity ──────────────────────────────────────────────
+SERVICE_NAME=web-api
+HOST=0.0.0.0
+PORT=9001
+LOG_LEVEL=debug
+SECRET=rpd_pks
+ENV=development
+
+# ── PostgreSQL ────────────────────────────────────────────────────
+POSTGRES__HOST=postgres
+POSTGRES__PORT=5432
+POSTGRES__DB_NAME=web_db
+POSTGRES__AUTH__USER=rapida_user
+POSTGRES__AUTH__PASSWORD=rapida_db_password
+POSTGRES__MAX_OPEN_CONNECTION=10
+POSTGRES__MAX_IDEAL_CONNECTION=10
+POSTGRES__SSL_MODE=disable
+
+# ── Redis (second-level GORM cache) ───────────────────────────────
+POSTGRES__SLC_CACHE__HOST=redis
+POSTGRES__SLC_CACHE__PORT=6379
+POSTGRES__SLC_CACHE__DB=1
+POSTGRES__SLC_CACHE__MAX_CONNECTION=10
+
+# ── Redis ─────────────────────────────────────────────────────────
+REDIS__HOST=redis
+REDIS__PORT=6379
+REDIS__MAX_CONNECTION=5
+
+# ── Asset storage ─────────────────────────────────────────────────
+ASSET_STORE__STORAGE_TYPE=local
+ASSET_STORE__STORAGE_PATH_PREFIX=/app/rapida-data/assets/web
+
+# ── Internal service addresses ────────────────────────────────────
+INTEGRATION_HOST=integration-api:9004
+ENDPOINT_HOST=endpoint-api:9005
+ASSISTANT_HOST=assistant-api:9007
+WEB_HOST=web-api:9001
+DOCUMENT_HOST=http://document-api:9010
+UI_HOST=https://localhost:3000
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Overview" icon="server" href="/opensource/services/web-api/overview">
+    Web API purpose, request flow, and component architecture.
+  </Card>
+  <Card title="Configuration Reference" icon="sliders" href="/opensource/configuration">
+    Cross-service configuration reference.
+  </Card>
+</CardGroup>

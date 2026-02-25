@@ -1,0 +1,133 @@
+---
+title: "Document API — Configuration"
+description: "config.yaml and environment variable reference for the document-api service."
+sidebarTitle: "Configuration"
+---
+
+## Configuration File
+
+The document-api uses a YAML config file at `docker/document-api/config.yaml`. Unlike the Go services, environment variables are not the primary configuration mechanism — settings are specified in YAML.
+
+---
+
+## Required Settings
+
+| YAML Key | Default | Description |
+|----------|---------|-------------|
+| `postgres.host` | `postgres` | PostgreSQL host |
+| `postgres.db` | `assistant_db` | Database name |
+| `postgres.auth.user` | `rapida_user` | Database user |
+| `postgres.auth.password` | — | Database password |
+| `elastic_search.host` | `opensearch` | OpenSearch host |
+| `celery.broker` | `redis://redis:6379/0` | Celery broker URL |
+| `celery.backend` | `redis://redis:6379/0` | Celery result backend |
+| `authentication_config.config.secret_key` | `rpd_pks` | JWT signing secret — must match `SECRET` in all other services |
+
+---
+
+## Tuning Settings
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `CHUNK_SIZE` | `1000` | Characters per document chunk |
+| `CHUNK_OVERLAP` | `100` | Character overlap between adjacent chunks |
+| `MAX_FILE_SIZE` | `52428800` | Maximum upload size in bytes (50 MB) |
+| `EMBEDDINGS_MODEL` | `all-MiniLM-L6-v2` | Sentence-transformers model name |
+| `EMBEDDINGS_DIMENSION` | `384` | Embedding vector dimension — must match the model |
+| `CELERY_WORKERS` | `4` | Number of Celery worker processes |
+| `CELERY_CONCURRENCY` | — | Per-worker concurrency (reduce to lower memory usage) |
+| `EMBEDDINGS_BATCH_SIZE` | — | Embedding batch size (`8` = low memory, `64` = high throughput) |
+| `RNNOISE_ENABLED` | `true` | Enable audio noise reduction |
+| `RNNOISE_LEVEL` | `0.5` | Noise reduction level (`0.0–1.0`) |
+
+---
+
+## Full Config File
+
+```yaml
+service_name: "Document API"
+host: "0.0.0.0"
+port: 9010
+
+authentication_config:
+  strict: false
+  type: "jwt"
+  config:
+    secret_key: "rpd_pks"   # Must match SECRET in other services
+
+elastic_search:
+  host: "opensearch"        # Use "localhost" for local dev
+  port: 9200
+  scheme: "http"
+  max_connection: 5
+
+postgres:
+  host: "postgres"          # Use "localhost" for local dev
+  port: 5432
+  auth:
+    password: "rapida_db_password"
+    user: "rapida_user"
+  db: "assistant_db"
+  max_connection: 10
+  ideal_connection: 5
+
+internal_service:
+  web_host: "web-api:9001"
+  integration_host: "integration-api:9004"
+  endpoint_host: "endpoint-api:9005"
+  assistant_host: "assistant-api:9007"
+
+storage:
+  storage_type: "local"
+  storage_path_prefix: /app/rapida-data/assets/workflow
+
+celery:
+  broker: "redis://redis:6379/0"
+  backend: "redis://redis:6379/0"
+
+knowledge_extractor_config:
+  chunking_technique:
+    chunker: "app.core.chunkers.statistical_chunker.StatisticalChunker"
+    options:
+      encoder: "app.core.encoders.openai_encoder.OpenaiEncoder"
+      options:
+        model_name: "text-embedding-3-large"
+        api_key: "your_openai_api_key"
+```
+
+---
+
+## Local Development Overrides
+
+For local development, update the `host` fields in `config.yaml`:
+
+```yaml
+elastic_search:
+  host: "localhost"   # instead of "opensearch"
+
+postgres:
+  host: "localhost"   # instead of "postgres"
+
+celery:
+  broker: "redis://localhost:6379/0"
+  backend: "redis://localhost:6379/0"
+
+internal_service:
+  web_host: "localhost:9001"
+  integration_host: "localhost:9004"
+  endpoint_host: "localhost:9005"
+  assistant_host: "localhost:9007"
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Overview" icon="server" href="/opensource/services/document-api/overview">
+    Document processing pipeline, file formats, and RAG search.
+  </Card>
+  <Card title="Configuration Reference" icon="sliders" href="/opensource/configuration">
+    Cross-service configuration reference.
+  </Card>
+</CardGroup>

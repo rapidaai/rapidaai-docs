@@ -1,0 +1,238 @@
+---
+title: "Web API"
+description: "Core platform backend. Handles authentication, organization management, credential vault, and acts as the gRPC proxy for all dashboard operations."
+sidebarTitle: "Overview"
+---
+
+## Purpose
+
+The `web-api` is the primary API backend for the Rapida dashboard. Every request from the browser — authentication, organization setup, assistant management, credential storage — goes through this service. It also acts as the gRPC proxy for downstream services, validating JWT tokens before forwarding requests.
+
+<CardGroup cols={3}>
+  <Card title="Port" icon="server">
+    `9001` — HTTP · gRPC · gRPC-web (cmux)
+  </Card>
+  <Card title="Language" icon="code">
+    Go 1.25
+    Gin (REST) + gRPC
+  </Card>
+  <Card title="Storage" icon="database">
+    PostgreSQL `web_db`
+    Redis (session cache)
+  </Card>
+</CardGroup>
+
+---
+
+## Request Flow
+
+```mermaid
+sequenceDiagram
+    participant Browser as Browser (Dashboard)
+    participant Nginx as Nginx :8080
+    participant Web as web-api :9001
+    participant PG as PostgreSQL (web_db)
+    participant Redis as Redis
+    participant DS as Downstream Service
+
+    Browser->>Nginx: gRPC-web POST /<service>_api.*
+    Nginx->>Web: Forward (all non-talk_api paths)
+    Web->>Web: JWT interceptor — validate token
+    Web->>PG: Check organization + project scope
+    alt Local service
+        Web->>PG: Execute operation
+        Web->>Redis: Update cache
+    else Downstream proxy
+        Web->>DS: gRPC forward with org context
+        DS-->>Web: Response
+    end
+    Web-->>Browser: gRPC-web response
+```
+
+---
+
+## Core Components
+
+<AccordionGroup>
+
+<Accordion title="Authentication & Session Management">
+
+Handles user registration, login, password recovery, OAuth 2.0, and JWT issuance.
+
+| Feature | Detail |
+|---------|--------|
+| Token type | JWT (signed with `SECRET`, shared across all services) |
+| Token storage | Client-side (`Authorization` header) |
+| Session cache | Redis DB 1 |
+| OAuth providers | Google, GitHub, Microsoft (configured per deployment) |
+| Token expiry | Default 24 hours |
+
+</Accordion>
+
+<Accordion title="Organization & Project Hierarchy">
+
+Every resource in Rapida is scoped to an `Organization → Project` hierarchy. The web-api enforces this at the gRPC interceptor level.
+
+```
+Organization
+└── Project
+    ├── Assistants
+    ├── Knowledge Bases
+    ├── Integrations
+    └── Webhooks
+```
+
+The gRPC auth interceptor rejects any request where the JWT's organization claim does not match the target resource's `organization_id`.
+
+</Accordion>
+
+<Accordion title="Credential Vault">
+
+Provider API keys are encrypted with AES-256-GCM before storage. The encryption key is derived from `SECRET`.
+
+| Operation | Behavior |
+|-----------|----------|
+| Store key | AES-256-GCM encrypt → write to `web_db` |
+| Retrieve key | Read → decrypt in-memory → forward to `integration-api` |
+| Rotate key | Replace ciphertext; in-flight calls unaffected |
+| Audit | Every read/write logged with user ID and timestamp |
+
+</Accordion>
+
+<Accordion title="gRPC Proxy Routing">
+
+The web-api proxies all dashboard gRPC calls after JWT validation:
+
+| gRPC Path Prefix | Forwarded To |
+|-----------------|--------------|
+| `/web_api` · `/vault_api` | Local (web-api) |
+| `/workflow_api` · `/assistant_api` · `/knowledge_api` | `assistant-api:9007` |
+| `/tool_api` · `/endpoint_api` · `/webhook_api` | `endpoint-api:9005` |
+| `/provider_api` · `/integration_api` | `integration-api:9004` |
+| `/document_api` | `document-api:9010` |
+| `/connect_api` | Local (OAuth connector) |
+| `/talk_api` | **Direct to `assistant-api` via Nginx** — not proxied through web-api |
+
+</Accordion>
+
+<Accordion title="Database Migrations">
+
+Migrations run automatically at service startup using [golang-migrate](https://github.com/golang-migrate/migrate). Migration files are in `api/web-api/migrations/`:
+
+```
+000001_initial_schema.up.sql
+000001_initial_schema.down.sql
+000002_add_oauth_tokens.up.sql
+```
+
+To run migrations manually:
+
+```bash
+go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+migrate \
+  -path api/web-api/migrations \
+  -database "postgresql://rapida_user:rapida_db_password@localhost:5432/web_db?sslmode=disable" \
+  up
+```
+
+</Accordion>
+
+</AccordionGroup>
+
+---
+
+## Running
+
+<Tabs>
+
+<Tab title="Docker Compose">
+
+```bash
+make up-web
+
+make logs-web
+
+make rebuild-web
+
+make shell-web
+```
+
+</Tab>
+
+<Tab title="From Source">
+
+Requires Go 1.25, PostgreSQL 15, and Redis 7 running locally.
+
+```bash
+export $(grep -v '^#' docker/web-api/.web.env | xargs)
+export POSTGRES__HOST=localhost
+export REDIS__HOST=localhost
+export INTEGRATION_HOST=localhost:9004
+export ENDPOINT_HOST=localhost:9005
+export ASSISTANT_HOST=localhost:9007
+export DOCUMENT_HOST=http://localhost:9010
+
+go run cmd/web/web.go
+```
+
+</Tab>
+
+</Tabs>
+
+---
+
+## Health Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /readiness/` | Service ready (DB + Redis connected) |
+| `GET /healthz/` | Liveness probe |
+
+```bash
+curl http://localhost:9001/readiness/
+```
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+
+<Accordion title="Service exits immediately on startup">
+The most common cause is PostgreSQL not yet healthy.
+
+```bash
+docker compose ps postgres
+make logs-web | head -40
+```
+</Accordion>
+
+<Accordion title="JWT validation fails across services">
+All services must share the same `SECRET` value. Confirm it is identical in `.web.env`, `.assistant.env`, `.integration.env`, and `.endpoint.env`.
+</Accordion>
+
+<Accordion title="gRPC proxy returns 'service unavailable'">
+The target downstream service must be running and healthy. Verify `INTEGRATION_HOST`, `ENDPOINT_HOST`, `ASSISTANT_HOST` point to reachable addresses. Check `make status` to confirm all containers are `Up`.
+</Accordion>
+
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="sliders" href="/opensource/services/web-api/configuration">
+    All environment variables and internal service addresses.
+  </Card>
+  <Card title="Assistant API" icon="mic" href="/opensource/services/assistant-api/overview">
+    Voice orchestration service that web-api proxies to.
+  </Card>
+  <Card title="Integration API" icon="plug" href="/opensource/services/integration-api/overview">
+    Provider credential management.
+  </Card>
+  <Card title="Architecture" icon="diagram-project" href="/opensource/architecture">
+    Full system topology and routing.
+  </Card>
+</CardGroup>

@@ -154,7 +154,7 @@ Under **Voice Configuration**, set:
 | Field | Value |
 |-------|-------|
 | **A call comes in** | Webhook |
-| **URL** | `https://api.rapida.ai/v1/talk/twilio/call/{your-assistant-id}` |
+| **URL** | `https://websocket-01.in.rapida.ai/v1/talk/twilio/call/{your-assistant-id}` |
 | **HTTP Method** | `POST` |
 
 Replace `{your-assistant-id}` with your Rapida assistant ID.
@@ -165,7 +165,7 @@ To receive call lifecycle events (ringing, answered, completed):
 
 | Field | Value |
 |-------|-------|
-| **Status Callback URL** | `https://api.rapida.ai/v1/talk/twilio/ctx/{contextId}/event` |
+| **Status Callback URL** | `https://websocket-01.in.rapida.ai/v1/talk/twilio/ctx/{contextId}/event` |
 | **Status Callback Events** | `initiated`, `ringing`, `answered`, `completed` |
 
 <Note>
@@ -271,7 +271,7 @@ Once your phone deployment is configured, you can initiate outbound calls using 
 
   <Accordion title="Status callbacks not received">
     - Ensure the status callback URL is configured in Twilio console
-    - Verify the URL format: `https://api.rapida.ai/v1/talk/twilio/ctx/{contextId}/event`
+    - Verify the URL format: `https://websocket-01.in.rapida.ai/v1/talk/twilio/ctx/{contextId}/event`
     - Check Twilio's [Debugger](https://console.twilio.com/us1/monitor/logs/debugger) for webhook errors
   </Accordion>
 </AccordionGroup>

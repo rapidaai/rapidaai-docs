@@ -134,7 +134,8 @@ load = res_audiosocket.so
 
 [globals]
 RAPIDA_API_KEY = rpd-xxx-your-api-key
-RAPIDA_HOST    = api.rapida.ai
+RAPIDA_HOST    = websocket-01.in.rapida.ai
+RAPIDA_AS_HOST = socket-01.in.rapida.ai
 RAPIDA_PORT    = 4573
 ASSISTANT_ID   = 123456789
 
@@ -146,7 +147,7 @@ exten => _X.,1,Answer()
  same => n,Set(CTX=${CURL(https://${RAPIDA_HOST}/v1/talk/asterisk/call/${ASSISTANT_ID}?from=${CALLERID(num)}&x-api-key=${RAPIDA_API_KEY})})
  same => n,GotoIf($["${CTX}" = ""]?error)
  ; Phase 2: Connect AudioSocket with contextId as UUID
- same => n,AudioSocket(${CTX},${RAPIDA_HOST}:${RAPIDA_PORT})
+ same => n,AudioSocket(${CTX},${RAPIDA_AS_HOST}:${RAPIDA_PORT})
  same => n,Hangup()
  same => n(error),Playback(an-error-has-occurred)
  same => n,Hangup()
@@ -181,7 +182,7 @@ load = chan_websocket.so
 
 [globals]
 RAPIDA_API_KEY = rpd-xxx-your-api-key
-RAPIDA_HOST    = api.rapida.ai
+RAPIDA_HOST    = websocket-01.in.rapida.ai
 ASSISTANT_ID   = 123456789
 
 [rapida-inbound-ws]
@@ -342,7 +343,7 @@ Outbound calls are initiated via the **Rapida SDK** (gRPC `CreatePhoneCall` RPC)
         exten => s,1,Set(CHANNEL(audioreadformat)=slin)
          same => n,Set(CHANNEL(audiowriteformat)=slin)
          ; RAPIDA_CONTEXT_ID is passed as a channel variable by ARI
-         same => n,AudioSocket(${RAPIDA_CONTEXT_ID},${RAPIDA_HOST}:${RAPIDA_PORT})
+         same => n,AudioSocket(${RAPIDA_CONTEXT_ID},${RAPIDA_AS_HOST}:${RAPIDA_PORT})
          same => n,Hangup()
 
         [rapida-outbound-ws]
@@ -600,7 +601,7 @@ Simplest setup — no ARI needed, no vault credential required for inbound-only.
     # /etc/asterisk/extensions.conf
     [globals]
     RAPIDA_API_KEY = rpd-xxx-your-api-key
-    RAPIDA_HOST    = api.rapida.ai
+    RAPIDA_HOST    = websocket-01.in.rapida.ai
     RAPIDA_PORT    = 4573
     ASSISTANT_ID   = 123456789
 
@@ -611,7 +612,7 @@ Simplest setup — no ARI needed, no vault credential required for inbound-only.
      same => n,Set(CHANNEL(audiowriteformat)=slin)
      same => n,Set(CTX=${CURL(https://${RAPIDA_HOST}/v1/talk/asterisk/call/${ASSISTANT_ID}?from=${CALLERID(num)}&x-api-key=${RAPIDA_API_KEY})})
      same => n,GotoIf($["${CTX}" = ""]?error)
-     same => n,AudioSocket(${CTX},${RAPIDA_HOST}:${RAPIDA_PORT})
+     same => n,AudioSocket(${CTX},${RAPIDA_AS_HOST}:${RAPIDA_PORT})
      same => n,Hangup()
      same => n(error),Playback(an-error-has-occurred)
      same => n,Hangup()
@@ -633,7 +634,7 @@ No firewall port needed beyond HTTPS — ideal for cloud-hosted Asterisk.
 # /etc/asterisk/extensions.conf
 [globals]
 RAPIDA_API_KEY = rpd-xxx-your-api-key
-RAPIDA_HOST    = api.rapida.ai
+RAPIDA_HOST    = websocket-01.in.rapida.ai
 ASSISTANT_ID   = 123456789
 
 [from-pstn-ws]
@@ -655,7 +656,7 @@ Complete setup with ARI for outbound calls and AudioSocket for media.
     ```ini
     [globals]
     RAPIDA_API_KEY = rpd-xxx-your-api-key
-    RAPIDA_HOST    = api.rapida.ai
+    RAPIDA_HOST    = websocket-01.in.rapida.ai
     RAPIDA_PORT    = 4573
     ASSISTANT_ID   = 123456789
 
@@ -666,7 +667,7 @@ Complete setup with ARI for outbound calls and AudioSocket for media.
      same => n,Set(CHANNEL(audiowriteformat)=slin)
      same => n,Set(CTX=${CURL(https://${RAPIDA_HOST}/v1/talk/asterisk/call/${ASSISTANT_ID}?from=${CALLERID(num)}&x-api-key=${RAPIDA_API_KEY})})
      same => n,GotoIf($["${CTX}" = ""]?error)
-     same => n,AudioSocket(${CTX},${RAPIDA_HOST}:${RAPIDA_PORT})
+     same => n,AudioSocket(${CTX},${RAPIDA_AS_HOST}:${RAPIDA_PORT})
      same => n,Hangup()
      same => n(error),Playback(an-error-has-occurred)
      same => n,Hangup()
@@ -676,7 +677,7 @@ Complete setup with ARI for outbound calls and AudioSocket for media.
     [rapida-outbound]
     exten => s,1,Set(CHANNEL(audioreadformat)=slin)
      same => n,Set(CHANNEL(audiowriteformat)=slin)
-     same => n,AudioSocket(${RAPIDA_CONTEXT_ID},${RAPIDA_HOST}:${RAPIDA_PORT})
+     same => n,AudioSocket(${RAPIDA_CONTEXT_ID},${RAPIDA_AS_HOST}:${RAPIDA_PORT})
      same => n,Hangup()
     ```
   </Tab>
@@ -738,7 +739,7 @@ Zero custom ports — everything runs over HTTPS.
     ```ini
     [globals]
     RAPIDA_API_KEY = rpd-xxx-your-api-key
-    RAPIDA_HOST    = api.rapida.ai
+    RAPIDA_HOST    = websocket-01.in.rapida.ai
     ASSISTANT_ID   = 123456789
 
     ; ---- Inbound ----
@@ -817,7 +818,7 @@ Each call automatically records:
     **Symptoms:** `AudioSocket()` returns immediately, no audio
 
     **Checklist:**
-    - Verify Rapida host is reachable: `nc -zv api.rapida.ai 4573`
+    - Verify Rapida host is reachable: `nc -zv socket-01.in.rapida.ai 4573`
     - Check firewall allows TCP 4573 outbound
     - Ensure `res_audiosocket.so` is loaded
     - Verify the contextId (token) is non-empty in the dialplan
@@ -827,7 +828,7 @@ Each call automatically records:
     **Symptoms:** `WebSocket()` fails, no audio
 
     **Checklist:**
-    - Verify WSS URL is correct: `wss://api.rapida.ai/v1/talk/asterisk/ctx/{contextId}`
+    - Verify WSS URL is correct: `wss://websocket-01.in.rapida.ai/v1/talk/asterisk/ctx/{contextId}`
     - Ensure `chan_websocket.so` is loaded
     - Check TLS certificate trust on the Asterisk server
     - Verify Asterisk version is 20+ for `chan_websocket`
@@ -856,7 +857,7 @@ Each call automatically records:
     **Symptoms:** Audio artifacts, long pauses
 
     **Checklist:**
-    - Check network latency to Rapida: `ping api.rapida.ai` (target < 100ms)
+    - Check network latency to Rapida: `ping websocket-01.in.rapida.ai` (target < 100ms)
     - Verify no packet loss on the path
     - For WebSocket: ensure no proxy is buffering WebSocket frames
     - Reduce network hops if possible
@@ -903,8 +904,8 @@ asterisk -rx "http show status"
 asterisk -rx "dialplan show rapida-inbound"
 
 # Test network connectivity
-nc -zv api.rapida.ai 4573   # AudioSocket
-curl -I https://api.rapida.ai  # HTTPS/WebSocket
+nc -zv socket-01.in.rapida.ai 4573   # AudioSocket
+curl -I https://websocket-01.in.rapida.ai  # HTTPS/WebSocket
 ```
 
 ---

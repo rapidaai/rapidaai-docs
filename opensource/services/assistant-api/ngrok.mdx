@@ -1,0 +1,295 @@
+---
+title: "Local Telephony with ngrok"
+description: "Use ngrok to expose assistant-api to Twilio, Vonage, and Exotel webhooks during local development."
+sidebarTitle: "Local Telephony (ngrok)"
+---
+
+## Why ngrok is Required
+
+Twilio, Vonage, and Exotel use a two-step call setup:
+
+1. They send an HTTP POST webhook to your server when a call arrives
+2. They open a WebSocket to your server to stream bidirectional audio
+
+Both connections come **from the provider's cloud** to your machine. During local development your machine is not publicly reachable, so you need ngrok to create an HTTPS tunnel.
+
+```
+Twilio/Vonage/Exotel cloud
+        │
+        ▼
+ngrok tunnel (https://xyz.ngrok.io)
+        │
+        ▼
+localhost:8080  →  Nginx  →  assistant-api:9007
+```
+
+<Info>
+  You need a single ngrok tunnel pointing to port `8080` (the Nginx gateway). All webhook and WebSocket traffic flows through Nginx and is proxied to `assistant-api`.
+</Info>
+
+---
+
+## Prerequisites
+
+| Tool | Version | Install |
+|------|---------|---------|
+| ngrok | v3+ | [ngrok.com/download](https://ngrok.com/download) |
+| Rapida stack | running | `make up-all` |
+
+---
+
+## Step-by-Step Setup
+
+<Steps>
+
+<Step title="Install and authenticate ngrok">
+
+```bash
+# macOS (Homebrew)
+brew install ngrok/ngrok/ngrok
+
+# Linux
+curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
+sudo apt update && sudo apt install ngrok
+```
+
+Sign in and set your authtoken (required for stable subdomains):
+
+```bash
+ngrok config add-authtoken <your-authtoken>
+```
+
+Get your authtoken at [dashboard.ngrok.com/get-started/your-authtoken](https://dashboard.ngrok.com/get-started/your-authtoken).
+
+</Step>
+
+<Step title="Start the tunnel">
+
+```bash
+ngrok http 8080
+```
+
+ngrok outputs a forwarding URL like:
+
+```
+Forwarding  https://abc123.ngrok-free.app -> http://localhost:8080
+```
+
+Copy the `https://` URL — this is your `PUBLIC_ASSISTANT_HOST`.
+
+<Note>
+  The free tier generates a random URL on each restart. To get a stable URL across restarts, use a paid ngrok plan with a reserved domain.
+</Note>
+
+</Step>
+
+<Step title="Update PUBLIC_ASSISTANT_HOST in assistant-api">
+
+Edit `docker/assistant-api/.assistant.env`:
+
+```env
+# Replace with your ngrok hostname (without https://)
+PUBLIC_ASSISTANT_HOST=abc123.ngrok-free.app
+```
+
+</Step>
+
+<Step title="Update media URL in the UI config">
+
+Edit `ui/src/configs/config.development.json`:
+
+```json
+{
+    "connection": {
+        "assistant": "http://localhost:8080",
+        "web": "http://localhost:8080",
+        "endpoint": "http://localhost:8080",
+        "media": "https://abc123.ngrok-free.app",
+        "socket": "localhost:4573",
+        "sip": "localhost:5060"
+    }
+}
+```
+
+The `media` field is the public URL the browser and telephony providers use for WebSocket connections.
+
+</Step>
+
+<Step title="Restart assistant-api and the UI">
+
+```bash
+make rebuild-assistant   # Picks up the new PUBLIC_ASSISTANT_HOST
+```
+
+If running the UI in development mode:
+
+```bash
+cd ui && yarn start:dev
+```
+
+</Step>
+
+<Step title="Verify the tunnel is proxying correctly">
+
+```bash
+curl https://abc123.ngrok-free.app/readiness/
+# Expected: {"status":"ok"} or similar
+```
+
+You can also check the ngrok web inspector at **http://localhost:4040** to see incoming requests in real time.
+
+</Step>
+
+</Steps>
+
+---
+
+## Configuring Twilio for Local Testing
+
+With ngrok running, point your Twilio phone number's webhook to:
+
+```
+POST https://abc123.ngrok-free.app/v1/talk/twilio/call/{your-assistant-id}
+```
+
+<Tabs>
+
+<Tab title="Inbound call">
+
+1. Open [Twilio Console → Phone Numbers → Active Numbers](https://console.twilio.com/us1/develop/phone-numbers/manage/incoming)
+2. Select your number
+3. Under **Voice Configuration**, set:
+
+| Field | Value |
+|-------|-------|
+| A call comes in | Webhook |
+| URL | `https://abc123.ngrok-free.app/v1/talk/twilio/call/{assistantId}` |
+| HTTP Method | POST |
+
+4. Call the number — Twilio posts the webhook to ngrok, which forwards to your local assistant-api
+
+</Tab>
+
+<Tab title="Outbound call">
+
+Outbound calls are initiated from your code — no additional webhook configuration is needed. Twilio will connect its WebSocket media stream back to `wss://abc123.ngrok-free.app/v1/talk/twilio/ctx/{contextId}`, which is generated automatically from `PUBLIC_ASSISTANT_HOST`.
+
+```bash
+curl -X POST http://localhost:8080/v1/talk/call \
+  -H "Authorization: Bearer <your-api-key>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "assistant": { "assistant_id": 123456789 },
+    "to_number": "+15551234567",
+    "from_number": "+15559876543"
+  }'
+```
+
+</Tab>
+
+</Tabs>
+
+---
+
+## Configuring Vonage for Local Testing
+
+Point your Vonage Application's **Answer URL** to:
+
+```
+POST https://abc123.ngrok-free.app/v1/talk/vonage/call/{your-assistant-id}
+```
+
+1. Open [Vonage Dashboard → Applications](https://dashboard.nexmo.com/applications) → select your app
+2. Under **Capabilities → Voice → Answer URL**, set the URL above
+3. Set **Event URL** to: `https://abc123.ngrok-free.app/v1/talk/vonage/ctx/{contextId}/event`
+
+---
+
+## Configuring Exotel for Local Testing
+
+In your Exotel App (applet), set the webhook URL to:
+
+```
+https://abc123.ngrok-free.app/v1/talk/exotel/call/{your-assistant-id}
+```
+
+---
+
+## Two Configurations Always Need Updating
+
+When your ngrok URL changes (e.g., after a free-tier restart), update **both** of these:
+
+| File | Field | Value |
+|------|-------|-------|
+| `docker/assistant-api/.assistant.env` | `PUBLIC_ASSISTANT_HOST` | `abc123.ngrok-free.app` (no `https://`) |
+| `ui/src/configs/config.development.json` | `connection.media` | `https://abc123.ngrok-free.app` (with `https://`) |
+
+Then restart:
+
+```bash
+make rebuild-assistant
+# restart UI if needed: cd ui && yarn start:dev
+```
+
+---
+
+## Stable URLs (Recommended for Team Development)
+
+Using a random URL is inconvenient for team development since the webhook URL in Twilio/Vonage must be updated every time ngrok restarts. Options for a stable URL:
+
+| Option | Description |
+|--------|-------------|
+| **ngrok reserved domain** | Paid ngrok plan — assign a fixed subdomain |
+| **ngrok static domain** | Free tier offers one free static domain: `ngrok http --domain=your-name.ngrok-free.app 8080` |
+| **Cloudflare Tunnel** | Free alternative — `cloudflared tunnel --url http://localhost:8080` |
+
+With a static/reserved domain, you set the webhook URL in Twilio/Vonage once and never update it.
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+
+<Accordion title="Webhook returns 502 Bad Gateway">
+  The Rapida stack is not running. Verify:
+
+  ```bash
+  make status      # All containers should show "Up"
+  make logs-all    # Check for startup errors
+  ```
+</Accordion>
+
+<Accordion title="Audio connects but there is no voice / silence">
+  `PUBLIC_ASSISTANT_HOST` is still set to the old ngrok URL or to `localhost`. Update it to the new ngrok hostname and run `make rebuild-assistant`.
+</Accordion>
+
+<Accordion title="ngrok shows 'ERR_NGROK_3200: tunnel not found'">
+  The tunnel is not running. Start it again:
+
+  ```bash
+  ngrok http 8080
+  ```
+
+  And update both `PUBLIC_ASSISTANT_HOST` and `connection.media` with the new URL.
+</Accordion>
+
+<Accordion title="Twilio error: 'Not a valid https URL'">
+  Twilio requires HTTPS. ngrok provides HTTPS automatically. Do not use the `http://` version of the URL — always use the `https://abc123.ngrok-free.app` URL in Twilio's console.
+</Accordion>
+
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Telephony Setup" icon="phone" href="/opensource/services/assistant-api/telephony">
+    Full provider setup — Twilio, Vonage, Exotel, Asterisk, SIP.
+  </Card>
+  <Card title="Configuration" icon="sliders" href="/opensource/services/assistant-api/configuration">
+    All PUBLIC_ASSISTANT_HOST and SIP variables.
+  </Card>
+</CardGroup>
