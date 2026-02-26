@@ -1,53 +1,158 @@
 ---
 title: "Self hosted Deployment"
-description: "How to deploy the Rapida Voice AI Platform on your own infrastructure?"
+description: "Deploy the Rapida Voice AI Platform on your own infrastructure using Docker Compose"
 sidebarTitle: "Self hosted"
 icon: "person-standing"
 ---
 
-Choose the self hosted deployment method that best suits your infrastructure and requirements:
-- [Local/VM (Docker Compose)](#local%2Fvm-docker-compose) - Quickest way to get started
+## Choose Your Deployment Mode
 
-## Local/VM (Docker Compose)
+Rapida ships as two Docker Compose configurations. Pick one before you start.
+
+| | Voice Assistant Only | Voice + Knowledge Base |
+|--|----------------------|------------------------|
+| **What it does** | Build voice assistants that call LLMs directly | Everything in Voice Only, plus upload documents and answer questions from your own content |
+| **Extra services** | — | `document-api` (Python) + `opensearch` |
+| **RAM** | 4 GB minimum | 8–16 GB (OpenSearch is memory-intensive) |
+| **Build command** | `make build-all` | `make build-all-with-knowledge` |
+| **Start command** | `make up-all` | `make up-all-with-knowledge` |
+
+<Tip>
+  **Start with Voice Only.** You can add the knowledge base at any time by running `make up-all-with-knowledge` — no data is lost.
+</Tip>
+
+---
+
+## Quickstart
 
 ### Requirements
 
-- Git
-- Docker & Docker Compose → use [Docker Desktop](https://www.docker.com/products/docker-desktop/) on Mac or Windows
-- Minimum 4 CPU cores, 16GB RAM, and 30GB storage
-- Internet connection for initial container pulls
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Mac / Windows) or Docker Engine v20.10+ with Docker Compose v2.0+ (Linux)
+- **Voice Only**: 4 GB RAM, 10 GB free disk
+- **With Knowledge Base**: 8–16 GB RAM, 20 GB free disk
 
+### Steps
 
-### Deployment Steps
-1. **Clone the Rapida Voice AI Platform repository**
-   ```bash
-   git clone https://github.com/rapida/rapida-voice-ai.git
-   cd rapida-voice-ai
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/rapidaai/voice-ai.git
+    cd voice-ai
+    ```
+  </Step>
+
+  <Step title="Create data directories">
+    ```bash
+    make setup-local
     ```
 
-2. **Configure environment variables**
-   ```bash
-   cp .env.example .env
+    This creates `~/rapida-data/assets/db`, `~/rapida-data/assets/redis`, and `~/rapida-data/assets/opensearch` and sets the correct permissions.
+
+    <Note>
+      On macOS, `setup-local` calls `sudo setfacl` which requires the `acl` package. If it fails, create the directories manually:
+      ```bash
+      mkdir -p ~/rapida-data/assets/{db,redis,opensearch}
+      ```
+    </Note>
+  </Step>
+
+  <Step title="Configure environment files">
+    Each service has an env file under `docker/<service>/`. Edit them with your API keys and settings:
+
     ```
-   Edit .env file with your configuration settings
-
-3. **Start the application**
-   ```bash
-    docker compose up
-
-4. **Monitor Startup**
-   ```bash
-    docker compose logs -f
+    docker/web-api/.web.env
+    docker/assistant-api/.assistant.env
+    docker/integration-api/.integration.env
+    docker/endpoint-api/.endpoint.env
     ```
 
-    Watch the containers being started and the logs flowing in. After about 2-3 minutes, the rapida-voice-ai container should log "Ready". At this point you can proceed to the next step.
+    See [Configuration](/opensource/configuration) for a full reference of all variables.
+  </Step>
 
-5. **Access the Platform**
-    Open your browser and navigate to
-    http://localhost:3000
+  <Step title="Build images">
 
-### Common Issues
-- **Port Conflicts**: If you see errors about ports already in use, modify the port mappings in your .env file
-- **Resource Limitations**: Increase Docker's resource allocation if containers fail to start
-- **Network Issues**: Ensure Docker has proper internet access to pull container images
+    <Tabs>
+      <Tab title="Voice Only (recommended)">
+        ```bash
+        make build-all
+        ```
+        Builds: `web-api`, `assistant-api`, `integration-api`, `endpoint-api`, `ui`. Does **not** include `document-api` or `opensearch`.
 
+        Initial build takes 10–25 minutes (the `assistant-api` uses CGO with the Azure Speech SDK).
+      </Tab>
+      <Tab title="With Knowledge Base">
+        ```bash
+        make build-all-with-knowledge
+        ```
+        Builds everything above **plus** `document-api` (Python image). Requires 8–16 GB RAM.
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Start Rapida">
+
+    <Tabs>
+      <Tab title="Voice Only (recommended)">
+        ```bash
+        make up-all
+        ```
+        Starts: `postgres`, `redis`, `web-api`, `assistant-api`, `integration-api`, `endpoint-api`, `ui`, `nginx`.
+      </Tab>
+      <Tab title="With Knowledge Base">
+        ```bash
+        make up-all-with-knowledge
+        ```
+        Starts everything above **plus** `opensearch` and `document-api`.
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Open the dashboard">
+    Navigate to **http://localhost:3000** in your browser.
+
+    Check container status with:
+    ```bash
+    make status
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Common Issues
+
+### Port conflicts
+
+If you see *"port is already in use"*, another service on your machine is using one of Rapida's ports (5432, 6379, 9001, 9004, 9005, 9007, 8080, 3000). Stop the conflicting service or edit the port mapping in `docker-compose.yml`.
+
+### Container name conflicts
+
+Rapida containers use common names (`postgres`, `redis`, `opensearch`). If you run other projects with the same names, stop them first:
+
+```bash
+docker stop postgres redis opensearch
+docker rm postgres redis opensearch
+```
+
+### Out of memory
+
+If containers are killed during startup (exit code 137), Docker does not have enough memory allocated.
+
+- **Docker Desktop** → Settings → Resources → Memory: set to **8 GB** (Voice Only: 4 GB minimum)
+- **Tip**: Stop all services before rebuilding — `make down-all` then `make build-all` — to avoid OOM during builds.
+
+### `document-api` unhealthy on first boot
+
+On first startup, `document-api` can take 30–60 seconds to connect to OpenSearch. If `make up-all-with-knowledge` exits with a dependency error, wait a moment and run it again:
+
+```bash
+make up-all-with-knowledge
+```
+
+---
+
+## Next Steps
+
+- [Installation guide](/opensource/installation) — detailed Docker and manual setup
+- [Overview](/opensource/overview) — architecture and service descriptions
+- [Configuration](/opensource/configuration) — all environment variable references

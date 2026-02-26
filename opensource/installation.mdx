@@ -199,7 +199,7 @@ Rapida has two deployment modes. Choose before running any commands.
     # Specific service
     make logs-web
     make logs-assistant
-    make logs-postgres
+    make logs-db
     ```
 
     ### Stop Services
@@ -257,7 +257,7 @@ Rapida has two deployment modes. Choose before running any commands.
 
     OpenSearch is **only required for the knowledge base**. If you don't need knowledge base features, simply run `make up-all` (without the `with-knowledge` profile) and OpenSearch is not started at all.
 
-    If you do need knowledge base support and want to use an existing OpenSearch instance, comment out the `opensearch` service in `docker-compose.yml`:
+    If you do need knowledge base support and want to use an existing OpenSearch instance, comment out the `opensearch` service in `docker-compose.knowledge.yml`:
 
     ```yaml
     # opensearch:
