@@ -121,12 +121,14 @@ REDIS__MAX_CONNECTION=30
 REDIS__DIAL_TIMEOUT=10
 ```
 
-## OpenSearch Configuration
+## OpenSearch Configuration (Optional — Knowledge Base Only)
+
+OpenSearch is only required when using the knowledge base / RAG features. If `OPENSEARCH__HOST` is not set (or left empty), the assistant-api starts without knowledge base support and no connection to OpenSearch is attempted.
 
 ```env
 # Connection settings
 OPENSEARCH__SCHEMA=http          # http or https
-OPENSEARCH__HOST=localhost       # OpenSearch host
+OPENSEARCH__HOST=opensearch      # OpenSearch host (leave empty to disable knowledge base)
 OPENSEARCH__PORT=9200            # OpenSearch port
 OPENSEARCH__USERNAME=            # Username (if auth enabled)
 OPENSEARCH__PASSWORD=            # Password (if auth enabled)
@@ -216,7 +218,7 @@ INTEGRATION_HOST=integration-api:9004
 ENDPOINT_HOST=endpoint-api:9005
 ASSISTANT_HOST=assistant-api:9007
 WEB_HOST=web-api:9001
-DOCUMENT_HOST=http://document-api:9010
+DOCUMENT_HOST=http://document-api:9010  # Optional — only needed when using knowledge base
 UI_HOST=https://localhost:3000
 ```
 
@@ -260,7 +262,8 @@ REDIS__AUTH__USER=
 REDIS__MAX_CONNECTION=10
 REDIS__MAX_DB=0
 
-# OpenSearch
+# OpenSearch — optional, only needed for knowledge base features
+# Leave OPENSEARCH__HOST empty (or remove these lines) to run without knowledge base
 OPENSEARCH__SCHEMA=http
 OPENSEARCH__HOST=opensearch
 OPENSEARCH__PORT=9200

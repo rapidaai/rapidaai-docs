@@ -22,11 +22,11 @@ For local development (without Docker), export the variables and override the Do
 | `POSTGRES__AUTH__USER` | `rapida_user` | Database user |
 | `POSTGRES__AUTH__PASSWORD` | `rapida_db_password` | Database password |
 | `REDIS__HOST` | `redis` | Redis host |
-| `OPENSEARCH__HOST` | `opensearch` | OpenSearch host |
+| `OPENSEARCH__HOST` | *(empty)* | OpenSearch host — **optional**, leave empty to disable knowledge base |
 | `INTEGRATION_HOST` | `integration-api:9004` | integration-api gRPC address |
 | `ENDPOINT_HOST` | `endpoint-api:9005` | endpoint-api gRPC address |
 | `WEB_HOST` | `web-api:9001` | web-api gRPC address |
-| `DOCUMENT_HOST` | `http://document-api:9010` | document-api HTTP address |
+| `DOCUMENT_HOST` | *(empty)* | document-api HTTP address — **optional**, only needed for knowledge base |
 | `PUBLIC_ASSISTANT_HOST` | — | **Publicly reachable hostname** for telephony callbacks and WebSocket media |
 
 <Warning>
@@ -77,12 +77,14 @@ For local development (without Docker), export the variables and override the Do
 
 ---
 
-## OpenSearch
+## OpenSearch (Optional — Knowledge Base Only)
+
+OpenSearch is only needed for knowledge base / RAG features. If `OPENSEARCH__HOST` is left empty (the default), the assistant-api starts without knowledge base support and skips the OpenSearch connection entirely.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `OPENSEARCH__SCHEMA` | `http` | `http` · `https` |
-| `OPENSEARCH__HOST` | `opensearch` | OpenSearch host (`localhost` for local dev) |
+| `OPENSEARCH__HOST` | *(empty)* | OpenSearch host — leave empty to disable knowledge base |
 | `OPENSEARCH__PORT` | `9200` | OpenSearch port |
 | `OPENSEARCH__MAX_RETRIES` | `3` | Request retry count |
 | `OPENSEARCH__MAX_CONNECTION` | `10` | Connection pool size |
@@ -177,19 +179,19 @@ REDIS__PORT=6379
 REDIS__MAX_CONNECTION=10
 REDIS__MAX_DB=0
 
-# ── OpenSearch ────────────────────────────────────────────────────
-OPENSEARCH__SCHEMA=http
-OPENSEARCH__HOST=opensearch
-OPENSEARCH__PORT=9200
-OPENSEARCH__MAX_RETRIES=3
-OPENSEARCH__MAX_CONNECTION=10
+# ── OpenSearch (optional — remove or leave empty to disable knowledge base) ──
+# OPENSEARCH__SCHEMA=http
+# OPENSEARCH__HOST=opensearch
+# OPENSEARCH__PORT=9200
+# OPENSEARCH__MAX_RETRIES=3
+# OPENSEARCH__MAX_CONNECTION=10
 
 # ── Internal service addresses ────────────────────────────────────
 INTEGRATION_HOST=integration-api:9004
 ENDPOINT_HOST=endpoint-api:9005
 ASSISTANT_HOST=assistant-api:9007
 WEB_HOST=web-api:9001
-DOCUMENT_HOST=http://document-api:9010
+# DOCUMENT_HOST=http://document-api:9010   # optional — only needed for knowledge base
 UI_HOST=https://localhost:3000
 
 # ── Public hostname (required for telephony) ──────────────────────
@@ -218,11 +220,13 @@ When running from source, override Docker hostnames:
 export $(grep -v '^#' docker/assistant-api/.assistant.env | xargs)
 export POSTGRES__HOST=localhost
 export REDIS__HOST=localhost
-export OPENSEARCH__HOST=localhost
 export INTEGRATION_HOST=localhost:9004
 export ENDPOINT_HOST=localhost:9005
 export WEB_HOST=localhost:9001
-export DOCUMENT_HOST=http://localhost:9010
+
+# Optional: only needed for knowledge base features
+# export OPENSEARCH__HOST=localhost
+# export DOCUMENT_HOST=http://localhost:9010
 
 go run cmd/assistant/assistant.go
 ```

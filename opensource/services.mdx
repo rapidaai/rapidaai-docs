@@ -16,9 +16,13 @@ Rapida consists of multiple microservices, each with specific responsibilities. 
 | **assistant-api**   | 9007 | Voice agents, conversations      | assistant_db   | Go       |
 | **integration-api** | 9004 | Third-party integrations         | integration_db | Go       |
 | **endpoint-api**    | 9005 | Webhooks, callbacks              | endpoint_db    | Go       |
-| **document-api**    | 9010 | Knowledge base, RAG              | assistant_db   | Python   |
+| **document-api** *(optional)* | 9010 | Knowledge base, RAG   | assistant_db   | Python   |
 | **ui**              | 3000 | Web dashboard                    | N/A            | React    |
 | **nginx**           | 8080 | API gateway, reverse proxy       | N/A            | N/A      |
+
+<Info>
+  **document-api** is optional. It is only needed for knowledge base / RAG features. Start it with `make up-all-with-knowledge`. The core voice assistant services work without it.
+</Info>
 
 ## Infrastructure Services
 
@@ -26,7 +30,7 @@ Rapida consists of multiple microservices, each with specific responsibilities. 
 | -------------- | ---- | --------------------------------- |
 | **PostgreSQL** | 5432 | Relational database (4 instances) |
 | **Redis**      | 6379 | Cache, queues, sessions           |
-| **OpenSearch** | 9200 | Full-text search, analytics       |
+| **OpenSearch** *(optional)* | 9200 | Full-text search, vector search — knowledge base only |
 
 ---
 
@@ -422,9 +426,13 @@ curl http://localhost:9005/readiness/
 
 ---
 
-### document-api (Port 9010)
+### document-api (Port 9010) — Optional
 
 **Purpose**: Knowledge base management and RAG (Retrieval Augmented Generation)
+
+<Info>
+  This service is **optional**. It is only required if you want to use the knowledge base / RAG features. To start it, use `make up-all-with-knowledge`. Voice assistants work fully without it.
+</Info>
 
 **Responsibilities**:
 

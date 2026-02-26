@@ -4,6 +4,77 @@ description: "Run the full Rapida Voice AI platform on your own infrastructure. 
 sidebarTitle: "Overview"
 ---
 
+## Choose your setup
+
+Rapida supports two deployment modes. Pick the one that fits your use case before you start.
+
+<Tabs>
+  <Tab title="🎙️ Voice Assistant Only (Recommended)">
+    **Best for most users.** Build and run AI voice assistants — inbound/outbound calls, real-time STT/LLM/TTS, webhooks, and telephony integrations.
+
+    No OpenSearch or Python services required. Lower RAM, simpler setup, faster to get started.
+
+    **Services started:** web-api · assistant-api · integration-api · endpoint-api · UI · PostgreSQL · Redis · Nginx
+
+    **Services skipped:** document-api · OpenSearch
+
+    **RAM needed:** 4 GB minimum
+
+    ```bash
+    # Build images
+    make build-all
+
+    # Start all services
+    make up-all
+    ```
+
+    That's it — open http://localhost:3000 and create your first assistant.
+  </Tab>
+  <Tab title="📚 Voice Assistant + Knowledge Base">
+    **Add this when you need RAG.** Everything in Voice Only, plus the ability to upload documents (PDF, DOCX, CSV, etc.) and have the assistant search and answer questions from your own content using vector embeddings.
+
+    Requires OpenSearch (memory-intensive) and the Python `document-api` service.
+
+    **Extra services added:** document-api · OpenSearch
+
+    **RAM needed:** 8–16 GB (OpenSearch alone uses 4–8 GB)
+
+    ```bash
+    # Build images (includes document-api Python image)
+    make build-all-with-knowledge
+
+    # Start all services including document-api and opensearch
+    make up-all-with-knowledge
+    ```
+
+    After starting, go to **Knowledge** in the dashboard to create a knowledge base and upload documents.
+  </Tab>
+</Tabs>
+
+<Info>
+  **Not sure which to pick?** Start with Voice Only (`make up-all`). You can add the knowledge base at any time later — just run `make up-all-with-knowledge`. No existing data is lost.
+</Info>
+
+---
+
+## What is the knowledge base?
+
+The knowledge base lets your voice assistant answer questions grounded in your own documents. When a caller asks something, the assistant searches your uploaded content and injects the most relevant passages into the LLM prompt before generating a response. This is called Retrieval-Augmented Generation (RAG).
+
+| Feature | Without knowledge base | With knowledge base |
+|---------|----------------------|-------------------|
+| Voice calls (STT → LLM → TTS) | ✅ | ✅ |
+| Inbound / outbound telephony | ✅ | ✅ |
+| Webhooks & callbacks | ✅ | ✅ |
+| LLM provider integrations | ✅ | ✅ |
+| Upload documents (PDF, DOCX, CSV…) | ✗ | ✅ |
+| Answer questions from your documents | ✗ | ✅ |
+| Semantic / vector search | ✗ | ✅ |
+| OpenSearch required | ✗ | ✅ |
+| RAM requirement | ~4 GB | ~8–16 GB |
+
+---
+
 ## What you are deploying
 
 Rapida is a microservices platform. Self-hosting means running all services on your own infrastructure — no data leaves your environment.
@@ -15,11 +86,11 @@ Rapida is a microservices platform. Self-hosting means running all services on y
 | `assistant-api` | 9007 · 4573 | Voice orchestration, STT/LLM/TTS pipeline, telephony |
 | `integration-api` | 9004 | LLM, STT, TTS provider integrations |
 | `endpoint-api` | 9005 | Webhook delivery and event routing |
-| `document-api` | 9010 | Document ingestion, embeddings, RAG search |
+| `document-api` | 9010 | Document ingestion, embeddings, RAG search *(optional — knowledge base only)* |
 | `ui` | 3000 | React dashboard |
 | `postgres` | 5432 | Relational data (4 databases) |
 | `redis` | 6379 | Cache, sessions, job queue |
-| `opensearch` | 9200 | Conversation search, document indexing |
+| `opensearch` | 9200 | Conversation search, document indexing *(optional — knowledge base only)* |
 
 <Info>
   The recommended path for self-hosting is Docker Compose. All services, infrastructure, and Nginx are wired together in `docker-compose.yml`. No manual network or volume configuration is needed.
@@ -33,7 +104,7 @@ Rapida is a microservices platform. Self-hosting means running all services on y
 |-------------|---------|-------|
 | Docker Engine | 20.10+ | [Install Docker](https://docs.docker.com/get-docker/) |
 | Docker Compose | v2.0+ | Included with Docker Desktop |
-| RAM | 8 GB minimum | 16 GB recommended (OpenSearch is memory-intensive) |
+| RAM | 4 GB minimum | 8 GB recommended; 16 GB if running with knowledge base (OpenSearch is memory-intensive) |
 | Disk | 10 GB free | For images, volumes, and uploaded assets |
 | OS | macOS · Linux · Windows WSL2 | |
 
@@ -58,7 +129,7 @@ cd voice-ai
 make setup-local
 ```
 
-Creates `~/rapida-data/assets/{db,redis,opensearch}` with the correct ownership for Docker volume mounts.
+Creates `~/rapida-data/assets/{db,redis,opensearch}` with the correct ownership for Docker volume mounts. The `opensearch` directory is only used when running with the knowledge base profile.
 
 <Note>
   **macOS users:** `make setup-local` uses `setfacl`, which is a Linux utility. If the command fails, create the directories manually:
@@ -92,18 +163,30 @@ docker/document-api/config.yaml
 <Step title="Build all service images">
 
 ```bash
+# Without knowledge base (recommended for most users)
 make build-all
+
+# With knowledge base (includes document-api and opensearch)
+make build-all-with-knowledge
 ```
 
-Builds Docker images for all Go services and the Python document-api. Initial build takes 5–10 minutes depending on your network.
+Builds Docker images for all Go services. Initial build takes 5–10 minutes depending on your network.
 
 </Step>
 
 <Step title="Start all services">
 
 ```bash
+# Without knowledge base — voice assistants only
 make up-all
+
+# With knowledge base — includes document-api and opensearch
+make up-all-with-knowledge
 ```
+
+<Note>
+  The default `make up-all` starts all core services (web-api, assistant-api, integration-api, endpoint-api, UI, PostgreSQL, Redis, Nginx). `document-api` and `opensearch` are **optional** and only started with the `with-knowledge` variant. You can always add knowledge base support later by running `make up-all-with-knowledge`.
+</Note>
 
 </Step>
 
@@ -135,16 +218,16 @@ The Nginx gateway is accessible at **[http://localhost:8080](http://localhost:80
 
 ## Service Endpoints
 
-| Service | URL | Health Check |
-|---------|-----|-------------|
-| Dashboard | http://localhost:3000 | — |
-| Nginx Gateway | http://localhost:8080 | — |
-| Web API | http://localhost:9001 | `GET /readiness/` |
-| Assistant API | http://localhost:9007 | `GET /readiness/` |
-| Integration API | http://localhost:9004 | `GET /readiness/` |
-| Endpoint API | http://localhost:9005 | `GET /readiness/` |
-| Document API | http://localhost:9010 | `GET /readiness/` |
-| OpenSearch | http://localhost:9200 | `GET /_cluster/health` |
+| Service | URL | Health Check | Required |
+|---------|-----|-------------|---------|
+| Dashboard | http://localhost:3000 | — | Yes |
+| Nginx Gateway | http://localhost:8080 | — | Yes |
+| Web API | http://localhost:9001 | `GET /readiness/` | Yes |
+| Assistant API | http://localhost:9007 | `GET /readiness/` | Yes |
+| Integration API | http://localhost:9004 | `GET /readiness/` | Yes |
+| Endpoint API | http://localhost:9005 | `GET /readiness/` | Yes |
+| Document API | http://localhost:9010 | `GET /readiness/` | Optional (knowledge base only) |
+| OpenSearch | http://localhost:9200 | `GET /_cluster/health` | Optional (knowledge base only) |
 
 ```bash
 # Verify a specific service
@@ -236,13 +319,16 @@ Use the built-in call tester in the dashboard or connect via the [rapida-react S
 | Command | Description |
 |---------|-------------|
 | `make setup-local` | Create data directories with correct permissions |
-| `make build-all` | Build all Docker images |
-| `make rebuild-all` | Rebuild all images (no cache) |
+| `make build-all` | Build all Docker images (without knowledge base) |
+| `make build-all-with-knowledge` | Build all Docker images including document-api |
+| `make rebuild-all` | Rebuild all images (no cache, without knowledge base) |
+| `make rebuild-all-with-knowledge` | Rebuild all images including document-api (no cache) |
 | `make rebuild-<service>` | Rebuild a single service (no cache) |
-| `make up-all` | Start all services |
+| `make up-all` | Start all services (without knowledge base) |
+| `make up-all-with-knowledge` | Start all services including document-api and opensearch |
 | `make down-all` | Stop all services |
 | `make restart-all` | Restart all services |
-| `make deps` | Start infrastructure only (postgres, redis, opensearch) |
+| `make deps` | Start infrastructure only (postgres, redis) |
 | `make status` | Show container status and port mappings |
 | `make logs-all` | Tail all service logs |
 | `make logs-<service>` | Tail logs for a specific service |
@@ -264,7 +350,7 @@ make clean
 ```
 
 <Warning>
-  `make clean` deletes all Docker volumes, including the PostgreSQL and OpenSearch data directories. All database content and indexed documents will be lost.
+  `make clean` deletes all Docker volumes, including the PostgreSQL data directory and (if used) the OpenSearch data directory. All database content and indexed documents will be lost.
 </Warning>
 
 ---
@@ -272,7 +358,7 @@ make clean
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Architecture" icon="diagram-project" href="/opensource/architecture">
+  <Card title="Architecture" icon="network" href="/opensource/architecture">
     System topology, service communication, and data flow diagrams.
   </Card>
   <Card title="Configuration Reference" icon="sliders" href="/opensource/configuration">

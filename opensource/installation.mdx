@@ -4,6 +4,25 @@ description: "Get Rapida up and running - Choose your setup method"
 sidebarTitle: "Installation"
 ---
 
+## Before you start — voice only or with knowledge base?
+
+Rapida has two deployment modes. Choose before running any commands.
+
+| | Voice Assistant Only | Voice + Knowledge Base |
+|--|----------------------|----------------------|
+| **What it does** | Build voice assistants that call LLMs directly | Everything in Voice Only, plus upload documents and answer questions from your own content |
+| **Extra services** | — | `document-api` (Python) + `opensearch` |
+| **RAM** | 4 GB minimum | 8–16 GB (OpenSearch is memory-intensive) |
+| **Build command** | `make build-all` | `make build-all-with-knowledge` |
+| **Start command** | `make up-all` | `make up-all-with-knowledge` |
+| **Best for** | Most users — calling bots, IVR, voice agents | Assistants that answer questions from your PDFs, docs, or CSVs |
+
+<Tip>
+  **Start with Voice Only.** You can add the knowledge base later at any time by running `make up-all-with-knowledge`. No existing data is affected.
+</Tip>
+
+---
+
 <Tabs>
   <Tab title="Docker (Recommended)">
 
@@ -92,14 +111,53 @@ sidebarTitle: "Installation"
     This creates:
     - `~/rapida-data/assets/db` - PostgreSQL
     - `~/rapida-data/assets/redis` - Redis
-    - `~/rapida-data/assets/opensearch` - OpenSearch
+    - `~/rapida-data/assets/opensearch` - OpenSearch (only used with the knowledge base profile)
+
+</Step>
+    <Step title="Build images">
+
+    <Tabs>
+      <Tab title="Voice Only (recommended)">
+        Builds all core services. Does **not** include `document-api` or `opensearch`.
+
+        ```bash
+        make build-all
+        ```
+      </Tab>
+      <Tab title="With Knowledge Base">
+        Builds everything, including `document-api` (Python image) and pulls the OpenSearch image.
+        Requires **8–16 GB RAM** due to OpenSearch.
+
+        ```bash
+        make build-all-with-knowledge
+        ```
+      </Tab>
+    </Tabs>
+
+    Initial build takes 5–10 minutes depending on your network speed.
 
 </Step>
     <Step title="Start Rapida">
 
-    ```bash
-    make up-all
-    ```
+    <Tabs>
+      <Tab title="Voice Only (recommended)">
+        Starts all core services: web-api, assistant-api, integration-api, endpoint-api, UI, PostgreSQL, Redis, and Nginx.
+        `document-api` and `opensearch` are **not started**.
+
+        ```bash
+        make up-all
+        ```
+      </Tab>
+      <Tab title="With Knowledge Base">
+        Starts everything above **plus** `document-api` and `opensearch`.
+        Use this if you want to upload documents and use RAG / vector search in your assistants.
+
+        ```bash
+        make up-all-with-knowledge
+        ```
+      </Tab>
+    </Tabs>
+
 </Step>
     
      <Step title="Access Dashboard">
@@ -117,6 +175,20 @@ sidebarTitle: "Installation"
     ```
 
     All containers should show `Up` status.
+
+    ### Enabling Knowledge Base Later
+
+    Started with Voice Only and want to add knowledge base support? No reinstall needed:
+
+    ```bash
+    # Build the document-api image (first time only)
+    make build-all-with-knowledge
+
+    # Start document-api and opensearch alongside existing services
+    make up-all-with-knowledge
+    ```
+
+    Your existing data (PostgreSQL, Redis) is untouched. The new services simply start alongside what's already running.
 
     ### View Logs
 
@@ -183,7 +255,9 @@ sidebarTitle: "Installation"
 
     ### Example: Use Existing OpenSearch
 
-    Comment out OpenSearch in `docker-compose.yml`:
+    OpenSearch is **only required for the knowledge base**. If you don't need knowledge base features, simply run `make up-all` (without the `with-knowledge` profile) and OpenSearch is not started at all.
+
+    If you do need knowledge base support and want to use an existing OpenSearch instance, comment out the `opensearch` service in `docker-compose.yml`:
 
     ```yaml
     # opensearch:
@@ -191,11 +265,20 @@ sidebarTitle: "Installation"
     #   ...
     ```
 
-    Update OpenSearch settings:
+    Then set the OpenSearch vars in `docker/assistant-api/.assistant.env`:
 
     ```env
+    OPENSEARCH__SCHEMA=http
     OPENSEARCH__HOST=host.docker.internal
     OPENSEARCH__PORT=9200
+    OPENSEARCH__USER=admin
+    OPENSEARCH__PASSWORD=admin
+    ```
+
+    And run with the knowledge profile:
+
+    ```bash
+    make up-all-with-knowledge
     ```
 
     ## Next Steps
@@ -209,6 +292,10 @@ sidebarTitle: "Installation"
   </Tab>
   <Tab title="Manual Setup">
     For developers who prefer not to use Docker. This requires installing each component individually.
+
+    <Info>
+      Same choice applies here: **Voice Only** (PostgreSQL + Redis only) or **With Knowledge Base** (PostgreSQL + Redis + OpenSearch + Python). If you only need voice assistants, skip the OpenSearch and Python/document-api sections below.
+    </Info>
 
     ### Prerequisites
 
@@ -346,7 +433,9 @@ sidebarTitle: "Installation"
       ```
     </CodeGroup>
 
-    #### OpenSearch
+    #### OpenSearch (Optional — Knowledge Base Only)
+
+    OpenSearch is only needed if you want to use knowledge base / RAG features. Skip this section if you only need voice assistant functionality.
 
     <CodeGroup>
       ```bash macOS
@@ -500,7 +589,9 @@ sidebarTitle: "Installation"
     make build-endpoint
     ```
 
-    #### Set Up Python Services
+    #### Set Up Python Services (Optional — Knowledge Base Only)
+
+    The `document-api` is only needed if you want to use the knowledge base / RAG features. Skip this step if you only need voice assistant functionality.
 
     ```bash
     # Create Python virtual environment
@@ -528,6 +619,8 @@ sidebarTitle: "Installation"
 
     #### Start Services (in separate terminals)
 
+    **Required for both modes** — start these four services first:
+
     <CodeGroup>
       ```bash Web Api
       go run cmd/web/web.go
@@ -545,16 +638,27 @@ sidebarTitle: "Installation"
       go run cmd/integration/integration.go
       ```
 
-      ```bash Document Api (Optional)
+      ```bash Web console (UI)
+      cd ui
+      yarn start:dev
+      ```
+    </CodeGroup>
+
+    **Optional — only needed for knowledge base:**
+
+    <CodeGroup>
+      ```bash Document Api (optional)
+      # Requires OpenSearch running and Python venv activated
       cd api/document-api
       source venv/bin/activate
       cd ../..
       PYTHONPATH=api/document-api uvicorn app.main:app --host 0.0.0.0 --port 9010
       ```
 
-      ```bash Web console (UI)
-      cd ui
-      yarn start:dev
+      ```bash Celery Worker (optional)
+      # Background worker for document processing jobs
+      cd api/document-api && source venv/bin/activate && cd ../..
+      PYTHONPATH=api/document-api celery -A app.worker worker --loglevel=info
       ```
     </CodeGroup>
 
@@ -592,10 +696,14 @@ sidebarTitle: "Installation"
 
     #### Skip OpenSearch Installation
 
-    Update OpenSearch host:
+    OpenSearch is **only required for the knowledge base**. If you don't need knowledge base features, you can skip OpenSearch entirely — just don't set `OPENSEARCH__HOST` and the assistant-api will start without knowledge base support.
+
+    If you do need knowledge base support, update the OpenSearch env vars in your assistant-api config:
 
     ```bash
-    export OPENSEARCH_HOST="your-opensearch-host:9200"
+    export OPENSEARCH__SCHEMA=http
+    export OPENSEARCH__HOST=your-opensearch-host
+    export OPENSEARCH__PORT=9200
     ```
 
     ## Troubleshooting

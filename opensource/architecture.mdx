@@ -84,9 +84,13 @@ graph TD
 | **assistant-api**   | 9007      | Go       | Voice orchestration, STT/TTS pipeline, telephony    |
 | **integration-api** | 9004      | Go       | LLM/STT/TTS provider integrations, OAuth            |
 | **endpoint-api**    | 9005      | Go       | Webhook management, event routing, retry            |
-| **document-api**    | 9010      | Python   | Document processing, embeddings, RAG (FastAPI)      |
+| **document-api** *(optional)* | 9010 | Python | Document processing, embeddings, RAG (FastAPI) — knowledge base only |
 | **ui**              | 3000      | React/TS | Frontend dashboard                                  |
 | **nginx**           | 8080      | —        | Reverse proxy, WebSocket upgrade, SSL/TLS           |
+
+<Info>
+  **document-api** and **opensearch** are optional. They are only needed for knowledge base / RAG features. Voice assistants (STT/LLM/TTS) work fully without them.
+</Info>
 
 ---
 
@@ -139,9 +143,9 @@ Redis 7 serves as the in-memory cache, session store, and job broker.
 | 1   | Session / auth token cache                       |
 | 2   | Celery job broker (document-api background jobs) |
 
-### OpenSearch Indices
+### OpenSearch Indices (Optional — Knowledge Base Only)
 
-OpenSearch 2.11.1 handles full-text search and vector similarity search.
+OpenSearch 2.11.1 handles full-text search and vector similarity search. It is only required when running with the knowledge base profile (`make up-all-with-knowledge`).
 
 | Index                     | Producer          | Purpose                                  |
 | ------------------------- | ----------------- | ---------------------------------------- |

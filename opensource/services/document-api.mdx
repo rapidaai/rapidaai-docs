@@ -6,6 +6,10 @@ sidebarTitle: "Document API"
 
 ## Overview
 
+<Warning>
+  **This service is optional.** `document-api` and its dependency `opensearch` are only needed for knowledge base / RAG features. Voice assistants work fully without it. Use `make up-all-with-knowledge` (Docker) to start with knowledge base support.
+</Warning>
+
 The `document-api` is the knowledge backend for the Rapida platform. It processes documents from PDF, Word, CSV, and other formats into searchable vector embeddings and full-text search indices. At call time, `assistant-api` queries this service to inject relevant knowledge context into the LLM prompt.
 
 <CardGroup cols={3}>
@@ -242,11 +246,19 @@ knowledge_extractor_config:
 
 <Tab title="Docker Compose">
 
+`document-api` is part of the `knowledge` Docker Compose profile and is not started by default.
+
 ```bash
+# Start document-api together with all other services and opensearch
+make up-all-with-knowledge
+
+# Or start document-api individually (opensearch must already be running)
 make up-document
 
+# View logs
 make logs-document
 
+# Rebuild
 make rebuild-document
 ```
 
@@ -354,7 +366,7 @@ docker stats document-api
   <Card title="Assistant API" icon="mic" href="/opensource/services/assistant-api">
     How assistants use knowledge bases during calls.
   </Card>
-  <Card title="Architecture" icon="diagram-project" href="/opensource/architecture">
+  <Card title="Architecture" icon="network" href="/opensource/architecture">
     Full system topology and data flow diagrams.
   </Card>
   <Card title="Installation Guide" icon="rocket" href="/opensource/installation">
