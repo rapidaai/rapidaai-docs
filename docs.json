@@ -21,6 +21,7 @@
                 "tab": "Documentation",
                 "groups": [
                     {
+                        "group": "Getting Started",
                         "pages": [
                             "introduction/overview"
                         ]
