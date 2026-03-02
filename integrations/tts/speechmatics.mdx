@@ -1,0 +1,43 @@
+---
+title: "Speechmatics TTS"
+description: "Speechmatics provides multilingual HTTP streaming text-to-speech backed by its speech platform."
+sidebarTitle: "Speechmatics"
+---
+
+## Overview
+
+Speechmatics provides text-to-speech via HTTP streaming, backed by the same platform known for its highly accurate, language-inclusive speech recognition. It is well-suited for multilingual voice assistants where both STT and TTS from a single provider is preferred.
+
+## Authentication
+
+| Key | Description |
+|-----|-------------|
+| `key` | API key from [portal.speechmatics.com](https://portal.speechmatics.com) |
+
+## Configuration
+
+| Option | Description |
+|--------|-------------|
+| `voice_id` | Speechmatics voice identifier |
+| `language` | Language code (e.g. `en`, `es`, `fr`, `de`, `it`, `pt`, `nl`, `pl`, `ja`, `zh`) |
+
+## Getting Started
+
+<Steps>
+  <Step title="Add Speechmatics credentials to your vault">
+    Navigate to **Integration → Vault** in the Rapida dashboard. Add your Speechmatics API key from your [Speechmatics account](https://portal.speechmatics.com).
+  </Step>
+
+  <Step title="Select Speechmatics as your TTS provider">
+    When configuring your assistant, open **Audio Settings** and choose **Speechmatics** as your Text-to-Speech provider.
+  </Step>
+
+  <Step title="Configure voice and language">
+    Select a voice ID and set the desired language code for your deployment.
+  </Step>
+</Steps>
+
+## Related
+
+- [Speechmatics STT](/integrations/stt/speechmatics)
+- [Deepgram TTS](/integrations/tts/deepgram)

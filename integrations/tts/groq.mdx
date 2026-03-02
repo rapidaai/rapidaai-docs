@@ -1,0 +1,43 @@
+---
+title: "Groq TTS"
+description: "Groq provides ultra-fast text-to-speech via an OpenAI-compatible API powered by its LPU inference engine."
+sidebarTitle: "Groq"
+---
+
+## Overview
+
+Groq delivers text-to-speech through its OpenAI-compatible HTTP API, accelerated by the LPU inference engine for extremely low-latency synthesis. It supports English and Arabic voices through the PlayAI voice collection.
+
+## Authentication
+
+| Key | Description |
+|-----|-------------|
+| `key` | API key from [console.groq.com](https://console.groq.com) |
+
+## Configuration
+
+| Option | Description |
+|--------|-------------|
+| `model` | Model: `playai-tts` (English), `playai-tts-arabic` (Arabic) |
+| `voice_id` | PlayAI voice name (e.g. `Arista-PlayAI`, `Atlas-PlayAI`, `Celeste-PlayAI`, `Chip-PlayAI`) |
+
+## Getting Started
+
+<Steps>
+  <Step title="Add Groq credentials to your vault">
+    Navigate to **Integration → Vault** in the Rapida dashboard. Add your Groq API key from your [Groq console](https://console.groq.com).
+  </Step>
+
+  <Step title="Select Groq as your TTS provider">
+    When configuring your assistant, open **Audio Settings** and choose **Groq** as your Text-to-Speech provider.
+  </Step>
+
+  <Step title="Choose a model and voice">
+    Select `playai-tts` for English or `playai-tts-arabic` for Arabic, then specify a PlayAI voice ID.
+  </Step>
+</Steps>
+
+## Related
+
+- [Groq STT](/integrations/stt/groq)
+- [OpenAI TTS](/integrations/tts/openai-tts)

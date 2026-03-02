@@ -1,0 +1,56 @@
+---
+title: "NVIDIA TTS"
+description: "Configure NVIDIA text-to-speech via the NVCF API in assistant-api."
+sidebarTitle: "NVIDIA"
+---
+
+NVIDIA provides text-to-speech through the NVIDIA Cloud Functions (NVCF) API, offering enterprise-grade neural voice synthesis. Voices are served from NVIDIA's inference infrastructure with high throughput.
+
+**Provider identifier:** `nvidia`
+
+---
+
+## Vault Credentials
+
+| Key | Description |
+|-----|-------------|
+| `key` | NVIDIA API key from [nvidia.com](https://build.nvidia.com) |
+| `function_id` | NVCF Function ID for the TTS model endpoint |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get NVIDIA API credentials">
+Sign in at [build.nvidia.com](https://build.nvidia.com) → **API Keys** to generate your API key. Navigate to the TTS model card to find the corresponding NVCF Function ID.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **NVIDIA**, enter `key` = your API key and `function_id` = your NVCF Function ID.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **TTS Provider**, select **NVIDIA**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `voice_id` | `English-US.Female-1` | NVIDIA voice identifier (e.g. `English-US.Female-1`, `English-US.Male-1`) |
+| `language` | `en-US` | Language code: `en-US`, `en-GB`, `es-ES`, `fr-FR`, `de-DE`, and more |
+
+Browse available voices and models in the [NVIDIA NIM catalog](https://build.nvidia.com/explore/speech).
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="NVIDIA STT" icon="waveform" href="/opensource/services/assistant-api/stt/nvidia">
+    NVIDIA speech recognition via NVCF
+  </Card>
+  <Card title="TTS Overview" icon="volume" href="/opensource/services/assistant-api/tts/overview">
+    All TTS providers
+  </Card>
+</CardGroup>

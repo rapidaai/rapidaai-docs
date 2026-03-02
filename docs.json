@@ -131,7 +131,9 @@
                                     "integrations/stt/cartesia",
                                     "integrations/stt/revai",
                                     "integrations/stt/speechmatics",
-                                    "integrations/stt/sarvam"
+                                    "integrations/stt/sarvam",
+                                    "integrations/stt/groq",
+                                    "integrations/stt/nvidia"
                                 ]
                             },
                             {
@@ -146,7 +148,12 @@
                                     "integrations/tts/cartesia",
                                     "integrations/tts/resemble",
                                     "integrations/tts/rime",
-                                    "integrations/tts/sarvam"
+                                    "integrations/tts/sarvam",
+                                    "integrations/tts/neuphonic",
+                                    "integrations/tts/minimax",
+                                    "integrations/tts/groq",
+                                    "integrations/tts/speechmatics",
+                                    "integrations/tts/nvidia"
                                 ]
                             },
                             {
@@ -254,6 +261,10 @@
                                     "opensource/services/assistant-api/stt/assemblyai",
                                     "opensource/services/assistant-api/stt/revai",
                                     "opensource/services/assistant-api/stt/sarvamai",
+                                    "opensource/services/assistant-api/stt/groq",
+                                    "opensource/services/assistant-api/stt/speechmatics",
+                                    "opensource/services/assistant-api/stt/nvidia",
+                                    "opensource/services/assistant-api/stt/aws",
                                     "opensource/services/assistant-api/stt/custom"
                                 ]
                             },
@@ -268,6 +279,13 @@
                                     "opensource/services/assistant-api/tts/azure",
                                     "opensource/services/assistant-api/tts/sarvamai",
                                     "opensource/services/assistant-api/tts/rime",
+                                    "opensource/services/assistant-api/tts/resembleai",
+                                    "opensource/services/assistant-api/tts/neuphonic",
+                                    "opensource/services/assistant-api/tts/minimax",
+                                    "opensource/services/assistant-api/tts/groq",
+                                    "opensource/services/assistant-api/tts/speechmatics",
+                                    "opensource/services/assistant-api/tts/nvidia",
+                                    "opensource/services/assistant-api/tts/aws",
                                     "opensource/services/assistant-api/tts/custom"
                                 ]
                             }

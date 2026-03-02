@@ -1,0 +1,56 @@
+---
+title: "MiniMax TTS"
+description: "Configure MiniMax text-to-speech with HTTP streaming SSE in assistant-api."
+sidebarTitle: "MiniMax"
+---
+
+MiniMax provides high-quality speech synthesis via HTTP streaming Server-Sent Events (SSE). It offers multiple model tiers ranging from fast turbo models to high-definition output.
+
+**Provider identifier:** `minimax`
+
+---
+
+## Vault Credentials
+
+| Key | Description |
+|-----|-------------|
+| `key` | MiniMax API key from [minimax.io](https://minimax.io) |
+| `group_id` | MiniMax Group ID associated with your account |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get MiniMax API credentials">
+Sign in at [minimax.io](https://minimax.io) → **Account → API Keys** to retrieve your API key and Group ID.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **MiniMax**, enter `key` = your API key and `group_id` = your Group ID.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **TTS Provider**, select **MiniMax**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `model` | `speech-02-turbo` | Model: `speech-02-turbo`, `speech-02-hd`, `speech-2.6-turbo`, `speech-2.6-hd` |
+| `voice_id` | `Wise_Woman` | MiniMax voice ID (system or custom voice) |
+
+Browse available voices in the [MiniMax TTS documentation](https://minimax.io/docs).
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="ElevenLabs TTS" icon="microphone" href="/opensource/services/assistant-api/tts/elevenlabs">
+    High-fidelity voice cloning alternative
+  </Card>
+  <Card title="TTS Overview" icon="volume" href="/opensource/services/assistant-api/tts/overview">
+    All TTS providers
+  </Card>
+</CardGroup>

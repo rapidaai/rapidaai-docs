@@ -1,0 +1,54 @@
+---
+title: "Resemble AI TTS"
+description: "Configure Resemble AI text-to-speech with real-time WebSocket streaming in assistant-api."
+sidebarTitle: "Resemble AI"
+---
+
+Resemble AI provides high-quality, real-time neural voice synthesis and voice cloning via WebSocket streaming. Audio is streamed directly into the voice pipeline for low-latency assistant responses.
+
+**Provider identifier:** `resembleai`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | Resemble AI API key from [resemble.ai](https://resemble.ai) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get a Resemble AI API key">
+Sign in at [resemble.ai](https://app.resemble.ai) → **API** → copy your API key.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **Resemble AI**, enter `key` = your API key.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **TTS Provider**, select **Resemble AI**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `voice_id` | `a1b2c3d4-...` | Voice UUID from your Resemble AI account (pre-built or custom cloned voice) |
+
+Browse and manage your voices in the [Resemble AI dashboard](https://app.resemble.ai).
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Rime TTS" icon="microphone" href="/opensource/services/assistant-api/tts/rime">
+    Ultra-low-latency WebSocket TTS alternative
+  </Card>
+  <Card title="TTS Overview" icon="volume" href="/opensource/services/assistant-api/tts/overview">
+    All TTS providers
+  </Card>
+</CardGroup>

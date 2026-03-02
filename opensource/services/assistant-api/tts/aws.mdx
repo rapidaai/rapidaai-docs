@@ -1,0 +1,58 @@
+---
+title: "AWS Polly TTS"
+description: "Configure AWS Polly text-to-speech via HTTP in assistant-api."
+sidebarTitle: "AWS Polly"
+---
+
+AWS Polly provides cloud text-to-speech synthesis via Amazon Web Services. It supports neural, standard, and generative engine tiers with a broad library of voices across dozens of languages.
+
+**Provider identifier:** `aws`
+
+---
+
+## Vault Credentials
+
+| Key | Description |
+|-----|-------------|
+| `access_key_id` | AWS Access Key ID from your IAM user or role |
+| `secret_access_key` | AWS Secret Access Key corresponding to the Access Key ID |
+| `region` | AWS region where Polly requests are sent (e.g. `us-east-1`) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Create AWS credentials with Polly access">
+In the [AWS IAM console](https://console.aws.amazon.com/iam/) → **Users → Create User** → attach the `AmazonPollyReadOnlyAccess` policy (or a scoped custom policy). Generate an access key pair under **Security credentials**.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **AWS**, enter `access_key_id`, `secret_access_key`, and `region`.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **TTS Provider**, select **AWS Polly**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `model` | `neural` | Engine: `neural`, `standard`, `generative` |
+| `voice_id` | `Joanna` | Polly voice ID (e.g. `Joanna`, `Matthew`, `Amy`, `Brian`, `Ivy`, `Justin`, `Kendra`, `Kimberly`, `Salli`, `Joey`) |
+| `language` | `en-US` | Language code: `en-US`, `en-GB`, `es-ES`, `fr-FR`, `de-DE`, `it-IT`, `ja-JP`, `pt-BR`, and more |
+
+See the full list of voices in the [AWS Polly voice documentation](https://docs.aws.amazon.com/polly/latest/dg/voicelist.html).
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="AWS Transcribe STT" icon="waveform" href="/opensource/services/assistant-api/stt/aws">
+    AWS speech-to-text with Transcribe
+  </Card>
+  <Card title="TTS Overview" icon="volume" href="/opensource/services/assistant-api/tts/overview">
+    All TTS providers
+  </Card>
+</CardGroup>

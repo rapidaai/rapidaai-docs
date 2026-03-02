@@ -1,0 +1,55 @@
+---
+title: "NVIDIA STT"
+description: "Configure NVIDIA speech-to-text via the NVCF API in assistant-api."
+sidebarTitle: "NVIDIA"
+---
+
+NVIDIA provides speech-to-text through the NVIDIA Cloud Functions (NVCF) API, offering enterprise-grade automatic speech recognition powered by NVIDIA's inference infrastructure.
+
+**Provider identifier:** `nvidia`
+
+---
+
+## Vault Credentials
+
+| Key | Description |
+|-----|-------------|
+| `key` | NVIDIA API key from [nvidia.com](https://build.nvidia.com) |
+| `function_id` | NVCF Function ID for the STT model endpoint |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get NVIDIA API credentials">
+Sign in at [build.nvidia.com](https://build.nvidia.com) → **API Keys** to generate your API key. Navigate to the desired ASR model card in the NIM catalog to find the corresponding NVCF Function ID.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **NVIDIA**, enter `key` = your API key and `function_id` = your NVCF Function ID.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **STT Provider**, select **NVIDIA**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `language` | `en-US` | Language code: `en-US`, `en-GB`, `es-ES`, `fr-FR`, `de-DE`, `ja-JP`, and more |
+
+Browse available ASR models and supported languages in the [NVIDIA NIM catalog](https://build.nvidia.com/explore/speech).
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="NVIDIA TTS" icon="microphone" href="/opensource/services/assistant-api/tts/nvidia">
+    NVIDIA text-to-speech via NVCF
+  </Card>
+  <Card title="STT Overview" icon="waveform" href="/opensource/services/assistant-api/stt/overview">
+    All STT providers
+  </Card>
+</CardGroup>

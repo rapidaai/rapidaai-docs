@@ -1,0 +1,55 @@
+---
+title: "Speechmatics TTS"
+description: "Configure Speechmatics text-to-speech with HTTP streaming in assistant-api."
+sidebarTitle: "Speechmatics"
+---
+
+Speechmatics provides speech synthesis via HTTP streaming TTS, backed by the same platform known for its broad multilingual speech recognition. It supports a range of voices and languages for conversational assistant deployments.
+
+**Provider identifier:** `speechmatics`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | Speechmatics API key from [speechmatics.com](https://portal.speechmatics.com) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get a Speechmatics API key">
+Sign in at [portal.speechmatics.com](https://portal.speechmatics.com) → **API Keys → Generate API Key**.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **Speechmatics**, enter `key` = your API key.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **TTS Provider**, select **Speechmatics**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `voice_id` | `en-US-Neural-F` | Speechmatics voice identifier |
+| `language` | `en` | Language code: `en`, `es`, `fr`, `de`, `it`, `pt`, `nl`, `pl`, `ja`, `zh`, and more |
+
+See the full voice and language list in the [Speechmatics TTS documentation](https://docs.speechmatics.com).
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Speechmatics STT" icon="waveform" href="/opensource/services/assistant-api/stt/speechmatics">
+    Speechmatics real-time speech recognition
+  </Card>
+  <Card title="TTS Overview" icon="volume" href="/opensource/services/assistant-api/tts/overview">
+    All TTS providers
+  </Card>
+</CardGroup>

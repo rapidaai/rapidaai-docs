@@ -1,0 +1,56 @@
+---
+title: "AWS Transcribe STT"
+description: "Configure AWS Transcribe speech-to-text via HTTP in assistant-api."
+sidebarTitle: "AWS Transcribe"
+---
+
+AWS Transcribe provides automatic speech recognition via Amazon Web Services. It supports a broad set of languages and dialects with streaming transcription for real-time voice assistant pipelines.
+
+**Provider identifier:** `aws`
+
+---
+
+## Vault Credentials
+
+| Key | Description |
+|-----|-------------|
+| `access_key_id` | AWS Access Key ID from your IAM user or role |
+| `secret_access_key` | AWS Secret Access Key corresponding to the Access Key ID |
+| `region` | AWS region where Transcribe requests are sent (e.g. `us-east-1`) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Create AWS credentials with Transcribe access">
+In the [AWS IAM console](https://console.aws.amazon.com/iam/) → **Users → Create User** → attach the `AmazonTranscribeFullAccess` policy (or a scoped custom policy). Generate an access key pair under **Security credentials**.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **AWS**, enter `access_key_id`, `secret_access_key`, and `region`.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **STT Provider**, select **AWS Transcribe**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `language` | `en-US` | Language code: `en-US`, `en-GB`, `es-US`, `fr-FR`, `de-DE`, `it-IT`, `pt-BR`, `ja-JP`, `ko-KR`, `zh-CN`, and more |
+
+See the full list of supported languages in the [AWS Transcribe documentation](https://docs.aws.amazon.com/transcribe/latest/dg/supported-languages.html).
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="AWS Polly TTS" icon="microphone" href="/opensource/services/assistant-api/tts/aws">
+    AWS text-to-speech with Polly
+  </Card>
+  <Card title="STT Overview" icon="waveform" href="/opensource/services/assistant-api/stt/overview">
+    All STT providers
+  </Card>
+</CardGroup>

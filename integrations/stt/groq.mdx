@@ -1,0 +1,44 @@
+---
+title: "Groq STT"
+description: "Groq provides ultra-fast speech-to-text via an OpenAI Whisper-compatible API powered by its LPU inference engine."
+sidebarTitle: "Groq"
+---
+
+## Overview
+
+Groq delivers speech-to-text through its OpenAI Whisper-compatible HTTP API, accelerated by the LPU inference engine for extremely fast transcription. It supports a wide range of languages and is well-suited for real-time voice assistant pipelines that require near-instant transcripts.
+
+## Authentication
+
+| Key | Description |
+|-----|-------------|
+| `key` | API key from [console.groq.com](https://console.groq.com) |
+
+## Configuration
+
+| Option | Description |
+|--------|-------------|
+| `model` | Whisper model: `whisper-large-v3-turbo` (fast), `whisper-large-v3` (highest accuracy) |
+| `language` | ISO-639-1 language code (e.g. `en`, `es`, `fr`, `de`, `ja`, `zh`). Leave blank for automatic detection |
+
+## Getting Started
+
+<Steps>
+  <Step title="Add Groq credentials to your vault">
+    Navigate to **Integration → Vault** in the Rapida dashboard. Add your Groq API key from your [Groq console](https://console.groq.com).
+  </Step>
+
+  <Step title="Select Groq as your STT provider">
+    When configuring your assistant, open **Audio Settings** and choose **Groq** as your Speech-to-Text provider.
+  </Step>
+
+  <Step title="Choose a model and language">
+    Select `whisper-large-v3-turbo` for lowest latency or `whisper-large-v3` for maximum accuracy. Optionally set a language code to skip auto-detection.
+  </Step>
+</Steps>
+
+## Related
+
+- [Groq TTS](/integrations/tts/groq)
+- [Deepgram STT](/integrations/stt/deepgram)
+- [OpenAI Whisper STT](/integrations/stt/openai-whisper)

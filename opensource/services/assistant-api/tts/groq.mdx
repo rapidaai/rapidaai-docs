@@ -1,0 +1,55 @@
+---
+title: "Groq TTS"
+description: "Configure Groq text-to-speech with ultra-fast HTTP inference in assistant-api."
+sidebarTitle: "Groq"
+---
+
+Groq delivers text-to-speech via an OpenAI-compatible HTTP API powered by its LPU inference engine, providing extremely low-latency synthesis. It supports English and Arabic voices through the PlayAI voice collection.
+
+**Provider identifier:** `groq`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | Groq API key from [groq.com](https://console.groq.com) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get a Groq API key">
+Sign in at [console.groq.com](https://console.groq.com) → **API Keys → Create API Key**.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **Groq**, enter `key` = your API key.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **TTS Provider**, select **Groq**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `model` | `playai-tts` | Model: `playai-tts` (English), `playai-tts-arabic` (Arabic) |
+| `voice_id` | `Arista-PlayAI` | PlayAI voice name. English options include: `Arista-PlayAI`, `Atlas-PlayAI`, `Basil-PlayAI`, `Briggs-PlayAI`, `Calum-PlayAI`, `Celeste-PlayAI`, `Cheyenne-PlayAI`, `Chip-PlayAI`, `Cillian-PlayAI`, `Deedee-PlayAI`, and more |
+
+See the full voice list in the [Groq TTS documentation](https://console.groq.com/docs/text-speech).
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Groq STT" icon="waveform" href="/opensource/services/assistant-api/stt/groq">
+    Groq speech-to-text with Whisper
+  </Card>
+  <Card title="TTS Overview" icon="volume" href="/opensource/services/assistant-api/tts/overview">
+    All TTS providers
+  </Card>
+</CardGroup>

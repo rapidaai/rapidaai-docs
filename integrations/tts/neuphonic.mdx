@@ -1,0 +1,44 @@
+---
+title: "Neuphonic"
+description: "Neuphonic provides multilingual streaming text-to-speech via WebSocket with adjustable speech speed."
+sidebarTitle: "Neuphonic"
+---
+
+## Overview
+
+Neuphonic is a text-to-speech platform offering real-time voice synthesis via WebSocket streaming. It supports a wide range of languages and provides speed control for flexible voice assistant deployments.
+
+## Authentication
+
+| Key | Description |
+|-----|-------------|
+| `key` | API key from [neuphonic.com](https://neuphonic.com) |
+
+## Configuration
+
+| Option | Description |
+|--------|-------------|
+| `voice_id` | Neuphonic voice identifier |
+| `language` | Language code (e.g. `en`, `de`, `es`, `fr`, `pt`, `it`, `nl`, `pl`) |
+| `speed` | Speech speed multiplier (0.1–3.0; default `1.0`) |
+
+## Getting Started
+
+<Steps>
+  <Step title="Add Neuphonic credentials to your vault">
+    Navigate to **Integration → Vault** in the Rapida dashboard. Add your Neuphonic API key from your [Neuphonic account](https://neuphonic.com).
+  </Step>
+
+  <Step title="Select Neuphonic as your TTS provider">
+    When configuring your assistant, open **Audio Settings** and choose **Neuphonic** as your Text-to-Speech provider.
+  </Step>
+
+  <Step title="Configure voice and language">
+    Select a voice ID and set the desired language code. Adjust the speed parameter if needed.
+  </Step>
+</Steps>
+
+## Related
+
+- [Rime TTS](/integrations/tts/rime)
+- [ElevenLabs TTS](/integrations/tts/elevenlabs)

@@ -1,0 +1,55 @@
+---
+title: "Groq STT"
+description: "Configure Groq speech-to-text with ultra-fast Whisper inference in assistant-api."
+sidebarTitle: "Groq"
+---
+
+Groq provides speech-to-text via an OpenAI Whisper-compatible HTTP API, accelerated by its LPU inference engine for extremely fast transcription. It is well-suited for real-time voice assistant pipelines that require near-instant transcripts.
+
+**Provider identifier:** `groq`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | Groq API key from [groq.com](https://console.groq.com) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get a Groq API key">
+Sign in at [console.groq.com](https://console.groq.com) → **API Keys → Create API Key**.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **Groq**, enter `key` = your API key.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **STT Provider**, select **Groq**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `model` | `whisper-large-v3-turbo` | Model: `whisper-large-v3-turbo` (fast), `whisper-large-v3` (highest accuracy) |
+| `language` | `en` | ISO-639-1 language code: `en`, `es`, `fr`, `de`, `it`, `pt`, `ja`, `zh`, `ar`, and more. Leave blank for automatic language detection |
+
+See supported models and languages in the [Groq STT documentation](https://console.groq.com/docs/speech-text).
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Groq TTS" icon="microphone" href="/opensource/services/assistant-api/tts/groq">
+    Groq text-to-speech with PlayAI
+  </Card>
+  <Card title="STT Overview" icon="waveform" href="/opensource/services/assistant-api/stt/overview">
+    All STT providers
+  </Card>
+</CardGroup>

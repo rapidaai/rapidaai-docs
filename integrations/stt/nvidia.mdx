@@ -1,0 +1,43 @@
+---
+title: "NVIDIA STT"
+description: "NVIDIA provides enterprise-grade automatic speech recognition via the NVCF API."
+sidebarTitle: "NVIDIA"
+---
+
+## Overview
+
+NVIDIA delivers speech-to-text through the NVIDIA Cloud Functions (NVCF) API, offering enterprise-grade ASR powered by NVIDIA's high-throughput inference infrastructure. It is suitable for enterprise voice deployments requiring scalable, accurate transcription.
+
+## Authentication
+
+| Key | Description |
+|-----|-------------|
+| `key` | API key from [build.nvidia.com](https://build.nvidia.com) |
+| `function_id` | NVCF Function ID for the STT model endpoint |
+
+## Configuration
+
+| Option | Description |
+|--------|-------------|
+| `language` | Language code (e.g. `en-US`, `en-GB`, `es-ES`, `fr-FR`, `de-DE`, `ja-JP`) |
+
+## Getting Started
+
+<Steps>
+  <Step title="Add NVIDIA credentials to your vault">
+    Navigate to **Integration → Vault** in the Rapida dashboard. Add your NVIDIA API key and the NVCF Function ID for the desired ASR model from [build.nvidia.com](https://build.nvidia.com).
+  </Step>
+
+  <Step title="Select NVIDIA as your STT provider">
+    When configuring your assistant, open **Audio Settings** and choose **NVIDIA** as your Speech-to-Text provider.
+  </Step>
+
+  <Step title="Configure language">
+    Set the language code matching your expected input audio. Browse supported languages in the [NVIDIA NIM catalog](https://build.nvidia.com/explore/speech).
+  </Step>
+</Steps>
+
+## Related
+
+- [NVIDIA TTS](/integrations/tts/nvidia)
+- [Azure Speech STT](/integrations/stt/azure-speech-service)

@@ -1,0 +1,56 @@
+---
+title: "Neuphonic TTS"
+description: "Configure Neuphonic text-to-speech with WebSocket streaming in assistant-api."
+sidebarTitle: "Neuphonic"
+---
+
+Neuphonic delivers streaming speech synthesis via WebSocket with multilingual support and adjustable speech speed. Audio is streamed directly into the voice pipeline for low-latency assistant responses.
+
+**Provider identifier:** `neuphonic`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | Neuphonic API key from [neuphonic.com](https://neuphonic.com) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get a Neuphonic API key">
+Sign in at [neuphonic.com](https://neuphonic.com) → **Dashboard → API Keys** → create a new key.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **Neuphonic**, enter `key` = your API key.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **TTS Provider**, select **Neuphonic**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `voice_id` | `e564ba7e-aa8d-46a2-96a8-8dffedade48f` | Neuphonic voice ID |
+| `language` | `en` | Language code: `en`, `de`, `es`, `fr`, `pt`, `it`, `nl`, `pl`, `ru`, `zh`, and more |
+| `speed` | `1.0` | Speech speed multiplier (0.1–3.0; default `1.0`) |
+
+Browse available voices in the [Neuphonic voice library](https://neuphonic.com/voices).
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Rime TTS" icon="microphone" href="/opensource/services/assistant-api/tts/rime">
+    Ultra-low-latency WebSocket TTS alternative
+  </Card>
+  <Card title="TTS Overview" icon="volume" href="/opensource/services/assistant-api/tts/overview">
+    All TTS providers
+  </Card>
+</CardGroup>

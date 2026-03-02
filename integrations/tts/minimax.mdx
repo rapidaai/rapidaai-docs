@@ -1,0 +1,44 @@
+---
+title: "MiniMax"
+description: "MiniMax provides high-quality speech synthesis via HTTP streaming SSE with multiple model tiers."
+sidebarTitle: "MiniMax"
+---
+
+## Overview
+
+MiniMax is a speech synthesis platform that delivers streaming TTS via Server-Sent Events (SSE). It offers multiple model tiers — from fast turbo options to high-definition output — suitable for both low-latency and quality-focused voice assistants.
+
+## Authentication
+
+| Key | Description |
+|-----|-------------|
+| `key` | API key from [minimax.io](https://minimax.io) |
+| `group_id` | Group ID associated with your MiniMax account |
+
+## Configuration
+
+| Option | Description |
+|--------|-------------|
+| `model` | Model tier: `speech-02-turbo`, `speech-02-hd`, `speech-2.6-turbo`, `speech-2.6-hd` |
+| `voice_id` | MiniMax voice identifier (system or custom voice) |
+
+## Getting Started
+
+<Steps>
+  <Step title="Add MiniMax credentials to your vault">
+    Navigate to **Integration → Vault** in the Rapida dashboard. Add your MiniMax API key and Group ID from your [MiniMax account](https://minimax.io).
+  </Step>
+
+  <Step title="Select MiniMax as your TTS provider">
+    When configuring your assistant, open **Audio Settings** and choose **MiniMax** as your Text-to-Speech provider.
+  </Step>
+
+  <Step title="Choose a model and voice">
+    Select a model tier based on your latency and quality requirements, then specify a voice ID.
+  </Step>
+</Steps>
+
+## Related
+
+- [ElevenLabs TTS](/integrations/tts/elevenlabs)
+- [Deepgram TTS](/integrations/tts/deepgram)
