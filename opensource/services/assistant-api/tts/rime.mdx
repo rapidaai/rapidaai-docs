@@ -1,0 +1,57 @@
+---
+title: "Rime TTS"
+description: "Configure Rime text-to-speech with ultra-low-latency WebSocket streaming in assistant-api."
+sidebarTitle: "Rime"
+---
+
+Rime provides ultra-low-latency streaming speech synthesis via WebSocket. Audio is streamed as PCM at 16kHz for direct pipeline integration.
+
+**Provider identifier:** `rime`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | Rime API key from [rime.ai](https://rime.ai) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get a Rime API key">
+Sign in at [rime.ai](https://rime.ai) → **Dashboard → API Keys**.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Credentials → Create Credential**, select provider **Rime**, enter `key` = your API key.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant settings → **TTS Provider**, select **Rime**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `voice_id` | `river` | Rime voice ID (Arcana: `luna`, `celeste`, `orion`; Mist: `river`, `cove`, `peak`) |
+| `model` | `mistv2` | Model: `mist`, `mistv2`, `arcana` |
+| `language` | `eng` | Language: `eng`, `spa`, `hin`, `fra`, `ger` |
+| `speed_alpha` | `1.0` | Speech speed multiplier (0.1–3.0) |
+
+Find available voices in the [Rime Voice Library](https://rime.ai/docs).
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="ElevenLabs" icon="microphone" href="/opensource/services/assistant-api/tts/elevenlabs">
+    High-fidelity voice cloning alternative
+  </Card>
+  <Card title="TTS Overview" icon="volume" href="/opensource/services/assistant-api/tts/overview">
+    All TTS providers
+  </Card>
+</CardGroup>

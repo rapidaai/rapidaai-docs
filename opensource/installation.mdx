@@ -35,6 +35,10 @@ Rapida has two deployment modes. Choose before running any commands.
     - 4GB+ RAM available
     - 10GB free disk space
 
+    <Note>
+      **Apple Silicon (M1/M2/M3/M4):** Rapida's base images are built for `linux/amd64`. The `Makefile` automatically sets `DOCKER_DEFAULT_PLATFORM=linux/amd64` so all `make` commands work correctly without any extra configuration. Always use `make build-all` rather than running `docker compose build` directly.
+    </Note>
+
     ### Installation Steps
 
 <Steps>

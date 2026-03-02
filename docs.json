@@ -145,6 +145,7 @@
                                     "integrations/tts/aws-polly",
                                     "integrations/tts/cartesia",
                                     "integrations/tts/resemble",
+                                    "integrations/tts/rime",
                                     "integrations/tts/sarvam"
                                 ]
                             },
@@ -266,6 +267,7 @@
                                     "opensource/services/assistant-api/tts/google",
                                     "opensource/services/assistant-api/tts/azure",
                                     "opensource/services/assistant-api/tts/sarvamai",
+                                    "opensource/services/assistant-api/tts/rime",
                                     "opensource/services/assistant-api/tts/custom"
                                 ]
                             }
@@ -372,7 +374,7 @@
         "primary": {
             "type": "button",
             "label": "Dashboard",
-            "href": "https://app.rapida.ai/login"
+            "href": "https://app.rapida.ai/dashboard"
         }
     },
     "integrations": {
