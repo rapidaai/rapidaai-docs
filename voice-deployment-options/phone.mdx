@@ -1,105 +1,161 @@
 ---
-title: "Enable phone calls powered by your AI assistant"
-description: "Build natural-sounding AI voice assistants with ease"
-icon: "phone"
+title: "Phone Call Deployment"
+description: "Deploy your AI assistant on inbound and outbound phone calls with full telephony, STT, and TTS configuration."
 sidebarTitle: "Phone Call"
 ---
 
-Rapida.ai's voice platform enables you to design, deploy and manage sophisticated voice assistants without complex coding or telephony infrastructure setup. Our intuitive tools help you craft voice experiences that understand context, respond naturally, and handle complex customer inquiries with human-like speech.
+The Phone Call deployment connects your assistant to the telephone network. Callers interact with your assistant through natural voice conversations over PSTN, SIP, or WebRTC — powered by your choice of telephony provider, speech-to-text engine, and text-to-speech voice.
 
-<Frame>
-  <video
-    controls
-    width="100%"
-    src="https://www.loom.com/share/aaec13c1c37f45c0b7ad639081bbc0d2?sid=e215c09f-3bf0-4d7b-ac23-ebe7d27bae20"
-  >
-    Your browser does not support the video tag.
-  </video>
-</Frame>
+<Info>
+Phone deployments require a telephony provider (Twilio, Vonage, Exotel, Asterisk, or SIP) with valid credentials configured in your [credential vault](/credential/rapida-credentials).
+</Info>
 
-<Card
-  title="Create and deploy your first assistant in 10 minute"
-  href="/assistants/create-assistant"
-  icon="audio-lines"
->
-Get started with our step-by-step guide to building voice assistants
-</Card>
+## Deployment channels
 
-## Key Voice Assistant Features
+| Channel | Direction | Protocol |
+|---------|-----------|----------|
+| Twilio | Inbound + Outbound | WebSocket media streams |
+| Vonage | Inbound + Outbound | WebSocket audio streaming |
+| Exotel | Inbound + Outbound | Cloud telephony (India & SEA) |
+| Asterisk | Inbound + Outbound | AudioSocket + WebSocket |
+| SIP Trunk | Inbound + Outbound | Direct SIP (RFC 3261) |
 
-- **Natural Speech Processing**: Leverage state-of-the-art speech recognition and synthesis for lifelike conversations
-- **Multi-turn Voice Dialogues**: Build voice assistants that maintain context throughout complex spoken interactions
-- **Voice Personality Design**: Customize tone, speech patterns, and vocal style to match your brand identity
-- **Telephony Integration**: Connect your voice assistants to phone systems through multiple providers:
-  - [Twilio](/integrations/telephony/twilio) — Global cloud telephony with WebSocket media streams
-  - [Vonage](/integrations/telephony/vonage) — Cloud communications with WebSocket audio streaming
-  - [Exotel](/integrations/telephony/exotel) — Cloud telephony optimized for India & Southeast Asia
-  - [Asterisk](/integrations/telephony/asterisk) — Open-source PBX with AudioSocket & WebSocket support
-  - [SIP Trunk](/integrations/telephony/sip) — Direct SIP connection for any SIP-compatible PBX or carrier
-- **Voice Analytics**: Gain insights into call patterns, user satisfaction, and voice assistant performance
+## Creating a Phone Deployment
 
-Rapida.ai provides a comprehensive voice AI platform with powerful tools specifically designed for voice interactions:
+Navigate to your assistant, click **Configure Assistant**, then select **Deployments** from the sidebar. Click **Add Deployment** and choose **Phone Call**.
 
-## Use Cases for Rapida Phone Assistants
+The phone deployment wizard walks you through four steps:
 
-Rapida.ai's phone assistants can be customized for a wide range of applications. Here are some popular use cases you can build:
+<Steps>
+  <Step title="Telephony">
+    Select and configure your telephony provider for inbound and outbound calls.
+
+    **Required fields:**
+    - **Provider** — Choose from Twilio, Vonage, Exotel, Asterisk, or SIP
+    - **Credentials** — Select stored credentials from your vault for the chosen provider
+    - **Phone Number** — The phone number associated with this deployment (for outbound caller ID and inbound routing)
+
+    <Tip>
+      Store your telephony credentials in the [credential vault](/credential/rapida-credentials) before creating the deployment. The wizard will let you select from your saved credentials.
+    </Tip>
+  </Step>
+
+  <Step title="General Experience">
+    Define how the assistant greets callers and handles session lifecycle.
+
+    **Required fields:**
+    - **Greeting** — The opening message spoken when a call connects. Supports `{{variable}}` syntax for dynamic content (e.g., `Hello {{name}}, how can I help you?`)
+
+    **Advanced settings** (expand to configure):
+    - **Error Message** — Fallback message spoken when an unexpected error occurs mid-call
+    - **Idle Silence Timeout** — Duration of caller silence before Rapida prompts them (15-120 seconds, default: 30s)
+    - **Idle Timeout Backoff** — How many times the idle timeout multiplies before ending the session (0-5, default: 2)
+    - **Idle Message** — Message spoken when the caller hasn't responded (default: "Are you there?")
+    - **Maximum Session Duration** — Hard limit before the call is automatically ended (180-600 seconds, default: 300s)
+  </Step>
+
+  <Step title="Voice Input (Speech-to-Text)">
+    Configure how caller audio is transcribed into text for the LLM.
+
+    **Required fields:**
+    - **STT Provider** — Deepgram, AssemblyAI, Google, Azure, OpenAI Whisper, AWS Transcribe, Cartesia, Rev.ai, Speechmatics, Sarvam, Groq, or Nvidia
+    - **Model** — Provider-specific model (e.g., Nova-3 for Deepgram)
+    - **Language** — Primary transcription language
+    - **Encoding** — Audio encoding format. Use **Mulaw** for Twilio, **PCM** for most other providers
+    - **Sample Rate** — Audio sample rate (typically 8000 Hz for telephony)
+
+    **Advanced settings** (expand to configure):
+
+    **Voice Activity Detection (VAD)**
+    - **VAD Provider** — Silero VAD (default) for detecting when the caller starts and stops speaking
+    - **VAD Threshold** — Sensitivity threshold (0.0-1.0, default: 0.8). Higher values require more confident speech detection
+
+    **Background Noise Removal**
+    - **Noise Cancellation Provider** — RNNoise (default). Removes background audio before transcription for improved accuracy
+
+    **End of Speech (EOS) Detection**
+    - **EOS Provider** — Silence-based EOS (default). Determines when the caller has finished their turn
+    - **EOS Timeout** — Duration of silence that signals turn completion (default: 1000ms). Lower values make the assistant more responsive; higher values accommodate natural pauses
+
+    <Note>
+      The EOS timeout is the primary control for perceived latency. For IVR-style interactions, try 700ms. For conversational use cases where callers pause mid-thought, try 1200-1500ms.
+    </Note>
+  </Step>
+
+  <Step title="Voice Output (Text-to-Speech)">
+    Configure how assistant text responses are converted to speech audio.
+
+    **Required fields:**
+    - **TTS Provider** — ElevenLabs, Deepgram, Azure, Google, OpenAI, AWS Polly, Cartesia, Resemble, Rime, Sarvam, Neuphonic, MiniMax, Groq, Speechmatics, or Nvidia
+    - **Model** — Provider-specific model (e.g., Sonic-2 for Cartesia)
+    - **Language** — Output speech language
+    - **Voice ID** — The specific voice to use from your TTS provider
+    - **Encoding** — Audio encoding. Use **PCM Mulaw** for Twilio
+    - **Sample Rate** — Output sample rate
+
+    **Advanced settings** (expand to configure):
+
+    **Pronunciation**
+    - **Pronunciation Dictionaries** — Custom pronunciation rules for domain-specific terms, names, acronyms, and technical jargon
+
+    **Conjunction Boundaries**
+    - **Conjunction Boundaries** — Conjunctions treated as valid boundaries for adding natural pauses before delivering to the voice provider
+
+    **Pause**
+    - **Pause Duration** — Length of pause at conjunction boundaries (100-300ms, default: 240ms)
+
+    Click **Deploy Phone** to save and activate the deployment.
+  </Step>
+</Steps>
+
+## Configuring Inbound Calls
+
+After deploying, you need to point your telephony provider's webhook to Rapida so incoming calls reach your assistant.
+
+### Twilio
+
+1. Log in to [Twilio Console](https://www.twilio.com/login)
+2. Navigate to **Phone Numbers** > **Manage** > **Active numbers**
+3. Select the phone number linked to this deployment
+4. Under **Voice & Fax**, set **A CALL COMES IN** to **Webhook**
+5. Enter the webhook URL:
+
+```
+https://assistant-01.rapida.ai/v1/talk/twilio/call/{ASSISTANT_ID}?x-api-key={RAPIDA_API_KEY}
+```
+
+6. Set the HTTP method to **POST** and click **Save**
+
+<Tip>
+  Find your Assistant ID on the assistant overview page or in the browser URL. Get your API key from the [credential vault](/credential/rapida-credentials).
+</Tip>
+
+### Vonage, Exotel, Asterisk, SIP
+
+Each provider has a specific webhook format. See the integration guides:
+
+- [Twilio Integration](/integrations/telephony/twilio)
+- [Vonage Integration](/integrations/telephony/vonage)
+- [Exotel Integration](/integrations/telephony/exotel)
+- [Asterisk Integration](/integrations/telephony/asterisk)
+- [SIP Integration](/integrations/telephony/sip)
+
+## Triggering Outbound Calls
+
+Use the Rapida SDK or REST API to programmatically initiate outbound calls:
 
 <CardGroup cols={2}>
-  <Card title="Customer Support" icon="headphones">
-    Create a 24/7 phone support line handling inquiries, troubleshooting, and
-    escalations.
+  <Card title="Create Call API" href="/api-reference/call/create-call">
+    Trigger a single outbound call to a phone number with your assistant.
   </Card>
-  <Card title="Appointment Scheduling" icon="calendar">
-    Book, reschedule, or cancel appointments for healthcare, salons, or
-    consultations.
-  </Card>
-  <Card title="Order Management" icon="shopping-cart">
-    Allow customers to place orders, track shipments, and check product
-    availability.
-  </Card>
-  <Card title="Surveys & Feedback" icon="clipboard-list">
-    Automate phone surveys for customer feedback and market research.
-  </Card>
-  <Card title="Banking Services" icon="credit-card">
-    Handle balance inquiries, fund transfers, and basic account management
-    securely.
-  </Card>
-  <Card title="Restaurant Reservations" icon="utensils">
-    Manage table bookings, special requests, and provide menu information.
-  </Card>
-  <Card title="IT Helpdesk" icon="laptop">
-    Diagnose issues, guide users through troubleshooting, and create support
-    tickets.
-  </Card>
-  <Card title="Hotel Concierge" icon="building">
-    Handle room service, provide local information, and manage guest requests.
-  </Card>
-  <Card title="Prescription Refills" icon="pill">
-    Enable patients to refill prescriptions and receive medication reminders.
+  <Card title="Bulk Call API" href="/api-reference/call/create-bulk-call">
+    Launch outbound dialing campaigns to multiple numbers in parallel.
   </Card>
 </CardGroup>
 
-## Advanced Deployment Options
+## Related
 
-Rapida.ai offers flexible deployment options to meet your organization's specific needs:
-
-<CardGroup cols={2}>
-  <Card title="On-Premises Deployment" icon="server">
-    Deploy Rapida's phone AI system entirely within your own infrastructure for
-    maximum data control and security.
-  </Card>
-  <Card title="Hybrid Deployment" icon="git-branch">
-    Combine cloud and on-premises components for a balance of scalability and
-    data sovereignty.
-  </Card>
-  <Card title="Bring Your Own Model" icon="brain">
-    Integrate your proprietary AI models or use preferred third-party models
-    with Rapida's phone platform.
-  </Card>
-  <Card title="Full Visibility" icon="eye">
-    Gain complete insights into your phone AI operations with comprehensive
-    logging, monitoring, and analytics tools.
-  </Card>
-</CardGroup>
-
-These advanced options ensure that you can deploy Rapida phone assistants in a way that best suits your organization's requirements, whether you need strict data controls, custom AI models, or detailed operational visibility.
+- [Create an Assistant](/assistants/create-assistant) — Set up your assistant before deploying
+- [Twilio Integration](/integrations/telephony/twilio) — Detailed Twilio setup guide
+- [Conversation Logs](/activity/conversation-logs) — Monitor call transcripts and metrics
+- [Webhooks](/assistants/webhook/overview) — Receive post-call events

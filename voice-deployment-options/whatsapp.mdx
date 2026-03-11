@@ -1,98 +1,112 @@
 ---
-title: "Deploy your Voice AI assistant on WhatsApp"
-description: "Connect your Rapida assistant to WhatsApp to handle conversational interactions at scale."
-icon: "message-circle"
+title: "WhatsApp Deployment"
+description: "Connect your AI assistant to WhatsApp Business for automated conversational interactions at scale."
 sidebarTitle: "WhatsApp"
 ---
 
-Rapida's WhatsApp deployment lets you connect your assistant to WhatsApp Business, enabling automated conversational experiences on the world's most widely used messaging platform.
+The WhatsApp deployment connects your assistant to WhatsApp Business via the Meta Cloud API. Users interact with your assistant through text messages on the world's most widely used messaging platform. The assistant maintains full multi-turn conversation context across messages in the same thread.
 
-<Card
-  title="Configure your assistant before deploying to WhatsApp"
-  href="/assistants/create-assistant"
-  icon="bot"
->
-  Set up your assistant first, then return here to configure the WhatsApp deployment.
-</Card>
+<Info>
+WhatsApp deployments use the Meta WhatsApp Business API. You need a WhatsApp Business Account with an approved phone number and a Meta developer app before configuring this deployment.
+</Info>
 
 ## Prerequisites
 
-Before deploying to WhatsApp you will need:
+Before deploying to WhatsApp, ensure you have:
 
-- A [WhatsApp Business Account](https://business.whatsapp.com/) with an approved phone number
-- A Meta developer account with a WhatsApp Business API app
-- Your WhatsApp Access Token and Phone Number ID from the Meta developer portal
+<CardGroup cols={2}>
+  <Card title="WhatsApp Business Account">
+    A [WhatsApp Business Account](https://business.whatsapp.com/) with an approved phone number registered on the Meta Business platform.
+  </Card>
+  <Card title="Meta Developer App">
+    A Meta developer account with a WhatsApp Business API app created in the [Meta Developer Portal](https://developers.facebook.com/).
+  </Card>
+</CardGroup>
 
-## Key Features
+You will need these credentials from your Meta developer portal:
+- **Access Token** — Your WhatsApp Business API access token (permanent or temporary)
+- **Phone Number ID** — The phone number ID for your WhatsApp Business number
+- **Webhook Verify Token** — A secret string you define, used to verify Meta's webhook callback
 
-- **Messaging at scale**: Handle thousands of simultaneous WhatsApp conversations with a single assistant
-- **Multi-turn context**: The assistant maintains full conversation context across messages in the same thread
-- **Rich media support**: Send and receive text messages, voice notes, and structured content
-- **24/7 availability**: Automate responses around the clock without human intervention
-- **Handoff to human**: Escalate complex conversations to a live agent when needed
-
-## Configuring the WhatsApp Deployment
-
-Follow these steps to connect WhatsApp to your assistant:
+## Creating a WhatsApp Deployment
 
 <Steps>
   <Step title="Navigate to your assistant">
-    Go to **Assistants** in the sidebar and select the assistant you want to deploy.
+    Go to **Assistants** in the sidebar and select the assistant you want to deploy to WhatsApp.
   </Step>
 
   <Step title="Open deployment settings">
-    Click **Configure assistant** in the top right, then select **Deployments** from the left sidebar.
+    Click **Configure Assistant**, then select **Deployments** from the left sidebar.
   </Step>
 
-  <Step title="Enable WhatsApp">
+  <Step title="Add WhatsApp deployment">
     Click **Add Deployment** and choose **WhatsApp**.
   </Step>
 
   <Step title="Enter your WhatsApp credentials">
     Provide:
-    - **Access Token**: Your Meta WhatsApp Business API access token
-    - **Phone Number ID**: The phone number ID for your WhatsApp Business number
-    - **Webhook Verify Token**: A secret string you define, used to verify Meta's webhook callback
+    - **Access Token** — Your Meta WhatsApp Business API access token
+    - **Phone Number ID** — The phone number ID for your WhatsApp Business number
+    - **Webhook Verify Token** — A secret string you define (you'll use this same string in the Meta webhook configuration)
   </Step>
 
   <Step title="Configure the Meta webhook">
     In the Meta developer portal, set your webhook URL to:
     ```
-    https://api.rapida.ai/v1/whatsapp/event/<ASSISTANT_ID>
+    https://api.rapida.ai/v1/whatsapp/event/{ASSISTANT_ID}
     ```
     Set the **Verify Token** to the same value you entered in Rapida.
   </Step>
 
   <Step title="Subscribe to message events">
-    In the Meta webhook configuration, subscribe to the `messages` field under the WhatsApp Business Account product.
+    In the Meta webhook configuration, subscribe to the **messages** field under the WhatsApp Business Account product. This ensures Rapida receives incoming messages from your users.
   </Step>
 </Steps>
+
+## How It Works
+
+When a user sends a WhatsApp message to your business number:
+
+1. Meta delivers the message to Rapida via the configured webhook
+2. Rapida routes the message to the correct assistant based on the Assistant ID in the webhook URL
+3. The assistant processes the message through its configured LLM, tools, and knowledge bases
+4. The response is sent back to the user via the WhatsApp Business API
+5. Conversation context is maintained across all messages in the same thread
+
+## Key Features
+
+- **Multi-turn context** — The assistant maintains full conversation context across messages. Users can reference previous messages naturally
+- **Messaging at scale** — Handle thousands of simultaneous WhatsApp conversations with a single assistant
+- **Rich content** — Send and receive text messages, with support for structured responses
+- **24/7 availability** — Automate responses around the clock without human intervention
+- **Same brain, different channel** — The assistant uses the same prompt, model, tools, and knowledge bases as your phone and web deployments
 
 ## Use Cases
 
 <CardGroup cols={2}>
-  <Card title="Customer Support" icon="headphones">
-    Automate first-line support for product inquiries, order status, and troubleshooting.
+  <Card title="Customer Support">
+    Automate first-line support for product inquiries, order status, and troubleshooting on the platform your customers already use.
   </Card>
-  <Card title="Appointment Booking" icon="calendar">
-    Let users book, reschedule, or cancel appointments directly in WhatsApp.
+  <Card title="Appointment Booking">
+    Let users book, reschedule, or cancel appointments directly in WhatsApp with natural language.
   </Card>
-  <Card title="Order Management" icon="shopping-cart">
-    Handle order tracking, returns, and product availability queries.
+  <Card title="Order Management">
+    Handle order tracking, returns, and product availability queries conversationally.
   </Card>
-  <Card title="Lead Qualification" icon="user-check">
-    Engage inbound leads with qualifying questions and route them to your sales team.
+  <Card title="Lead Qualification">
+    Engage inbound leads with qualifying questions and route warm leads to your sales team.
   </Card>
-  <Card title="Notifications & Reminders" icon="bell">
-    Send proactive messages for appointment reminders, payment confirmations, and alerts.
+  <Card title="Notifications and Reminders">
+    Send proactive messages for appointment reminders, payment confirmations, and delivery alerts.
   </Card>
-  <Card title="Surveys & Feedback" icon="clipboard-list">
-    Collect customer feedback and NPS scores through conversational surveys.
+  <Card title="Surveys and Feedback">
+    Collect customer feedback and NPS scores through conversational surveys that feel natural.
   </Card>
 </CardGroup>
 
 ## Related
 
-- [Phone Call Deployment](/voice-deployment-options/phone)
-- [Web Widget Deployment](/voice-deployment-options/web-widget)
-- [Webhooks](/assistants/webhook/overview)
+- [Create an Assistant](/assistants/create-assistant) — Set up your assistant before deploying
+- [Phone Call Deployment](/voice-deployment-options/phone) — Deploy the same assistant on phone calls
+- [Web Widget Deployment](/voice-deployment-options/web-widget) — Embed on your website
+- [Webhooks](/assistants/webhook/overview) — Receive post-conversation events

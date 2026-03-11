@@ -1,96 +1,493 @@
 ---
-title: "Deploy a Voice AI widget for your website"
-description: "Deploy the Rapida Voice AI widget — your intelligent assistant — anywhere on the web"
-icon: "component"
-sidebarTitle: "Web widget"
+title: "Web Widget Deployment"
+description: "Embed an AI voice and chat widget on any website with a single script tag."
+sidebarTitle: "Web Widget"
 ---
 
-Rapida's web widget embeds an intelligent AI voice assistant into any website or web application. This flexible tool enhances user engagement and streamlines information access across various platforms.
+The Web Widget deployment embeds an interactive AI assistant directly into your website. Visitors can type messages, speak via microphone, and hear voice responses — all from a floating widget that loads with a single script tag. Voice input and output are optional; the widget works as a text-only chat by default.
 
-## Key Features
+<Info>
+Voice capabilities (microphone input and spoken responses) are optional. You can deploy a text-only chat widget by skipping the Voice Input and Voice Output steps during configuration.
+</Info>
 
-- **Universal Deployment**: Easily integrate the assistant into any website or web application
-- **Intelligent Assistance**: The widget provides instant, context-aware responses to user queries
-- **Customizable Interface**: Tailor the widget's appearance and behavior to match your brand
-- **Multi-purpose Functionality**: From customer support to lead generation, the assistant adapts to various use cases
-- **Easy Setup**: Implement the widget with minimal coding required
+## Creating a Web Widget Deployment
+
+Navigate to your assistant, click **Configure Assistant**, then select **Deployments** from the sidebar. Click **Add Deployment** and choose **Web Widget**.
+
+The web widget wizard walks you through four steps:
+
+<Steps>
+  <Step title="Experience">
+    Define the greeting, quickstart questions, and session behaviour.
+
+    **Required fields:**
+    - **Greeting** — Welcome message displayed when the widget opens. Describe your agent so users know how to interact with it
+
+    **Quickstart Questions:**
+    - **Quickstart Questions** — Pre-configured questions displayed as clickable buttons below the greeting. Users can tap one to start a conversation instantly, or type their own query
+
+    **Advanced settings** (expand to configure):
+    - **Error Message** — Message shown when an unexpected error occurs
+    - **Idle Silence Timeout** — Duration of silence before Rapida prompts the user (3000-10000ms, default: 30000ms)
+    - **Idle Timeout Backoff** — How many times the idle timeout multiplies before ending the session (0-5, default: 2)
+    - **Idle Message** — Message spoken/shown when the user hasn't responded (default: "Are you there?")
+    - **Maximum Session Duration** — Hard limit before the session is automatically ended (3-15 minutes, default: 5 min)
+  </Step>
+
+  <Step title="Voice Input (Speech-to-Text) — Optional">
+    Enable microphone-based voice input for the widget. Users can speak instead of typing.
+
+    **If enabled:**
+    - **STT Provider** — Deepgram, AssemblyAI, Google, Azure, OpenAI Whisper, AWS Transcribe, Cartesia, Rev.ai, Speechmatics, Sarvam, Groq, or Nvidia
+    - **Model** — Provider-specific transcription model
+    - **Language** — Primary transcription language
+    - **Encoding** — Audio encoding format
+    - **Sample Rate** — Audio sample rate
+
+    **Advanced settings** (expand to configure):
+    - **Voice Activity Detection (VAD)** — Silero VAD with configurable threshold (0.0-1.0, default: 0.8)
+    - **Background Noise Removal** — RNNoise for removing ambient noise before transcription
+    - **End of Speech Detection** — Silence-based EOS with configurable timeout (default: 1000ms)
+
+    <Tip>
+      Click **Skip** to deploy a text-only widget without voice input. You can enable it later by editing the deployment.
+    </Tip>
+  </Step>
+
+  <Step title="Voice Output (Text-to-Speech) — Optional">
+    Enable spoken audio responses from the assistant. The assistant's text responses will be read aloud through the browser.
+
+    **If enabled:**
+    - **TTS Provider** — ElevenLabs, Deepgram, Azure, Google, OpenAI, AWS Polly, Cartesia, Resemble, Rime, Sarvam, Neuphonic, MiniMax, Groq, Speechmatics, or Nvidia
+    - **Model** — Provider-specific voice model
+    - **Language** — Output speech language
+    - **Voice ID** — The specific voice from your TTS provider
+
+    **Advanced settings** (expand to configure):
+    - **Pronunciation Dictionaries** — Custom pronunciation for domain-specific terms, names, and acronyms
+    - **Conjunction Boundaries** — Natural pause points at conjunctions for more human-like speech
+    - **Pause Duration** — Length of pause at conjunction boundaries (100-300ms, default: 240ms)
+
+    <Tip>
+      Click **Skip** to deploy without voice output. Text responses will still appear in the chat. You can enable voice output later.
+    </Tip>
+  </Step>
+
+  <Step title="Features">
+    Enable additional content sections available in the web widget beyond the chat interface.
+
+    **Available sections:**
+    - **Help Center / Q&A Listing** — Display a searchable FAQ section alongside the chat, powered by your knowledge base
+    - **Product Catalog** — Show product listings and details within the widget
+    - **Blog Post / Articles** — Surface blog posts and articles for self-service browsing
+
+    Click **Deploy Web Widget** to save and activate the deployment.
+  </Step>
+</Steps>
+
+## Embedding the Widget
+
+After deployment, Rapida generates a pre-built widget script (`app.min.js`) hosted on the Rapida CDN. You configure it by setting `window.chatbotConfig` before the script loads.
+
+### Quick Start
+
+Add this to any page on your website:
+
+```html
+<script>
+  window.chatbotConfig = {
+    assistant_id: "YOUR_ASSISTANT_ID",
+    token: "YOUR_PROJECT_CREDENTIAL_KEY",
+  };
+</script>
+<script defer src="https://cdn-01.rapida.ai/public/scripts/app.min.js"></script>
+```
+
+The widget renders a floating button in the corner of the page. Clicking it opens the chat window with your assistant's greeting and quickstart questions.
+
+<Note>
+  Replace `YOUR_ASSISTANT_ID` with your assistant's ID (found on the assistant overview page) and `YOUR_PROJECT_CREDENTIAL_KEY` with your project credential key from the [credential vault](/credential/rapida-credentials).
+</Note>
+
+### Configuration Options
+
+The `window.chatbotConfig` object accepts the following properties:
+
+```html
+<script>
+  window.chatbotConfig = {
+    // Required
+    assistant_id: "YOUR_ASSISTANT_ID",
+    token: "YOUR_PROJECT_CREDENTIAL_KEY",
+
+    // Optional: target a specific assistant version
+    assistant_version: "VERSION_ID",
+
+    // Optional: custom API base URL (for self-hosted deployments)
+    api_base: "https://assistant-01.rapida.ai",
+
+    // Optional: language for the widget UI (default: "en", auto-detects from <html lang="">)
+    language: "en",
+
+    // Optional: enable debug logging in the browser console
+    debug: false,
+
+    // Optional: user identification
+    user: {
+      name: "Jane Doe",
+      user_id: "user-123",
+      meta: {
+        plan: "enterprise",
+        source: "pricing-page",
+      },
+    },
+
+    // Optional: theme customisation
+    theme: {
+      color: "#0f62fe",
+    },
+  };
+</script>
+<script defer src="https://cdn-01.rapida.ai/public/scripts/app.min.js"></script>
+```
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| `assistant_id` | `string` | Yes | — | Your assistant's ID |
+| `token` | `string` | Yes | — | Project credential key from the [credential vault](/credential/rapida-credentials) |
+| `assistant_version` | `string` | No | latest | Pin to a specific assistant version |
+| `api_base` | `string` | No | `https://assistant-01.rapida.ai` | API base URL (override for self-hosted) |
+| `language` | `string` | No | `"en"` | Widget UI language. Auto-detects from `<html lang="">` attribute changes |
+| `debug` | `boolean` | No | `false` | Enable verbose logging in browser console |
+| `user.name` | `string` | No | `"Guest"` | Display name for the user in the chat |
+| `user.user_id` | `string` | No | auto-generated | Unique user identifier. If not provided, a UUID is generated and persisted in `localStorage` |
+| `user.meta` | `Record<string, string>` | No | `{ source: "web plugin" }` | Custom metadata attached to the session (e.g., plan, UTM params, page URL) |
+| `theme.color` | `string` | No | `"#2663eb"` | Primary accent color for the widget UI |
+
+### Full HTML Example
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Website</title>
+</head>
+<body>
+  <h1>Welcome to my website</h1>
+
+  <!-- Rapida Web Widget Configuration -->
+  <script>
+    window.chatbotConfig = {
+      assistant_id: "2139456643765633024",
+      token: "5e04b962dfd988ca0f4ac9e097f17841ebf34d7e38c50297e245c12bddce2117",
+      user: {
+        name: "Guest",
+        user_id: "website-visitor-001",
+        meta: {
+          source: "marketing-site",
+          page: window.location.pathname,
+        },
+      },
+      theme: {
+        color: "#0f62fe",
+      },
+    };
+  </script>
+  <script defer src="https://cdn-01.rapida.ai/public/scripts/app.min.js"></script>
+</body>
+</html>
+```
+
+<Tip>
+  Place both script tags just before the closing `</body>` tag. The `defer` attribute on `app.min.js` ensures it loads after the config is set without blocking page rendering.
+</Tip>
+
+### CSS Customisation
+
+The widget supports CSS custom properties to control its size and position. Add these in a `<style>` tag before the script:
+
+```html
+<style>
+  #RPDContainer.RPDContainer .RPD_Wrapper {
+    --cds-chat-BASE-border-radius-xsmall: 0px;
+    --cds-chat-BASE-border-radius-small: 0px;
+    --cds-chat-BASE-border-radius-med: 0px;
+    --cds-chat-BASE-border-radius-large: 10px;
+    --cds-chat-BASE-border-radius-xlarge: 10px;
+    --cds-chat-BASE-width: 400px;
+    --cds-chat-BASE-height: 600px;
+    --cds-chat-BASE-bottom-position: 20px;
+    --cds-chat-BASE-right-position: 20px;
+  }
+</style>
+```
+
+| CSS Variable | Default | Description |
+|-------------|---------|-------------|
+| `--cds-chat-BASE-width` | `400px` | Width of the chat window |
+| `--cds-chat-BASE-height` | `600px` | Height of the chat window |
+| `--cds-chat-BASE-bottom-position` | `0px` | Distance from the bottom of the viewport |
+| `--cds-chat-BASE-right-position` | `0px` | Distance from the right of the viewport |
+| `--cds-chat-BASE-border-radius-large` | `10px` | Border radius of the chat window |
+
+### Full-Screen Widget
+
+To make the widget fill the entire viewport (e.g., for a dedicated support page):
+
+```html
+<style>
+  #RPDContainer.RPDContainer .RPD_Wrapper {
+    --cds-chat-BASE-width: 100% !important;
+    --cds-chat-BASE-height: 100dvh !important;
+    --cds-chat-BASE-bottom-position: 0px;
+    --cds-chat-BASE-right-position: 0px;
+  }
+</style>
+```
+
+## Platform Integration Guides
+
+<AccordionGroup>
+  <Accordion title="WordPress">
+    1. Go to **Appearance** > **Theme File Editor** (or use a plugin like **Insert Headers and Footers**)
+    2. Add the following before the closing `</body>` tag in your theme's `footer.php`:
+    ```html
+    <script>
+      window.chatbotConfig = {
+        assistant_id: "YOUR_ASSISTANT_ID",
+        token: "YOUR_PROJECT_CREDENTIAL_KEY",
+      };
+    </script>
+    <script defer src="https://cdn-01.rapida.ai/public/scripts/app.min.js"></script>
+    ```
+    3. Save and verify the widget loads on your site
+  </Accordion>
+
+  <Accordion title="Shopify">
+    1. Go to **Online Store** > **Themes** > **Edit Code**
+    2. Open `theme.liquid`
+    3. Add the scripts before the closing `</body>` tag:
+    ```html
+    <script>
+      window.chatbotConfig = {
+        assistant_id: "YOUR_ASSISTANT_ID",
+        token: "YOUR_PROJECT_CREDENTIAL_KEY",
+      };
+    </script>
+    <script defer src="https://cdn-01.rapida.ai/public/scripts/app.min.js"></script>
+    ```
+    4. Save and preview your store
+  </Accordion>
+
+  <Accordion title="Webflow">
+    1. Go to **Project Settings** > **Custom Code**
+    2. Paste in the **Footer Code** section:
+    ```html
+    <script>
+      window.chatbotConfig = {
+        assistant_id: "YOUR_ASSISTANT_ID",
+        token: "YOUR_PROJECT_CREDENTIAL_KEY",
+      };
+    </script>
+    <script defer src="https://cdn-01.rapida.ai/public/scripts/app.min.js"></script>
+    ```
+    3. Publish your site
+  </Accordion>
+
+  <Accordion title="Squarespace">
+    1. Go to **Settings** > **Advanced** > **Code Injection**
+    2. Paste in the **Footer** section:
+    ```html
+    <script>
+      window.chatbotConfig = {
+        assistant_id: "YOUR_ASSISTANT_ID",
+        token: "YOUR_PROJECT_CREDENTIAL_KEY",
+      };
+    </script>
+    <script defer src="https://cdn-01.rapida.ai/public/scripts/app.min.js"></script>
+    ```
+    3. Save and preview your site
+  </Accordion>
+
+  <Accordion title="Next.js">
+    Use Next.js `Script` component in your root layout:
+
+    ```tsx
+    // app/layout.tsx (App Router)
+    import Script from "next/script";
+
+    export default function RootLayout({ children }) {
+      return (
+        <html lang="en">
+          <body>
+            {children}
+            <Script id="rapida-config" strategy="beforeInteractive">
+              {`window.chatbotConfig = {
+                assistant_id: "${process.env.NEXT_PUBLIC_RAPIDA_ASSISTANT_ID}",
+                token: "${process.env.NEXT_PUBLIC_RAPIDA_TOKEN}",
+              };`}
+            </Script>
+            <Script
+              src="https://cdn-01.rapida.ai/public/scripts/app.min.js"
+              strategy="lazyOnload"
+            />
+          </body>
+        </html>
+      );
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Vue / Nuxt">
+    ```ts
+    // nuxt.config.ts
+    export default defineNuxtConfig({
+      app: {
+        head: {
+          script: [
+            {
+              children: `window.chatbotConfig = {
+                assistant_id: "YOUR_ASSISTANT_ID",
+                token: "YOUR_PROJECT_CREDENTIAL_KEY",
+              };`,
+            },
+            {
+              src: "https://cdn-01.rapida.ai/public/scripts/app.min.js",
+              defer: true,
+            },
+          ],
+        },
+      },
+    });
+    ```
+
+    For plain Vue, add the script tags directly to `public/index.html`.
+  </Accordion>
+
+  <Accordion title="Angular">
+    Add to `src/index.html` before the closing `</body>` tag:
+    ```html
+    <script>
+      window.chatbotConfig = {
+        assistant_id: "YOUR_ASSISTANT_ID",
+        token: "YOUR_PROJECT_CREDENTIAL_KEY",
+      };
+    </script>
+    <script defer src="https://cdn-01.rapida.ai/public/scripts/app.min.js"></script>
+    ```
+  </Accordion>
+
+  <Accordion title="Static HTML / Any Website">
+    Copy and paste the following into any HTML page:
+    ```html
+    <script>
+      window.chatbotConfig = {
+        assistant_id: "YOUR_ASSISTANT_ID",
+        token: "YOUR_PROJECT_CREDENTIAL_KEY",
+      };
+    </script>
+    <script defer src="https://cdn-01.rapida.ai/public/scripts/app.min.js"></script>
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Self-Hosted Deployment
+
+If you're running Rapida on your own infrastructure, override the `api_base` to point at your assistant API:
+
+```html
+<script>
+  window.chatbotConfig = {
+    assistant_id: "YOUR_ASSISTANT_ID",
+    token: "YOUR_PROJECT_CREDENTIAL_KEY",
+    api_base: "https://your-assistant-api.example.com",
+  };
+</script>
+<script defer src="https://cdn-01.rapida.ai/public/scripts/app.min.js"></script>
+```
+
+You can also self-host the widget script itself. Build the `react-widget` SDK and upload the generated `dist/app.min.js` to your own CDN or static file server:
+
+```bash
+cd sdks/react-widget
+yarn install
+yarn build
+# Upload dist/app.min.js to your CDN
+```
+
+Then reference your self-hosted script:
+
+```html
+<script defer src="https://your-cdn.example.com/scripts/app.min.js"></script>
+```
 
 ## How It Works
 
-When integrated, the Rapida web widget presents users with an intuitive interface:
+When the widget script loads, it:
 
-<Frame>
-  <img src="/images/widget.png" alt="Rapida Voice AI Web Widget" />
-</Frame>
+1. Reads configuration from `window.chatbotConfig`
+2. Creates a `<div id="rapida-chat-app">` element and appends it to the page `<body>`
+3. Initialises a `VoiceAgent` instance using `@rapidaai/react` SDK with `ConnectionConfig.WithSDK`
+4. Fetches the assistant's web plugin deployment config (greeting, suggestions, voice settings)
+5. Renders a floating button — clicking it opens the chat window
+6. Supports both text input and voice input (with microphone visualizer, device selection, and mute controls)
+7. Auto-detects language changes on the `<html lang="">` attribute
+8. Persists the user ID in `localStorage` (`rpd__uuid`) across sessions when no `user.user_id` is provided
 
-The assistant greets users and offers several interaction options:
+## Widget Features
 
-1. **General Inquiry**: "I'm just exploring – what do you offer?"
-2. **Specific Assistance**: "I'm more curious about what you can do for my project – can we chat about that?"
-3. **Direct Contact**: "How can I get in touch with the team?"
+The pre-built widget includes:
 
-Users can select a preset option or type their own query for a tailored response.
+- **Text chat** — Type messages and receive markdown-rendered responses
+- **Voice input** — Click the audio icon to switch to voice mode with real-time microphone visualization
+- **Microphone device selector** — Choose from available input devices via a dropdown flyout
+- **Mute/unmute** — Toggle microphone during voice conversations
+- **Quickstart suggestions** — Clickable buttons from your deployment's configured suggestions
+- **Session reset** — Restart the conversation via the header button
+- **Auto-scroll** — Chat automatically scrolls to the latest message
 
-## Versatile Use Cases
+## Input and Output Modes
 
-- **Customer Support**: Provide instant answers and reduce support ticket volume
-- **Lead Generation**: Engage visitors and collect qualified leads through conversations
-- **Product Information**: Offer detailed product information and recommendations
-- **Appointment Booking**: Enable users to schedule appointments directly through the widget
-- **FAQ Assistant**: Guide users to relevant information across your website
-- **Employee Support**: Deploy internally to assist with HR queries or IT support
+| Voice Input | Voice Output | User Experience |
+|-------------|-------------|-----------------|
+| Disabled | Disabled | Text-only chat |
+| Enabled | Disabled | Users speak, assistant replies with text |
+| Disabled | Enabled | Users type, assistant replies with voice + text |
+| Enabled | Enabled | Full voice conversation with text transcript |
 
-## Customization Options
+## Troubleshooting
 
-Rapida's web widget is highly adaptable:
+| Issue | Solution |
+|-------|----------|
+| Widget does not appear | Verify `assistant_id` and `token` are correct. Check the browser console for errors — the widget logs `"Please provide an assistant_id"` or `"Please provide an authentication token"` if either is missing |
+| Voice input not working | Ensure the page is served over HTTPS (required for microphone access). Check that the deployment has STT configured |
+| Widget loads but shows no greeting | Ensure you have an active **Web Widget** deployment for this assistant (not an SDK/API deployment) |
+| User ID resets across visits | The widget stores the auto-generated ID in `localStorage` as `rpd__uuid`. If `localStorage` is cleared, a new ID is generated. Pass a stable `user.user_id` in the config to avoid this |
+| CORS errors in console | If self-hosting, ensure your reverse proxy allows requests from your website's origin to the assistant API |
+| `window.chatbotConfig` not read | Make sure the config script runs **before** `app.min.js`. Use a regular `<script>` tag (not `defer`) for the config, and `defer` on the widget script |
 
-- **Visual Customization**: Adjust colors, fonts, and styling to seamlessly blend with your website
-- **Conversation Flow**: Design custom conversation paths tailored to your specific use case
-- **Integration**: Connect with your existing systems (CRM, knowledge base, etc.) for enhanced functionality
-- **Multilingual Support**: Configure the assistant to communicate in multiple languages
-- **Analytics**: Gain insights into user interactions and widget performance
-
-## Popular Use Cases
-
-Explore how the Rapida web widget can be applied across various scenarios:
+## Use Cases
 
 <CardGroup cols={2}>
-  <Card title="Cart Abandonment Recovery" icon="shopping-cart">
-    Engage users who are about to leave their shopping carts, offering
-    assistance or incentives to complete their purchase.
+  <Card title="Customer Support">
+    Provide instant answers and reduce support ticket volume with 24/7 voice-enabled help.
   </Card>
-  <Card title="Lead Capturing" icon="user-plus">
-    Collect visitor information through interactive conversations, qualifying
-    leads for your sales team.
+  <Card title="Lead Generation">
+    Engage visitors with qualifying questions and route them to your sales team.
   </Card>
-  <Card title="24/7 Customer Support" icon="headphones">
-    Provide round-the-clock assistance to customers, answering queries and
-    resolving issues instantly.
+  <Card title="Product Recommendations">
+    Guide users through product catalogs with personalized suggestions.
   </Card>
-  <Card title="Product Recommendations" icon="gift">
-    Offer personalized product suggestions based on user preferences and
-    browsing history.
-  </Card>
-  <Card title="Appointment Scheduling" icon="calendar">
-    Allow users to book appointments or demos directly through the widget,
-    integrated with your calendar system.
-  </Card>
-  <Card title="Feedback Collection" icon="message-square">
-    Gather user feedback on products, services, or website experience to drive
-    improvements.
-  </Card>
-  <Card title="Interactive FAQs" icon="help-circle">
-    Transform static FAQ pages into dynamic, conversational experiences that
-    guide users to the right information.
-  </Card>
-  <Card title="Onboarding Assistance" icon="graduation-cap">
-    Help new users or customers navigate your product or service with
-    step-by-step guidance.
-  </Card>
-  <Card title="Event Registration" icon="ticket">
-    Streamline the process of registering for webinars, conferences, or other
-    events through conversational flow.
+  <Card title="Appointment Scheduling">
+    Let users book appointments directly through conversational flow.
   </Card>
 </CardGroup>
 
-These use cases demonstrate the versatility of the Rapida web widget in enhancing user engagement, improving conversions, and providing valuable assistance across various business scenarios.
+## Related
+
+- [Create an Assistant](/assistants/create-assistant) — Set up your assistant before deploying
+- [Web App (React SDK)](/voice-deployment-options/web-app) — Full SDK integration for custom React apps with complete UI control
+- [Credentials](/credential/rapida-credentials) — Manage your project credential keys
+- [Conversation Logs](/activity/conversation-logs) — Monitor widget conversations
+- [Webhooks](/assistants/webhook/overview) — Receive post-conversation events

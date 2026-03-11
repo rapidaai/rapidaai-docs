@@ -3,14 +3,21 @@
     "theme": "mint",
     "name": "rapida.ai documentation",
     "colors": {
-        "primary": "#2463eb",
-        "light": "#2463eb",
-        "dark": "#2463eb"
+        "primary": "#0f62fe",
+        "light": "#0f62fe",
+        "dark": "#4589ff"
     },
     "fonts": {
-        "family": "IBM Plex Sans",
-        "weight": 400
+        "heading": {
+            "family": "IBM Plex Sans",
+            "weight": 600
+        },
+        "body": {
+            "family": "IBM Plex Sans",
+            "weight": 400
+        }
     },
+    "rounded": "sharp",
     "favicon": "/favicon.png",
     "icons": {
         "library": "lucide"
@@ -72,7 +79,6 @@
                     },
                     {
                         "group": "Knowledge",
-                        "icon": "database",
                         "pages": [
                             "knowledge/overview",
                             "knowledge/create-knowledge",
@@ -82,7 +88,6 @@
                     },
                     {
                         "group": "LLM Endpoint",
-                        "icon": "server",
                         "pages": [
                             "endpoint/overview",
                             "endpoint/create-endpoint",
@@ -92,7 +97,6 @@
                     },
                     {
                         "group": "Activity and logs",
-                        "icon": "activity",
                         "pages": [
                             "activity/llm-logs",
                             "activity/webhook-logs",
@@ -101,7 +105,6 @@
                     },
                     {
                         "group": "External Integrations",
-                        "icon": "plug",
                         "pages": [
                             {
                                 "group": "LLM Integrations",
@@ -170,14 +173,12 @@
                     },
                     {
                         "group": "Credentials",
-                        "icon": "key",
                         "pages": [
                             "credential/rapida-credentials"
                         ]
                     },
                     {
                         "group": "Workspace",
-                        "icon": "briefcase",
                         "pages": [
                             "workspace/overview",
                             "workspace/project-management",
@@ -188,7 +189,6 @@
                     },
                     {
                         "group": "Governance",
-                        "icon": "shield",
                         "pages": [
                             "governances/overview",
                             "governances/organization",
@@ -198,7 +198,6 @@
                     },
                     {
                         "group": "Deployment Options",
-                        "icon": "cloud",
                         "pages": [
                             "deployments/deployment-options",
                             "deployments/fully-managed",
@@ -330,7 +329,6 @@
                 "groups": [
                     {
                         "group": "API Documentation",
-                        "icon": "file-code",
                         "pages": [
                             "api-reference/installation",
                             "api-reference/authentication"
@@ -338,7 +336,6 @@
                     },
                     {
                         "group": "Calls",
-                        "icon": "phone",
                         "pages": [
                             "api-reference/call/create-call",
                             "api-reference/call/create-bulk-call"
@@ -346,7 +343,6 @@
                     },
                     {
                         "group": "Endpoint",
-                        "icon": "route",
                         "pages": [
                             "api-reference/endpoint/invoke",
                             "api-reference/endpoint/get-endpoint",

@@ -1,7 +1,12 @@
-footer {
-    margin-top: 2rem;
-}
+/* ==========================================================================
+   IBM Carbon Design System — Mintlify Overrides
+   Reference: https://carbondesignsystem.com
+   Tokens: Gray scale, Blue 60 primary, 8px spatial grid, IBM Plex type stack
+   ========================================================================== */
 
+/* --------------------------------------------------------------------------
+   1. SHARP CORNERS (Carbon uses 0px radius everywhere)
+   -------------------------------------------------------------------------- */
 .rounded,
 .rounded-sm,
 .rounded-xl,
@@ -9,10 +14,387 @@ footer {
 .rounded-xt,
 .rounded-t-xl,
 .rounded-md,
-.rounded-2xl {
-    border-radius: 2px !important;
+.rounded-2xl,
+.rounded-3xl,
+.rounded-full {
+    border-radius: 0 !important;
 }
 
-[class^="rounded-"] {
-    border-radius: 2px !important;
+[class^="rounded-"],
+[class*=" rounded-"] {
+    border-radius: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. TYPOGRAPHY — Carbon type scale
+   IBM Plex Sans 400/600, IBM Plex Mono 400 for code
+   -------------------------------------------------------------------------- */
+
+/* Body text — Carbon Body Compact 01 */
+body,
+p,
+li,
+td,
+th,
+dd,
+dt {
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    letter-spacing: 0.16px;
+    line-height: 1.5;
+}
+
+/* Headings — Carbon Productive Heading */
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
+}
+
+h1 {
+    font-size: 1.75rem !important;
+    line-height: 2.25rem !important;
+}
+
+h2 {
+    font-size: 1.25rem !important;
+    line-height: 1.75rem !important;
+    padding-top: 1.5rem;
+}
+
+h3 {
+    font-size: 1rem !important;
+    line-height: 1.375rem !important;
+    font-weight: 600 !important;
+}
+
+h4 {
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.16px !important;
+}
+
+/* Code — IBM Plex Mono */
+code,
+pre,
+kbd,
+samp,
+.font-mono {
+    font-family: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace !important;
+    font-size: 0.8125rem !important;
+    letter-spacing: 0.32px;
+}
+
+/* --------------------------------------------------------------------------
+   3. COLOR TOKENS — Carbon Gray scale + Blue 60
+   -------------------------------------------------------------------------- */
+
+:root {
+    --carbon-blue-60: #0f62fe;
+    --carbon-blue-70: #0043ce;
+    --carbon-blue-80: #002d9c;
+    --carbon-gray-10: #f4f4f4;
+    --carbon-gray-20: #e0e0e0;
+    --carbon-gray-30: #c6c6c6;
+    --carbon-gray-50: #8d8d8d;
+    --carbon-gray-70: #525252;
+    --carbon-gray-80: #393939;
+    --carbon-gray-90: #262626;
+    --carbon-gray-100: #161616;
+    --carbon-red-60: #da1e28;
+    --carbon-green-60: #198038;
+    --carbon-yellow-30: #f1c21b;
+    --carbon-focus: #0f62fe;
+}
+
+/* --------------------------------------------------------------------------
+   4. LINKS — Carbon interactive token
+   -------------------------------------------------------------------------- */
+
+a {
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: none;
+}
+
+/* --------------------------------------------------------------------------
+   5. TABLES — Carbon Structured List / Data Table
+   -------------------------------------------------------------------------- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+th {
+    text-align: left;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    letter-spacing: 0.16px !important;
+    padding: 0.75rem 1rem !important;
+}
+
+td {
+    padding: 0.75rem 1rem !important;
+    vertical-align: top;
+}
+
+th {
+    background-color: var(--carbon-gray-10) !important;
+    color: var(--carbon-gray-70) !important;
+}
+
+.dark th {
+    background-color: var(--carbon-gray-80) !important;
+    color: var(--carbon-gray-30) !important;
+}
+
+tr {
+    border-bottom: 1px solid var(--carbon-gray-20);
+}
+
+.dark tr {
+    border-bottom: 1px solid var(--carbon-gray-80);
+}
+
+/* --------------------------------------------------------------------------
+   6. CODE BLOCKS — Carbon code snippet style
+   -------------------------------------------------------------------------- */
+pre {
+    border-radius: 0 !important;
+    border: none !important;
+    padding: 1rem !important;
+    font-size: 0.875rem !important;
+    line-height: 1.375rem !important;
+}
+
+pre code {
+    font-size: 0.875rem !important;
+    letter-spacing: 0.32px !important;
+}
+
+/* Inline code — subtle background, no border */
+:not(pre) > code {
+    border-radius: 0 !important;
+    padding: 0.125rem 0.375rem !important;
+    font-size: 0.8125rem !important;
+    background-color: var(--carbon-gray-10) !important;
+    border: none !important;
+    color: var(--carbon-gray-100) !important;
+}
+
+.dark :not(pre) > code {
+    background-color: var(--carbon-gray-80) !important;
+    color: var(--carbon-gray-10) !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. CARDS — Carbon tile style (flat, no hover bg change)
+   -------------------------------------------------------------------------- */
+[class*="Card"],
+[class*="card"] {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. CALLOUTS — Carbon inline notification style
+   -------------------------------------------------------------------------- */
+[class*="callout"],
+[class*="Callout"],
+[class*="admonition"] {
+    border-radius: 0 !important;
+    border-left-width: 3px !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. BUTTONS & INTERACTIVE — Carbon Button style
+   -------------------------------------------------------------------------- */
+button,
+[role="button"] {
+    border-radius: 0 !important;
+    transition: background-color 70ms cubic-bezier(0.2, 0, 0.38, 0.9) !important;
+}
+
+/* Focus — Carbon 2px blue outline */
+:focus-visible {
+    outline: 2px solid var(--carbon-focus) !important;
+    outline-offset: -2px !important;
+    border-radius: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   10. SIDEBAR & NAV — Carbon left-nav style
+   -------------------------------------------------------------------------- */
+nav a,
+nav button {
+    border-radius: 0 !important;
+    font-size: 0.875rem !important;
+    letter-spacing: 0.16px !important;
+}
+
+/* Sidebar group headings — UPPERCASE (Carbon label style) */
+nav [class*="group"] {
+    text-transform: uppercase !important;
+    font-weight: 600 !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 0.32px !important;
+}
+
+/* --------------------------------------------------------------------------
+   11. SPACING — Carbon 8px grid
+   -------------------------------------------------------------------------- */
+footer {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--carbon-gray-20);
+}
+
+.dark footer {
+    border-top-color: var(--carbon-gray-80);
+}
+
+article p + p {
+    margin-top: 1rem;
+}
+
+article ul,
+article ol {
+    padding-left: 1.5rem;
+}
+
+article li {
+    margin-bottom: 0.25rem;
+}
+
+article li + li {
+    margin-top: 0.25rem;
+}
+
+/* --------------------------------------------------------------------------
+   12. STEPS — Carbon progress indicator style
+   -------------------------------------------------------------------------- */
+[class*="step"],
+[class*="Step"] {
+    border-radius: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   13. TABS — Carbon contained tabs style
+   -------------------------------------------------------------------------- */
+[role="tablist"] {
+    border-radius: 0 !important;
+}
+
+[role="tab"] {
+    border-radius: 0 !important;
+    font-size: 0.875rem !important;
+    font-weight: 400 !important;
+    letter-spacing: 0.16px !important;
+}
+
+[role="tab"][aria-selected="true"] {
+    font-weight: 600 !important;
+}
+
+[role="tabpanel"] {
+    border-radius: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   14. DIVIDERS — Carbon subtle rule
+   -------------------------------------------------------------------------- */
+hr {
+    border: none;
+    border-top: 1px solid var(--carbon-gray-20);
+    margin: 2rem 0;
+}
+
+.dark hr {
+    border-top-color: var(--carbon-gray-80);
+}
+
+/* --------------------------------------------------------------------------
+   15. IMAGES & FRAMES — Sharp, bordered
+   -------------------------------------------------------------------------- */
+img {
+    border-radius: 0 !important;
+}
+
+[class*="Frame"],
+[class*="frame"] {
+    border-radius: 0 !important;
+    border: 1px solid var(--carbon-gray-20);
+}
+
+.dark [class*="Frame"],
+.dark [class*="frame"] {
+    border-color: var(--carbon-gray-80);
+}
+
+/* --------------------------------------------------------------------------
+   16. SCROLLBAR — Carbon minimal scrollbar
+   -------------------------------------------------------------------------- */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--carbon-gray-30);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--carbon-gray-50);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: var(--carbon-gray-70);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: var(--carbon-gray-50);
+}
+
+/* --------------------------------------------------------------------------
+   17. TOOLTIPS & POPOVERS
+   -------------------------------------------------------------------------- */
+[role="tooltip"],
+[data-radix-popper-content-wrapper] {
+    border-radius: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   18. SELECTION — Carbon highlight
+   -------------------------------------------------------------------------- */
+::selection {
+    background-color: #d0e2ff;
+    color: var(--carbon-gray-100);
+}
+
+.dark ::selection {
+    background-color: #002d9c;
+    color: #f4f4f4;
+}
+
+/* --------------------------------------------------------------------------
+   19. BLOCKQUOTES — Carbon style
+   -------------------------------------------------------------------------- */
+blockquote {
+    border-left: 3px solid var(--carbon-gray-30) !important;
+    border-radius: 0 !important;
+    padding: 0.75rem 1rem !important;
+    margin: 1rem 0 !important;
+    font-style: normal !important;
+}
+
+.dark blockquote {
+    border-left-color: var(--carbon-gray-70) !important;
 }

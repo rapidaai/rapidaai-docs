@@ -1,93 +1,135 @@
 ---
-title: "Integrate your Voice AI assistant into your app"
-description: "Easily integrate your Voice AI assistant into any React application to enhance user interactions."
-icon: "globe"
-sidebarTitle: "Web app"
+title: "Web App / SDK Deployment"
+description: "Integrate your AI assistant into any React application via the Rapida SDK or REST API."
+sidebarTitle: "Web App / SDK"
 ---
 
-Rapida.ai's web-based voice platform enables you to design, deploy and manage sophisticated voice agents directly in your web applications without complex coding. Our intuitive tools help you craft voice experiences that understand context, respond naturally, and handle complex user inquiries with human-like speech, all within a web browser.
+The SDK / API deployment exposes your assistant through the Rapida React SDK and REST API. Unlike the Web Widget (which provides a pre-built UI), this deployment gives you full control over the user interface while Rapida handles the audio pipeline, LLM orchestration, and conversation state behind the scenes.
 
-<Card
-  title="Ready to create your first web-based AI voice agent?"
-  icon="globe"
-  href="/assistants/create-assistant"
->
-  Get started with our step-by-step guide to building web voice agents
-</Card>
+<Info>
+Voice capabilities (microphone input and spoken responses) are optional. You can build a text-only integration by skipping the Voice Input and Voice Output steps during configuration.
+</Info>
 
-## Key Web Voice Agent Features
+## Creating an SDK / API Deployment
 
-- **Browser-based Speech Processing**: Leverage state-of-the-art speech recognition and synthesis directly in web browsers
-- **Multi-turn Voice Dialogues**: Build voice agents that maintain context throughout complex spoken interactions on web pages
-- **Voice Personality Design**: Customize tone, speech patterns, and vocal style to match your brand identity
-- **Web Integration**: Easily embed voice agents into your websites and web applications
-- **Voice Analytics**: Gain insights into user interactions, satisfaction, and voice agent performance
+Navigate to your assistant, click **Configure Assistant**, then select **Deployments** from the sidebar. Click **Add Deployment** and choose **SDK / API**.
 
-<Frame>
-  <img src="/images/web-app.png" alt="Web Voice Agent Demo" />
-</Frame>
+The SDK deployment wizard walks you through three steps:
 
-## Use Cases for Rapida Web Voice Agents
+<Steps>
+  <Step title="General Experience">
+    Define how the assistant greets users and handles session lifecycle.
 
-Rapida.ai's web-based voice agents can be customized for a wide range of applications. Here are some popular use cases you can build:
+    **Required fields:**
+    - **Greeting** — Opening message sent when a session starts. Supports `{{variable}}` syntax for dynamic content passed as query parameters
+
+    **Advanced settings** (expand to configure):
+    - **Error Message** — Fallback message sent when an unexpected error occurs
+    - **Idle Silence Timeout** — Duration of user silence before Rapida sends a prompt (15-120 seconds, default: 30s)
+    - **Idle Timeout Backoff** — How many times the idle timeout multiplies before ending the session (0-5, default: 2)
+    - **Idle Message** — Message sent when the user hasn't responded (default: "Are you there?")
+    - **Maximum Session Duration** — Hard limit before the session is automatically ended (180-600 seconds, default: 300s)
+  </Step>
+
+  <Step title="Voice Input (Speech-to-Text) — Optional">
+    Enable microphone-based voice input. When configured, the SDK streams browser audio to Rapida for real-time transcription.
+
+    **If enabled:**
+    - **STT Provider** — Deepgram, AssemblyAI, Google, Azure, OpenAI Whisper, AWS Transcribe, Cartesia, Rev.ai, Speechmatics, Sarvam, Groq, or Nvidia
+    - **Model** — Provider-specific transcription model
+    - **Language** — Primary transcription language
+    - **Encoding** — Audio encoding format
+    - **Sample Rate** — Audio sample rate
+
+    **Advanced settings** (expand to configure):
+    - **Voice Activity Detection (VAD)** — Silero VAD with configurable threshold (0.0-1.0, default: 0.8)
+    - **Background Noise Removal** — RNNoise for ambient noise removal
+    - **End of Speech Detection** — Silence-based EOS with configurable timeout (default: 1000ms)
+
+    <Tip>
+      Click **Skip** to deploy without voice input. Your app can still send text messages via the SDK. You can enable voice input later by editing the deployment.
+    </Tip>
+  </Step>
+
+  <Step title="Voice Output (Text-to-Speech) — Optional">
+    Enable spoken audio responses. When configured, the SDK receives audio streams from Rapida and plays them through the browser.
+
+    **If enabled:**
+    - **TTS Provider** — ElevenLabs, Deepgram, Azure, Google, OpenAI, AWS Polly, Cartesia, Resemble, Rime, Sarvam, Neuphonic, MiniMax, Groq, Speechmatics, or Nvidia
+    - **Model** — Provider-specific voice model
+    - **Language** — Output speech language
+    - **Voice ID** — The specific voice from your TTS provider
+
+    **Advanced settings** (expand to configure):
+    - **Pronunciation Dictionaries** — Custom pronunciation for domain-specific terms
+    - **Conjunction Boundaries** — Natural pause points for more human-like speech
+    - **Pause Duration** — Length of pause at conjunction boundaries (100-300ms, default: 240ms)
+
+    Click **Deploy API** to save and activate the deployment. Click **Skip** to deploy without voice output.
+  </Step>
+</Steps>
+
+## Integration Methods
+
+After deployment, you can integrate via the React SDK or a public URL.
+
+### React SDK
+
+Install the Rapida React SDK:
+
+```bash
+npm install @rapidaai/react
+# or
+yarn add @rapidaai/react
+```
+
+The SDK provides hooks and components for managing sessions, streaming audio, and receiving transcripts. Audio streams over WebRTC directly between the browser and Rapida — no relay servers or iframes required.
+
+### Public URL
+
+Every SDK / API deployment generates a public URL you can share or embed in an iframe:
+
+```
+https://app.rapida.ai/preview/public/assistant/{ASSISTANT_ID}?token={PROJECT_CREDENTIAL_KEY}
+```
+
+Pass agent arguments as query parameters:
+
+```
+?token={KEY}&name=John&account_id=12345
+```
+
+These variables are available in your assistant's greeting and prompt via the `{{variable}}` syntax.
+
+## Input and Output Modes
+
+| Voice Input | Voice Output | Integration Style |
+|-------------|-------------|-------------------|
+| Disabled | Disabled | Text-only chat via SDK |
+| Enabled | Disabled | Users speak, assistant replies with text |
+| Disabled | Enabled | Users type, assistant replies with voice + text |
+| Enabled | Enabled | Full voice conversation with real-time transcripts |
+
+## Use Cases
 
 <CardGroup cols={2}>
-  <Card title="Virtual Shopping Assistant" icon="shopping-bag">
-    Guide users through product catalogs, answer questions, and assist with
-    purchases.
+  <Card title="Custom Voice Interface">
+    Build a fully branded voice experience inside your own React application with complete UI control.
   </Card>
-  <Card title="Interactive Learning" icon="book-open">
-    Create voice-enabled educational content and interactive lessons for
-    e-learning platforms.
+  <Card title="In-App Support">
+    Add voice-powered support directly inside your SaaS product without redirecting users.
   </Card>
-  <Card title="Accessibility Support" icon="accessibility">
-    Enhance web accessibility with voice navigation and content reading for
-    visually impaired users.
+  <Card title="Voice Search">
+    Implement voice-activated search for content-rich applications.
   </Card>
-  <Card title="Voice Search" icon="search">
-    Implement voice-activated search functionality for content-rich websites.
-  </Card>
-  <Card title="Virtual Tours" icon="map">
-    Provide voice-guided tours for real estate listings, museums, or travel
-    websites.
-  </Card>
-  <Card title="Form Filling Assistance" icon="clipboard">
-    Help users complete complex web forms through voice interactions.
-  </Card>
-  <Card title="Language Practice" icon="languages">
-    Offer conversational language learning exercises with pronunciation
-    feedback.
-  </Card>
-  <Card title="Web-based Games" icon="gamepad-2">
-    Create voice-controlled games or add voice interactions to existing web
-    games.
-  </Card>
-  <Card title="Virtual Event Host" icon="users">
-    Assist attendees during online conferences, webinars, or virtual events.
+  <Card title="Accessibility">
+    Enhance web accessibility with voice navigation for visually impaired users.
   </Card>
 </CardGroup>
 
-## Advanced Integration Options
+## Related
 
-Rapida.ai offers flexible integration options to meet your web application's specific needs:
-
-<CardGroup cols={2}>
-  <Card title="API Integration" icon="link-2">
-    Seamlessly integrate Rapida's voice AI capabilities into your existing web
-    applications via our robust API.
-  </Card>
-  <Card title="Custom Wake Words" icon="ear">
-    Create unique wake words or phrases to activate your voice agent, enhancing
-    brand recognition.
-  </Card>
-  <Card title="Multi-language Support" icon="globe-2">
-    Deploy voice agents that can understand and respond in multiple languages
-    for global applications.
-  </Card>
-  <Card title="Voice Analytics Dashboard" icon="bar-chart-2">
-    Access comprehensive analytics on voice interactions, user engagement, and
-    agent performance.
-  </Card>
-</CardGroup>
-
-These advanced options ensure that you can integrate Rapida web voice agents in a way that best suits your application's requirements, whether you need multilingual support, custom activation phrases, or detailed interaction analytics.
+- [Create an Assistant](/assistants/create-assistant) — Set up your assistant before deploying
+- [Web Widget](/voice-deployment-options/web-widget) — Pre-built embeddable widget (no custom UI needed)
+- [API Reference](/api-reference/installation) — SDK installation and authentication
+- [Conversation Logs](/activity/conversation-logs) — Monitor sessions and transcripts
