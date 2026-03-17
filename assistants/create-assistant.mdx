@@ -162,7 +162,7 @@ See the [AgentKit guide](/assistants/agentkit) for implementation examples with 
 
 The voice pipeline controls how audio is captured, cleaned, converted to text, and how text responses are spoken back. These settings directly affect latency, accuracy, and caller experience.
 
-#### Voice input — STT, VAD, and noise processing
+#### Voice input — STT, VAD, EOS, and noise processing
 
 <Tip>
 For telephone deployments (8kHz audio), choose STT providers with dedicated telephony models: Deepgram `nova-3`, Azure Speech (telephony mode), or AssemblyAI. For high-fidelity web audio (16kHz+), all providers perform well.
@@ -174,13 +174,15 @@ For telephone deployments (8kHz audio), choose STT providers with dedicated tele
 |---------------|---------|-------|-----------------|
 | STT language | `multi` | Provider-dependent | Primary transcription language; `multi` enables auto-detection |
 | STT model | `nova-3` | Provider-dependent | Accuracy vs. latency tradeoff per provider |
-| VAD threshold | `0.6` | 0.5–1.0 | Speech detection sensitivity. Lower = more sensitive (may catch noise). Higher = stricter (may miss quiet speech) |
-| EOS timeout | `700 ms` | 500–4000 ms | Silence duration before the assistant treats a pause as end-of-turn. Increase for conversational pauses; decrease for snappy IVR-style responses |
-| EOS backoff | `2` | 0–5 | Re-prompts ("Are you there?") before ending session on silence |
 | Noise cancellation | `rn_noise` | — | RNNoise background noise suppression applied before VAD and STT |
+| EOS backoff | `2` | 0–5 | Re-prompts ("Are you there?") before ending session on silence |
+
+**Voice Activity Detection (VAD)** — determines when the caller is speaking. Three providers available: [Silero VAD](/assistants/voice-activity-detection#silero-vad) (default, best general-purpose), [TEN VAD](/assistants/voice-activity-detection#ten-vad) (lowest latency), and [FireRed VAD](/assistants/voice-activity-detection#firered-vad) (best noise robustness). See [Voice Activity Detection](/assistants/voice-activity-detection) for provider details, parameters, and tuning guidance.
+
+**End of Speech (EOS)** — determines when the caller has finished their turn. Three providers available: [Silence-Based](/assistants/end-of-speech#silence-based-eos) (default, simple fixed timeout), [Pipecat Smart Turn](/assistants/end-of-speech#pipecat-smart-turn-eos) (audio model, catches prosodic cues), and [LiveKit Turn Detector](/assistants/end-of-speech#livekit-turn-detector-eos) (language model with conversation history). See [End of Speech Detection](/assistants/end-of-speech) for provider details, parameters, and tuning guidance.
 
 <Note>
-EOS timeout is the most impactful latency lever after model selection. At 700ms, the assistant waits 0.7 seconds of silence before responding. Reducing to 500ms cuts perceived latency noticeably but risks cutting off slow speakers mid-sentence.
+EOS is the most impactful latency lever after model selection. With Silence-Based EOS at 700ms, the assistant waits 0.7 seconds of silence before responding. Model-based providers (Pipecat, LiveKit) can reduce this wait by detecting turn completion before the full silence timeout expires — the assistant responds faster while cutting off callers less often.
 </Note>
 
 #### Voice output — TTS and pronunciation

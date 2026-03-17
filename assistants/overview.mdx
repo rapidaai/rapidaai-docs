@@ -19,7 +19,7 @@ Assistants are **version-controlled**. Every prompt or model change creates a ne
     The system prompt defines persona, scope, and behaviour. The LLM provider and model (OpenAI, Anthropic, Gemini, Mistral, Bedrock, or a custom AgentKit backend) power the reasoning. Model parameters — temperature, max tokens, stop sequences — are tunable per version.
   </Card>
   <Card title="Voice Pipeline" icon="mic">
-    Converts caller audio to text and assistant text back to speech. Configurable STT provider, VAD sensitivity, noise cancellation, end-of-speech detection, TTS provider, voice model, and pronunciation rules — independently tunable per deployment channel.
+    Converts caller audio to text and assistant text back to speech. Configurable STT provider, [VAD provider](/assistants/voice-activity-detection) (Silero, TEN, or FireRed), noise cancellation, [end-of-speech detection](/assistants/end-of-speech) (Silence-Based, Pipecat Smart Turn, or LiveKit Turn Detector), TTS provider, voice model, and pronunciation rules — independently tunable per deployment channel.
   </Card>
   <Card title="Knowledge Bases" icon="book-open">
     One or more knowledge bases attached for retrieval-augmented generation. At call time, the assistant retrieves the most relevant document chunks and injects them as context before calling the LLM.
@@ -46,10 +46,10 @@ Every conversation follows the same pipeline from audio-in to audio-out. Underst
 
 ```mermaid
 flowchart TD
-    A(["🎙 Caller speaks"]) --> B["Voice Activity Detection\nSilero VAD — detects speech onset, gates the STT stream"]
+    A(["🎙 Caller speaks"]) --> B["Voice Activity Detection\nSilero VAD · TEN VAD · FireRed VAD"]
     B --> C["Noise Cancellation\nRNNoise — removes background audio before transcription"]
     C --> D["Speech-to-Text\nDeepgram · Azure · AssemblyAI · OpenAI Whisper · Google"]
-    D --> E["End-of-Speech Detection\nSilence timeout fires — default 700 ms — signals turn end"]
+    D --> E["End-of-Speech Detection\nSilence-Based · Pipecat Smart Turn · LiveKit Turn Detector"]
     E --> F["LLM Inference\nOpenAI · Anthropic · Gemini · Mistral · Bedrock · AgentKit"]
     F --> G{Tool call\nrequested?}
     G -->|Yes| H["Tool Execution\nAPI · Knowledge · Endpoint · Hold"]
@@ -133,6 +133,12 @@ Use separate assistants for distinct products or personas rather than a single a
 <CardGroup cols={2}>
   <Card title="Create an Assistant" icon="plus" href="/assistants/create-assistant">
     Step-by-step guide through creation, prompt setup, model configuration, voice pipeline, and tools.
+  </Card>
+  <Card title="Voice Activity Detection" icon="shield" href="/assistants/voice-activity-detection">
+    Configure VAD providers (Silero, TEN, FireRed) — speech detection sensitivity, barge-in timing, and noise handling.
+  </Card>
+  <Card title="End of Speech Detection" icon="clock" href="/assistants/end-of-speech">
+    Configure EOS providers (Silence-Based, Pipecat Smart Turn, LiveKit) — turn detection, latency tuning, and parameter guidance.
   </Card>
   <Card title="Version Control" icon="git-branch" href="/assistants/create-new-version">
     Create, compare, and release new versions. Roll back instantly if something goes wrong.

@@ -38,6 +38,8 @@
                         "pages": [
                             "assistants/overview",
                             "assistants/create-assistant",
+                            "assistants/voice-activity-detection",
+                            "assistants/end-of-speech",
                             "assistants/create-new-version",
                             "assistants/agentkit",
                             {
