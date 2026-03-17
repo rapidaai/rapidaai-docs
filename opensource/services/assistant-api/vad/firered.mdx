@@ -1,0 +1,84 @@
+---
+title: "FireRed VAD"
+description: "Configure FireRed Voice Activity Detection in assistant-api."
+sidebarTitle: "FireRed VAD"
+---
+
+[FireRed VAD](https://github.com/FireRedTeam/FireRedASR) is a DFSMN (Deep Feed-forward Sequential Memory Network) streaming model from the FireRed team at Ant Group. It uses Kaldi-compatible fbank feature extraction, CMVN normalization, and a 4-state postprocessor for precise speech boundary detection.
+
+**Provider identifier:** `firered_vad`
+
+---
+
+## Source Location
+
+```
+api/assistant-api/internal/vad/internal/firered_vad/
+├── firered_vad.go       # Main implementation
+├── detector.go          # ONNX Runtime inference
+├── fbank.go             # Kaldi-compatible fbank feature extraction
+├── cmvn.go              # Cepstral mean and variance normalization
+├── postprocessor.go     # 4-state speech boundary detector
+├── models/
+│   └── fireredvad_stream_vad_with_cache.onnx   # DFSMN model (~5 MB)
+```
+
+---
+
+## How It Works
+
+1. Incoming LINEAR16 bytes are converted to `int16` samples and buffered
+2. Complete frames are extracted: 400 samples (25 ms) with 160-sample shift (10 ms)
+3. For each frame: fbank features are extracted, CMVN normalization is applied, ONNX inference produces a raw speech probability
+4. The postprocessor smooths probabilities (moving average, window size 5) and runs a 4-state machine:
+
+```
+Silence → Possible Speech → Speech → Possible Silence → Silence
+```
+
+5. Speech onset is confirmed only after `MinSpeechFrame` consecutive frames above threshold — this filters out short noise bursts
+6. Same packet emission: `InterruptionPacket` on confirmed onset, `VadSpeechActivityPacket` heartbeats during confirmed speech
+
+---
+
+## Parameters
+
+| Option Key | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `microphone.vad.threshold` | `0.5` | 0.3–1.0 | Speech probability threshold (applied after smoothing) |
+| `microphone.vad.min_silence_frame` | `20` | 1–30 | Silence frames before segment end (each frame = 10 ms) |
+| `microphone.vad.min_speech_frame` | `8` | 1–20 | Speech frames before confirming onset (each frame = 10 ms) |
+
+### Internal Postprocessor Defaults
+
+These are not configurable via assistant options — they are hardcoded in `DefaultPostprocessorConfig()`:
+
+| Setting | Value | Description |
+|---------|-------|-------------|
+| SmoothWindowSize | 5 | Moving average window for probability smoothing |
+| SpeechThreshold | 0.4 | Smoothed probability threshold (separate from the configurable threshold) |
+| PadStartFrame | 5 | Frames padded at speech start to capture onset audio (50 ms) |
+| MaxSpeechFrame | 2000 | Max consecutive speech frames before forced reset (20 seconds) |
+
+---
+
+## Model Path
+
+| Source | Resolution |
+|--------|-----------|
+| Environment variable | `FIRERED_VAD_MODEL_PATH` — absolute path to the `.onnx` file |
+| Default (Docker) | `./models/firered_vad/fireredvad_stream_vad_with_cache.onnx` |
+| Default (source) | `api/assistant-api/internal/vad/internal/firered_vad/models/fireredvad_stream_vad_with_cache.onnx` |
+
+---
+
+## Local Source Setup
+
+FireRed VAD requires ONNX Runtime (same as Silero VAD). The model file is checked into the repository.
+
+```bash
+# Ensure ONNX Runtime is available
+export CGO_CFLAGS="-I/opt/onnxruntime/include"
+export CGO_LDFLAGS="-L/opt/onnxruntime/lib -lonnxruntime"
+export LD_LIBRARY_PATH="/opt/onnxruntime/lib:$LD_LIBRARY_PATH"
+```

@@ -253,6 +253,24 @@
                                 ]
                             },
                             {
+                                "group": "Voice Activity Detection",
+                                "pages": [
+                                    "opensource/services/assistant-api/vad/overview",
+                                    "opensource/services/assistant-api/vad/silero",
+                                    "opensource/services/assistant-api/vad/ten",
+                                    "opensource/services/assistant-api/vad/firered"
+                                ]
+                            },
+                            {
+                                "group": "End of Speech",
+                                "pages": [
+                                    "opensource/services/assistant-api/eos/overview",
+                                    "opensource/services/assistant-api/eos/silence-based",
+                                    "opensource/services/assistant-api/eos/pipecat",
+                                    "opensource/services/assistant-api/eos/livekit"
+                                ]
+                            },
+                            {
                                 "group": "Speech-to-Text",
                                 "pages": [
                                     "opensource/services/assistant-api/stt/overview",

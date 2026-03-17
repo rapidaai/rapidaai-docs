@@ -1,0 +1,66 @@
+---
+title: "TEN VAD"
+description: "Configure TEN Framework Voice Activity Detection in assistant-api."
+sidebarTitle: "TEN VAD"
+---
+
+[TEN VAD](https://github.com/TEN-framework/ten-vad) is a native C library from the TEN Framework that provides frame-level speech probability scores with a fixed 256-sample hop size (16 ms at 16 kHz).
+
+**Provider identifier:** `ten_vad`
+
+---
+
+## Source Location
+
+```
+api/assistant-api/internal/vad/internal/ten_vad/
+├── ten_vad.go           # Main implementation
+├── detector.go          # CGO wrapper for libten_vad
+├── ten_vad.h            # C header
+├── lib/
+│   └── Linux/x64/libten_vad.so   # Shared library
+```
+
+---
+
+## How It Works
+
+1. Incoming LINEAR16 bytes are converted to `int16` samples
+2. Samples are processed in fixed 256-sample frames (16 ms each)
+3. Each frame produces a speech probability score
+4. Speech onset/offset is tracked with the same hysteresis logic as Silero — speech ends only when probability drops below `threshold - 0.15`
+5. Same packet emission pattern: `InterruptionPacket` on onset, `VadSpeechActivityPacket` heartbeats during speech
+
+---
+
+## Parameters
+
+| Option Key | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `microphone.vad.threshold` | `0.5` | 0.3–1.0 | Speech probability threshold |
+| `microphone.vad.min_silence_frame` | `20` | 1–30 | Silence frames before segment end (× 10 ms) |
+| `microphone.vad.min_speech_frame` | `8` | 1–20 | Speech frames before segment start (× 10 ms) |
+
+---
+
+## Shared Library
+
+TEN VAD does not use an ONNX model. It requires the `libten_vad` shared library at both build and runtime.
+
+**Docker:** The Dockerfile copies the library from the source tree:
+
+```dockerfile
+COPY api/assistant-api/internal/vad/internal/ten_vad/lib/Linux/x64/libten_vad.so /opt/ten_vad/lib/
+```
+
+**From source (Linux):**
+
+```bash
+export CGO_CFLAGS="-I$(pwd)/api/assistant-api/internal/vad/internal/ten_vad"
+export CGO_LDFLAGS="-L$(pwd)/api/assistant-api/internal/vad/internal/ten_vad/lib/Linux/x64 -lten_vad"
+export LD_LIBRARY_PATH="$(pwd)/api/assistant-api/internal/vad/internal/ten_vad/lib/Linux/x64:$LD_LIBRARY_PATH"
+```
+
+<Warning>
+The pre-compiled shared library is for **Linux x86_64** only. TEN VAD is not available for macOS local development. Use Silero VAD or FireRed VAD instead when developing on macOS.
+</Warning>

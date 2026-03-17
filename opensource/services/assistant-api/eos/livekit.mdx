@@ -1,0 +1,137 @@
+---
+title: "LiveKit Turn Detector EOS"
+description: "Configure LiveKit Turn Detector end-of-speech detection in assistant-api."
+sidebarTitle: "LiveKit Turn Detector"
+---
+
+The [LiveKit Turn Detector](https://github.com/livekit/turn-detector) uses a language model to predict turn completion from transcribed text combined with conversation history. It understands that incomplete sentences, addresses, and phone numbers are not finished turns — even when the caller pauses.
+
+**Provider identifier:** `livekit_eos`
+
+---
+
+## Source Location
+
+```
+api/assistant-api/internal/end_of_speech/internal/livekit/
+├── livekit_end_of_speech.go   # Main implementation
+├── turn_detector.go           # ONNX inference + tokenizer
+├── chat_template.go           # Conversation history formatting
+├── models/
+│   ├── model_q8.onnx                  # English model (~66 MB, downloaded at build)
+│   ├── model_q8_multilingual.onnx     # Multilingual model (~378 MB, downloaded at build)
+│   └── tokenizer.json                 # Shared tokenizer
+```
+
+---
+
+## How It Works
+
+1. Final `SpeechToTextPacket` transcripts are accumulated into the current user turn
+2. The model builds a chat template from conversation history (user + assistant turns) + current text
+3. The tokenizer encodes the text and the ONNX model predicts an end-of-utterance probability
+4. If `probability >= threshold` → timer set to `quick_timeout`
+5. If `probability < threshold` → timer set to `silence_timeout`
+6. `LLMResponseDonePacket` events record assistant turns in conversation history for context-aware predictions
+7. Interim transcripts reset the timer to `fallback_timeout`
+
+```
+History: [user: "I need to book a flight", assistant: "Sure, what's your destination?"]
+Current: "I'd like to go to"
+Model: P(complete) = 0.005 → still speaking → timer = 1500ms
+
+Current: "I'd like to go to London please"
+Model: P(complete) = 0.042 → done → timer = 250ms (quick)
+```
+
+---
+
+## Parameters
+
+| Option Key | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `microphone.eos.model` | `en` | `en`, `multilingual` | Model variant |
+| `microphone.eos.threshold` | `0.0289` | 0.001–0.1 | Turn completion probability threshold |
+| `microphone.eos.quick_timeout` | `250 ms` | 50–500 ms | Silence buffer when model says "done" |
+| `microphone.eos.silence_timeout` | `3000 ms` | 500–5000 ms | Max silence when model says "still speaking" |
+| `microphone.eos.timeout` | `500 ms` | 300–2000 ms | Fallback for interim transcripts and inference failures |
+| `microphone.eos.max_history_turns` | `6` | 1–20 | Conversation history turns used for context |
+
+<Warning>
+The threshold range (0.001–0.1) is very different from Pipecat's (0.1–0.9). These are different models with different probability distributions. Do not copy threshold values between providers.
+</Warning>
+
+### Model Variants
+
+| Variant | Identifier | Size | Languages |
+|---------|-----------|------|-----------|
+| English | `en` | 66 MB | English (optimized) |
+| Multilingual | `multilingual` | 378 MB | zh, de, nl, en, pt, es, fr, it, ja, ko, ru, tr, id, hi |
+
+---
+
+## Model Setup
+
+### Docker
+
+All models are downloaded from Hugging Face and patched during the Docker build. No manual action required.
+
+```env
+# Set automatically in the Dockerfile
+LIVEKIT_TURN_MODEL_PATH=./models/livekit_turn/model_q8.onnx
+LIVEKIT_TURN_MULTI_MODEL_PATH=./models/livekit_turn/model_q8_multilingual.onnx
+LIVEKIT_TURN_TOKENIZER_PATH=./models/livekit_turn/tokenizer.json
+```
+
+### From Source
+
+Download the models manually:
+
+```bash
+mkdir -p api/assistant-api/internal/end_of_speech/internal/livekit/models
+
+# English model (required)
+curl -fsSL -o api/assistant-api/internal/end_of_speech/internal/livekit/models/model_q8.onnx \
+    "https://huggingface.co/livekit/turn-detector/resolve/v1.2.2-en/onnx/model_q8.onnx"
+
+# Tokenizer (required)
+curl -fsSL -o api/assistant-api/internal/end_of_speech/internal/livekit/models/tokenizer.json \
+    "https://huggingface.co/livekit/turn-detector/resolve/v1.2.2-en/tokenizer.json"
+
+# Multilingual model (optional — only if using multilingual mode)
+curl -fsSL -o api/assistant-api/internal/end_of_speech/internal/livekit/models/model_q8_multilingual.onnx \
+    "https://huggingface.co/livekit/turn-detector/resolve/v0.4.1-intl/onnx/model_q8.onnx"
+```
+
+If you encounter ONNX opset errors, patch the models:
+
+```bash
+pip install onnx
+python3 -c "
+import onnx
+for path in [
+    'api/assistant-api/internal/end_of_speech/internal/livekit/models/model_q8.onnx',
+    'api/assistant-api/internal/end_of_speech/internal/livekit/models/model_q8_multilingual.onnx',
+]:
+    try:
+        m = onnx.load(path)
+        used = {n.domain for n in m.graph.node}
+        keep = [o for o in m.opset_import if o.domain == '' or o.domain in used]
+        del m.opset_import[:]
+        m.opset_import.extend(keep)
+        onnx.save(m, path)
+        print(f'Patched {path}')
+    except FileNotFoundError:
+        pass
+"
+```
+
+To override paths:
+
+```bash
+export LIVEKIT_TURN_MODEL_PATH=/path/to/model_q8.onnx
+export LIVEKIT_TURN_MULTI_MODEL_PATH=/path/to/model_q8_multilingual.onnx
+export LIVEKIT_TURN_TOKENIZER_PATH=/path/to/tokenizer.json
+```
+
+Requires ONNX Runtime (`libonnxruntime`) — same dependency as Silero/FireRed VAD.

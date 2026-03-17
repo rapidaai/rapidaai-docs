@@ -1,0 +1,84 @@
+---
+title: "Silero VAD"
+description: "Configure Silero Voice Activity Detection in assistant-api."
+sidebarTitle: "Silero VAD"
+---
+
+[Silero VAD](https://github.com/snakers4/silero-vad) is a pre-trained ONNX model (~2 MB) for real-time voice activity detection. It is the default VAD provider in Rapida.
+
+**Provider identifier:** `silero_vad`
+
+---
+
+## Source Location
+
+```
+api/assistant-api/internal/vad/internal/silero_vad/
+├── silero_vad.go        # Main implementation
+├── detector.go          # ONNX Runtime inference wrapper
+├── models/
+│   └── silero_vad_20251001.onnx   # Pre-trained model (~2 MB)
+```
+
+---
+
+## How It Works
+
+1. Incoming LINEAR16 bytes are converted to `float32` samples in the range `[-1.0, 1.0]`
+2. Samples are fed to the Silero ONNX detector which produces speech segments with start/end timestamps
+3. On speech onset, an `InterruptionPacket` is emitted (triggers barge-in)
+4. While speech is active, `VadSpeechActivityPacket` heartbeats keep the EOS timer from firing
+
+```go
+// Simplified flow
+samples := linear16ToFloat32(pkt.Audio)
+segments, isSpeaking, _ := detector.Detect(samples)
+
+if hasSpeechStart(segments) {
+    callback(InterruptionPacket{...})   // barge-in
+}
+if isSpeaking {
+    callback(VadSpeechActivityPacket{}) // EOS timer reset
+}
+```
+
+---
+
+## Parameters
+
+| Option Key | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `microphone.vad.threshold` | `0.5` | 0.3–1.0 | Speech probability threshold |
+| `microphone.vad.min_silence_frame` | `20` | 1–30 | Silence frames before segment end (× 10 ms) |
+| `microphone.vad.min_speech_frame` | `8` | 1–20 | Speech frames before segment start (× 10 ms) |
+
+Internally, frame counts are converted to milliseconds: `min_silence_frame × 10 = MinSilenceDurationMs`, `min_speech_frame × 10 = SpeechPadMs`.
+
+---
+
+## Model Path
+
+| Source | Resolution |
+|--------|-----------|
+| Environment variable | `SILERO_MODEL_PATH` — absolute path to the `.onnx` file |
+| Default (Docker) | `./models/silero_vad/silero_vad_20251001.onnx` |
+| Default (source) | `api/assistant-api/internal/vad/internal/silero_vad/models/silero_vad_20251001.onnx` |
+
+---
+
+## Local Source Setup
+
+Silero VAD requires ONNX Runtime. The Docker base image includes it. For local builds:
+
+```bash
+# macOS (Homebrew)
+brew install onnxruntime
+
+# Linux — download from https://github.com/microsoft/onnxruntime/releases
+# Extract and set:
+export CGO_CFLAGS="-I/opt/onnxruntime/include"
+export CGO_LDFLAGS="-L/opt/onnxruntime/lib -lonnxruntime"
+export LD_LIBRARY_PATH="/opt/onnxruntime/lib:$LD_LIBRARY_PATH"
+```
+
+The model file is checked into the repository — no download needed.

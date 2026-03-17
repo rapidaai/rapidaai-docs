@@ -1,0 +1,54 @@
+---
+title: "Silence-Based EOS"
+description: "Configure silence-based end-of-speech detection in assistant-api."
+sidebarTitle: "Silence-Based"
+---
+
+Silence-Based EOS triggers end-of-speech after a fixed duration of silence following the last speech activity or transcript. No ML model, no inference overhead.
+
+**Provider identifier:** `silence_based_eos`
+
+---
+
+## Source Location
+
+```
+api/assistant-api/internal/end_of_speech/internal/silence_based/
+└── silence_based_end_of_speech.go
+```
+
+---
+
+## How It Works
+
+1. A single worker goroutine manages a timer
+2. When a final `SpeechToTextPacket` arrives, text is accumulated and the timer is set to `timeout`
+3. When a `VadSpeechActivityPacket` or interim `SpeechToTextPacket` arrives, the timer resets
+4. When the timer expires, `EndOfSpeechPacket` fires with the accumulated text
+5. State resets for the next turn
+
+```
+STT final → accumulate text → start timer (1000ms)
+VAD activity → reset timer
+STT interim → reset timer
+...silence...
+Timer fires → EndOfSpeechPacket → LLM starts
+```
+
+---
+
+## Parameters
+
+| Option Key | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `microphone.eos.timeout` | `1000 ms` | 500–4000 ms | Silence duration before triggering end-of-speech |
+
+The UI sets a default of **700 ms** when switching to this provider. The backend default (when no value is configured) is **1000 ms**.
+
+---
+
+## Setup
+
+No model files or downloads required. Works out of the box with both Docker and source builds.
+
+To select this provider, set `microphone.eos.provider` to `silence_based_eos` in the assistant's audio options (or leave it unset — it is the default).

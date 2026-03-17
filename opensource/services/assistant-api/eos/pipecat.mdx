@@ -1,0 +1,100 @@
+---
+title: "Pipecat Smart Turn EOS"
+description: "Configure Pipecat Smart Turn end-of-speech detection in assistant-api."
+sidebarTitle: "Pipecat Smart Turn"
+---
+
+[Pipecat Smart Turn](https://github.com/pipecat-ai/smart-turn) uses a Whisper-based audio model (~8 MB) to predict turn completion directly from speech audio. It detects prosodic cues — falling intonation, speech rate changes — that indicate a caller has finished speaking.
+
+**Provider identifier:** `pipecat_smart_turn_eos`
+
+---
+
+## Source Location
+
+```
+api/assistant-api/internal/end_of_speech/internal/pipecat/
+├── pipecat_end_of_speech.go   # Main implementation
+├── turn_detector.go           # ONNX inference wrapper
+├── models/
+│   └── smart-turn-v3.2-cpu.onnx   # Downloaded at Docker build (~8 MB)
+```
+
+---
+
+## How It Works
+
+1. `UserAudioPacket` audio is accumulated in a rolling float32 buffer (max ~5 seconds at 16 kHz)
+2. When a final `SpeechToTextPacket` arrives, the model runs inference on the buffered audio
+3. The model outputs a turn-completion probability (0.0 – 1.0)
+4. If `probability >= threshold` → set timer to `quick_timeout` (caller is likely done)
+5. If `probability < threshold` → set timer to `silence_timeout` (caller is likely still speaking)
+6. Interim transcripts reset the timer to `fallback_timeout`
+7. When the timer fires, `EndOfSpeechPacket` is emitted
+
+```
+Audio → buffer (rolling ~5s)
+STT final → model inference → P(complete) = 0.73
+  0.73 >= 0.5 (threshold) → timer = 200ms (quick)
+  ...silence...
+  Timer fires → EndOfSpeechPacket
+```
+
+---
+
+## Parameters
+
+| Option Key | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `microphone.eos.threshold` | `0.5` | 0.1–0.9 | Turn completion probability threshold |
+| `microphone.eos.quick_timeout` | `250 ms` | 50–1000 ms | Silence buffer when model says "done" |
+| `microphone.eos.silence_timeout` | `2000 ms` | 500–5000 ms | Silence duration when model says "still speaking" |
+| `microphone.eos.timeout` | `500 ms` | 500–4000 ms | Fallback timeout for interim transcripts and inference failures |
+
+---
+
+## Model Setup
+
+### Docker
+
+The model is downloaded from Hugging Face during the Docker build and patched for ONNX Runtime compatibility. No manual action required.
+
+```env
+# Set automatically in the Dockerfile
+PIPECAT_TURN_MODEL_PATH=./models/pipecat_turn/smart-turn-v3.2-cpu.onnx
+```
+
+### From Source
+
+Download the model manually:
+
+```bash
+mkdir -p api/assistant-api/internal/end_of_speech/internal/pipecat/models
+
+curl -fsSL -o api/assistant-api/internal/end_of_speech/internal/pipecat/models/smart-turn-v3.2-cpu.onnx \
+    "https://huggingface.co/pipecat-ai/smart-turn-v3/resolve/main/smart-turn-v3.2-cpu.onnx"
+```
+
+If you encounter ONNX opset errors, patch the model:
+
+```bash
+pip install onnx
+python3 -c "
+import onnx
+m = onnx.load('api/assistant-api/internal/end_of_speech/internal/pipecat/models/smart-turn-v3.2-cpu.onnx')
+m.ir_version = 9
+used = {n.domain for n in m.graph.node}
+keep = [o for o in m.opset_import if o.domain == '' or o.domain in used]
+del m.opset_import[:]
+m.opset_import.extend(keep)
+onnx.save(m, 'api/assistant-api/internal/end_of_speech/internal/pipecat/models/smart-turn-v3.2-cpu.onnx')
+"
+```
+
+To override the model path:
+
+```bash
+export PIPECAT_TURN_MODEL_PATH=/path/to/smart-turn-v3.2-cpu.onnx
+```
+
+Requires ONNX Runtime (`libonnxruntime`) — same dependency as Silero/FireRed VAD.

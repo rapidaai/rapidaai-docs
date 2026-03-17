@@ -9,7 +9,9 @@ sidebarTitle: "Overview"
 The `assistant-api` is the runtime core of the Rapida platform. Every active voice call passes through this service. It owns:
 
 - Real-time audio streaming via WebSocket (browser and telephony)
+- Voice Activity Detection (Silero, TEN, FireRed) — speech detection and barge-in
 - Speech-to-text transcription (streaming, provider-agnostic)
+- End of Speech detection (Silence-Based, Pipecat Smart Turn, LiveKit Turn Detector) — turn boundary detection
 - LLM inference via `integration-api` (streaming token delivery)
 - Text-to-speech synthesis (streaming, provider-agnostic)
 - Telephony signalling for Twilio, Vonage, Exotel, Asterisk, and SIP
@@ -43,7 +45,9 @@ sequenceDiagram
     participant DA as document-api :9010
 
     Client->>AS: Audio stream (PCM 16kHz / μ-law)
+    AS->>AS: VAD → speech detection + barge-in
     AS->>AS: STT transformer → text transcript
+    AS->>AS: EOS → turn boundary detection
     AS->>DA: Semantic search (if knowledge base attached)
     DA-->>AS: Top-k relevant chunks
     AS->>IA: StreamChatCompletion(messages + context)
@@ -220,6 +224,12 @@ curl http://localhost:9007/readiness/
 <CardGroup cols={2}>
   <Card title="Configuration" icon="sliders" href="/opensource/services/assistant-api/configuration">
     All environment variables with defaults and descriptions.
+  </Card>
+  <Card title="Voice Activity Detection" icon="audio-waveform" href="/opensource/services/assistant-api/vad/overview">
+    Silero, TEN, and FireRed VAD — setup, parameters, and model files.
+  </Card>
+  <Card title="End of Speech" icon="timer" href="/opensource/services/assistant-api/eos/overview">
+    Silence-Based, Pipecat Smart Turn, and LiveKit Turn Detector — setup and model downloads.
   </Card>
   <Card title="STT / TTS Providers" icon="mic" href="/opensource/services/assistant-api/stt-tts">
     Supported providers, the transformer interface, and how to add a new provider.

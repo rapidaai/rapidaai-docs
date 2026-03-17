@@ -1,0 +1,138 @@
+---
+title: "End of Speech Detection — Overview"
+description: "EOS interface, factory function, providers, and model setup in assistant-api."
+sidebarTitle: "Overview"
+---
+
+End of Speech (EOS) detection determines when a caller has finished their turn and the assistant should begin responding. It runs downstream of VAD and STT — it receives speech activity signals, interim transcripts, and final transcripts, then decides when to fire the `EndOfSpeechPacket` that triggers LLM inference.
+
+---
+
+## EOS Interface
+
+Every provider implements the `EndOfSpeech` interface:
+
+```go
+// api/assistant-api/internal/type/end_of_speech.go
+type EndOfSpeech interface {
+    Name() string
+    Analyze(ctx context.Context, pkt Packet) error
+    Close() error
+}
+```
+
+The `Analyze` method receives multiple packet types:
+
+| Packet Type | What it signals |
+|-------------|----------------|
+| `SpeechToTextPacket` (interim) | Caller is still speaking — reset the silence timer |
+| `SpeechToTextPacket` (final) | A complete transcript segment — accumulate text, run model inference (if applicable) |
+| `VadSpeechActivityPacket` | VAD detected active speech — reset the silence timer |
+| `InterruptionPacket` | Speech onset detected — reset the silence timer |
+| `UserTextPacket` | Text input from web/chat — fire immediately (no silence detection needed) |
+| `LLMResponseDonePacket` | Assistant finished responding — recorded in conversation history (LiveKit only) |
+
+---
+
+## Factory Function
+
+```go
+// api/assistant-api/internal/end_of_speech/end_of_speech.go
+func GetEndOfSpeech(ctx, logger, onCallback, opts) (EndOfSpeech, error)
+```
+
+The factory reads `microphone.eos.provider` from the assistant's audio options. If no provider is set, **Silence-Based EOS** is used as the default.
+
+---
+
+## Provider Identifiers
+
+| Identifier | Provider | Model | Download Required |
+|-----------|----------|-------|-------------------|
+| `silence_based_eos` | Silence-Based | None | No |
+| `pipecat_smart_turn_eos` | Pipecat Smart Turn | `smart-turn-v3.2-cpu.onnx` (~8 MB) | Yes (at Docker build) |
+| `livekit_eos` | LiveKit Turn Detector | `model_q8.onnx` (66 MB) or `model_q8_multilingual.onnx` (378 MB) + `tokenizer.json` | Yes (at Docker build) |
+
+---
+
+## Model Files
+
+Silence-Based EOS needs no model. Pipecat and LiveKit models are **downloaded from Hugging Face during the Docker build** and bundled into the runtime image.
+
+### Docker
+
+The Dockerfile handles all model downloads automatically:
+
+```env
+# Set automatically in the Dockerfile — no manual config needed
+LIVEKIT_TURN_MODEL_PATH=./models/livekit_turn/model_q8.onnx
+LIVEKIT_TURN_MULTI_MODEL_PATH=./models/livekit_turn/model_q8_multilingual.onnx
+LIVEKIT_TURN_TOKENIZER_PATH=./models/livekit_turn/tokenizer.json
+PIPECAT_TURN_MODEL_PATH=./models/pipecat_turn/smart-turn-v3.2-cpu.onnx
+```
+
+### From Source
+
+When running from source, models must be downloaded manually into the correct directories. The providers resolve paths relative to their Go package directory using `runtime.Caller`.
+
+**Pipecat Smart Turn:**
+
+```bash
+mkdir -p api/assistant-api/internal/end_of_speech/internal/pipecat/models
+
+curl -fsSL -o api/assistant-api/internal/end_of_speech/internal/pipecat/models/smart-turn-v3.2-cpu.onnx \
+    "https://huggingface.co/pipecat-ai/smart-turn-v3/resolve/main/smart-turn-v3.2-cpu.onnx"
+```
+
+**LiveKit Turn Detector:**
+
+```bash
+mkdir -p api/assistant-api/internal/end_of_speech/internal/livekit/models
+
+# English model (66 MB)
+curl -fsSL -o api/assistant-api/internal/end_of_speech/internal/livekit/models/model_q8.onnx \
+    "https://huggingface.co/livekit/turn-detector/resolve/v1.2.2-en/onnx/model_q8.onnx"
+
+# Multilingual model (378 MB) — only needed if using multilingual mode
+curl -fsSL -o api/assistant-api/internal/end_of_speech/internal/livekit/models/model_q8_multilingual.onnx \
+    "https://huggingface.co/livekit/turn-detector/resolve/v0.4.1-intl/onnx/model_q8.onnx"
+
+# Tokenizer (shared by both models)
+curl -fsSL -o api/assistant-api/internal/end_of_speech/internal/livekit/models/tokenizer.json \
+    "https://huggingface.co/livekit/turn-detector/resolve/v1.2.2-en/tokenizer.json"
+```
+
+<Warning>
+The LiveKit and Pipecat ONNX models may need opset patching for ONNX Runtime compatibility. The Dockerfile handles this automatically with a Python `onnx` script. If you encounter opset errors during local development, install the `onnx` Python package and run the patching commands from the Dockerfile.
+</Warning>
+
+To override model paths, set environment variables:
+
+```bash
+export PIPECAT_TURN_MODEL_PATH=/path/to/smart-turn-v3.2-cpu.onnx
+export LIVEKIT_TURN_MODEL_PATH=/path/to/model_q8.onnx
+export LIVEKIT_TURN_MULTI_MODEL_PATH=/path/to/model_q8_multilingual.onnx
+export LIVEKIT_TURN_TOKENIZER_PATH=/path/to/tokenizer.json
+```
+
+---
+
+## CGO Dependencies
+
+| Provider | CGO dependency |
+|----------|---------------|
+| Silence-Based | None |
+| Pipecat Smart Turn | ONNX Runtime (`libonnxruntime`) |
+| LiveKit Turn Detector | ONNX Runtime (`libonnxruntime`) |
+
+---
+
+## Providers
+
+| Provider | Approach | Best for |
+|----------|----------|----------|
+| **[Silence-Based](/opensource/services/assistant-api/eos/silence-based)** | Fixed silence timer | Simple, predictable — the default |
+| **[Pipecat Smart Turn](/opensource/services/assistant-api/eos/pipecat)** | Audio model (prosodic cues) | Callers who pause mid-sentence |
+| **[LiveKit Turn Detector](/opensource/services/assistant-api/eos/livekit)** | Language model (text + conversation history) | Structured data collection (addresses, numbers) |
+
+See the [EOS concepts guide](/assistants/end-of-speech) for detailed parameter tuning guidance and use-case recommendations.

@@ -1,0 +1,128 @@
+---
+title: "Voice Activity Detection — Overview"
+description: "VAD interface, factory function, providers, and model setup in assistant-api."
+sidebarTitle: "Overview"
+---
+
+Voice Activity Detection (VAD) runs on every audio frame before STT. It determines whether the caller is speaking, emits interruption signals for barge-in, and sends speech activity heartbeats that keep the End of Speech timer from firing during active speech.
+
+All three VAD providers run locally using ONNX or native C libraries. No external API calls, no credentials, no added latency.
+
+---
+
+## VAD Interface
+
+Every provider implements the `Vad` interface:
+
+```go
+// api/assistant-api/internal/type/vad.go
+type Vad interface {
+    Name() string
+    Process(ctx context.Context, pkt UserAudioPacket) error
+    Close() error
+}
+```
+
+Input audio is always **16 kHz LINEAR16 mono** — the platform's internal format. Resampling from 8 kHz telephony audio happens upstream before VAD sees it.
+
+---
+
+## Factory Function
+
+```go
+// api/assistant-api/internal/vad/vad.go
+func GetVAD(ctx, logger, callback, options) (Vad, error)
+```
+
+The factory reads `microphone.vad.provider` from the assistant's audio options and returns the matching implementation. If no provider is set, **Silero VAD** is used as the default.
+
+---
+
+## Provider Identifiers
+
+| Identifier | Provider | Model |
+|-----------|----------|-------|
+| `silero_vad` | Silero VAD | `silero_vad_20251001.onnx` (~2 MB) |
+| `ten_vad` | TEN VAD | Native C library (no model file) |
+| `firered_vad` | FireRed VAD | `fireredvad_stream_vad_with_cache.onnx` (~5 MB) |
+
+---
+
+## Shared Parameters
+
+All three providers use the same configuration keys:
+
+| Option Key | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `microphone.vad.provider` | string | `silero_vad` | Provider selection |
+| `microphone.vad.threshold` | float | `0.5` | Speech probability threshold (0.3–1.0). Lower = more sensitive. |
+| `microphone.vad.min_silence_frame` | float | `20` | Consecutive silence frames before ending a speech segment. Each frame = 10 ms. Default 20 = 200 ms. |
+| `microphone.vad.min_speech_frame` | float | `8` | Consecutive speech frames before confirming speech onset. Each frame = 10 ms. Default 8 = 80 ms. |
+
+---
+
+## Model Files
+
+VAD models are bundled in the Docker image at build time. For source builds, models are resolved from the source tree relative to each provider's Go package directory.
+
+### Docker
+
+Models are copied into the runtime image and referenced via environment variables:
+
+```env
+SILERO_MODEL_PATH=./models/silero_vad/silero_vad_20251001.onnx
+FIRERED_VAD_MODEL_PATH=./models/firered_vad/fireredvad_stream_vad_with_cache.onnx
+```
+
+TEN VAD uses a native shared library instead of an ONNX model:
+
+```env
+LD_LIBRARY_PATH="/opt/ten_vad/lib:..."
+```
+
+These are set automatically in the Dockerfile — no manual configuration needed when running via Docker Compose.
+
+### From Source
+
+When running `go run cmd/assistant/assistant.go`, each provider resolves its model path using `runtime.Caller` to find the source directory:
+
+| Provider | Default path (relative to package dir) |
+|----------|---------------------------------------|
+| Silero VAD | `api/assistant-api/internal/vad/internal/silero_vad/models/silero_vad_20251001.onnx` |
+| FireRed VAD | `api/assistant-api/internal/vad/internal/firered_vad/models/fireredvad_stream_vad_with_cache.onnx` |
+| TEN VAD | No model file — requires `libten_vad.so` in the library path |
+
+Silero and FireRed models are checked into the repository. TEN VAD requires the shared library to be installed or available in `LD_LIBRARY_PATH` / `DYLIB_LIBRARY_PATH`.
+
+To override model paths, set the environment variables:
+
+```bash
+export SILERO_MODEL_PATH=/path/to/silero_vad.onnx
+export FIRERED_VAD_MODEL_PATH=/path/to/fireredvad.onnx
+```
+
+---
+
+## CGO Dependencies
+
+All VAD providers use CGO for inference:
+
+| Provider | CGO dependency | Build flags |
+|----------|---------------|-------------|
+| Silero VAD | ONNX Runtime (`libonnxruntime`) | `-I/opt/onnxruntime/include -L/opt/onnxruntime/lib -lonnxruntime` |
+| FireRed VAD | ONNX Runtime (`libonnxruntime`) | Same as Silero |
+| TEN VAD | TEN VAD library (`libten_vad`) | `-I/opt/ten_vad/include -L/opt/ten_vad/lib -lten_vad` |
+
+The Docker base image (`rapidaai/rapida-golang`) includes all CGO dependencies pre-installed. For local source builds, you need ONNX Runtime and the TEN VAD shared library installed on your system.
+
+---
+
+## Providers
+
+| Provider | Approach | Best for |
+|----------|----------|----------|
+| **[Silero VAD](/opensource/services/assistant-api/vad/silero)** | ONNX model, 100+ languages | General purpose — the default |
+| **[TEN VAD](/opensource/services/assistant-api/vad/ten)** | Native C library, 16 ms frame hops | Lowest per-frame latency |
+| **[FireRed VAD](/opensource/services/assistant-api/vad/firered)** | DFSMN model, 4-state postprocessor | Noisy environments, precise boundaries |
+
+See the [VAD concepts guide](/assistants/voice-activity-detection) for detailed parameter tuning guidance and use-case recommendations.
