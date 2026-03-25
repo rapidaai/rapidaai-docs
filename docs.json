@@ -37,10 +37,17 @@
                         "group": "Assistants",
                         "pages": [
                             "assistants/overview",
-                            "assistants/create-assistant",
+                            {
+                                "group": "Create assistant",
+                                "pages": [
+                                    "assistants/create-assistant",
+                                    "assistants/prompt-templating",
+                                    "assistants/create-new-version"
+                                ]
+                            },
+                            "assistants/telemetry",
                             "assistants/voice-activity-detection",
                             "assistants/end-of-speech",
-                            "assistants/create-new-version",
                             "assistants/agentkit",
                             {
                                 "group": "Voice Deployment",
@@ -239,6 +246,8 @@
                         "pages": [
                             "opensource/services/assistant-api/overview",
                             "opensource/services/assistant-api/configuration",
+                            "opensource/services/assistant-api/telemetry",
+                            "opensource/services/assistant-api/prompt-templating",
                             "opensource/services/assistant-api/ngrok",
                             {
                                 "group": "Telephony",

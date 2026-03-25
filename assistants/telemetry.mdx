@@ -1,0 +1,134 @@
+---
+title: "Assistant Telemetry"
+description: "Configure telemetry providers, understand required fields, and use telemetry records for debugging and optimization."
+sidebarTitle: "Telemetry"
+---
+
+Assistant telemetry exports runtime events and metrics so you can debug behavior, monitor latency, and validate production quality.
+
+<Info>
+Configure telemetry per assistant so you can isolate behavior by product, environment, or use case.
+</Info>
+
+---
+
+## Why Telemetry Is Useful
+
+| Use case | What telemetry gives you |
+|----------|--------------------------|
+| Debugging failed calls | Event timeline + error events |
+| Performance tuning | STT/LLM/TTS timing and metric scopes |
+| Release validation | Compare behavior before/after prompt/model changes |
+| Incident triage | Filter by conversation ID / message ID quickly |
+
+---
+
+## Where to Configure
+
+| Screen | Action |
+|--------|--------|
+| Assistants | Open target assistant |
+| Configure Assistant | Open **Telemetry** tab |
+| Telemetry page | Add / edit / delete provider |
+
+Routes used by UI:
+
+| Route | Purpose |
+|------|---------|
+| `/deployment/assistant/:assistantId/configure-telemetry` | List providers |
+| `/deployment/assistant/:assistantId/configure-telemetry/create` | Create provider |
+| `/deployment/assistant/:assistantId/configure-telemetry/:telemetryId` | Update provider |
+
+<Note>
+Saving a provider stores configuration for the assistant. Runtime export depends on the provider being enabled.
+</Note>
+
+---
+
+## Supported Providers (UI)
+
+| Provider | Code | Typical use |
+|----------|------|-------------|
+| OTLP | `otlp_http` | Generic OpenTelemetry pipelines |
+| Datadog | `datadog` | Datadog tracing/APM |
+| AWS X-Ray | `xray` | AWS-native trace pipeline |
+| Google Trace | `google_trace` | GCP trace pipeline |
+| Azure Monitor | `azure_monitor` | Azure monitoring stack |
+
+---
+
+## Required and Optional Fields
+
+| Field | Required | Why it exists |
+|------|----------|---------------|
+| Credential (`rapida.credential_id`) | Yes | Supplies auth/config values from vault |
+| Endpoint | Yes | Destination address for exporter |
+| Protocol | Provider-dependent | Transport behavior |
+| Insecure | Optional | TLS relaxation for controlled environments |
+| Region (`xray`) | Optional | AWS regional routing |
+
+Provider-specific UI fields:
+
+| Provider | Fields shown in UI |
+|---------|---------------------|
+| `otlp_http` | `endpoint`, `protocol`, `insecure` |
+| `datadog` | `endpoint`, `insecure` |
+| `xray` | `endpoint`, `region`, `insecure` |
+| `google_trace` | `endpoint`, `insecure` |
+| `azure_monitor` | `endpoint`, `insecure` |
+
+<Warning>
+If credential or endpoint is invalid, telemetry export will fail at runtime even if the provider configuration is saved.
+</Warning>
+
+---
+
+## Enabled vs Disabled
+
+| Status | Behavior |
+|--------|----------|
+| Enabled | Provider is loaded and used in runtime export |
+| Disabled | Configuration is saved but exporter is not used |
+
+<Tip>
+Use disabled providers as staged configs when testing new exporters, then enable after validation.
+</Tip>
+
+---
+
+## Reading Conversation Telemetry
+
+The conversation telemetry modal combines event and metric records.
+
+Available filters:
+
+| Filter key | What to use it for |
+|-----------|---------------------|
+| `conversationId` | Analyze one full conversation |
+| `messageId` | Analyze one specific turn |
+| `name` | Find specific event types |
+| `scope` | Narrow to metric scope |
+
+---
+
+## Example Debug Workflow
+
+| Step | Action | Outcome |
+|------|--------|---------|
+| 1 | Filter by `conversationId` | isolate one call |
+| 2 | Check event sequence (`stt` → `llm` → `tts`) | verify pipeline order |
+| 3 | Filter by `messageId` for slow turn | isolate latency spike |
+| 4 | Inspect metric scope entries | identify bottleneck stage |
+| 5 | Update prompt/voice settings and re-test | validate improvement |
+
+<Tip>
+When comparing releases, run the same scenario twice and compare telemetry for the same stage (`stt`, `llm`, `tts`) to confirm regression or improvement.
+</Tip>
+
+---
+
+## Related Pages
+
+- [Prompt templating](/assistants/prompt-templating)
+- [Conversation logs](/activity/conversation-logs)
+- [Assistant API — Telemetry](/opensource/services/assistant-api/telemetry)

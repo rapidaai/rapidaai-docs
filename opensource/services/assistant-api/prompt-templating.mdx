@@ -1,0 +1,216 @@
+---
+title: "Assistant API — Prompt Templating"
+description: "Prompt argument pipeline, variable namespaces, and rendering behavior in model executor."
+sidebarTitle: "Prompt Templating"
+---
+
+## Scope
+
+| Area | Implemented in |
+|------|----------------|
+| Request pipeline | `pipeline_request.go` |
+| Response pipeline | `pipeline_response.go` |
+| Pipeline types | `pipeline_types.go` |
+| Template rendering | `pkg/clients/integration/builders/chat_input_builder.go` |
+| Template parser | `pkg/parsers/pongo2.template.parser.go` |
+| Argument merge semantics | `pkg/utils/collection.go` |
+| Behavior tests | `model_test.go` |
+
+---
+
+## Request Pipeline Stages
+
+For each `UserTextPacket`, stages run in this order:
+
+| Order | Stage name | Output |
+|------|------------|--------|
+| 1 | `build_user_message` | `pipeline.UserMessage` |
+| 2 | `snapshot_history` | history snapshot |
+| 3 | `validate_history` | validates tool-call sequencing |
+| 4 | `prepare_prompt_arguments` | `pipeline.PromptArgs` |
+
+Stage order is validated by `TestRequestPipeline_DefaultStages`.
+
+---
+
+## Prompt Argument Map
+
+`buildPromptContext()` creates these top-level keys:
+
+| Key | Contents |
+|-----|----------|
+| `system` | current UTC date/time values |
+| `assistant` | assistant metadata |
+| `conversation` | conversation metadata |
+| `session` | session mode (if available) |
+| `message` | current or reconstructed user message context |
+| `args` | namespaced conversation args |
+| root args | flattened copy of conversation args at root level |
+
+Deep clone is applied before use (`clonePromptArguments`).
+
+---
+
+## General Jinja-Style Guidelines
+
+Template rendering is performed by Pongo2 (`pkg/parsers/pongo2.template.parser.go`), which follows Jinja-style syntax.
+
+Verified patterns from parser tests:
+
+| Pattern | Example | Reference |
+|--------|---------|-----------|
+| Variable interpolation | `{{ name }}` | `TestPongo2StringTemplateParser_Parse` |
+| Conditional block | `{% if age > 20 %}...{% endif %}` | `TestPongo2MessageTemplateParser_Parse` |
+| Loop block | `{% for message in messages %}...{% endfor %}` | `TestPongo2TemplateParser_Parse` |
+| Autoescape control | `{% autoescape off %}...{% endautoescape %}` | `TestPongo2TemplateParser_Parse` |
+
+Execution behavior:
+
+| Case | Behavior |
+|------|----------|
+| Parse/execute error | parser returns original template string |
+| Successful parse | rendered template string is used in chat request |
+
+---
+
+## Argument Namespaces
+
+### `system.*`
+
+| Field | Format |
+|------|--------|
+| `current_date` | `YYYY-MM-DD` |
+| `current_time` | `HH:MM:SS` |
+| `current_datetime` | RFC3339 |
+| `day_of_week` | weekday name |
+| `date_rfc1123` | RFC1123 |
+| `date_unix` | seconds |
+| `date_unix_ms` | milliseconds |
+
+All are UTC.
+
+### `assistant.*`
+
+| Field |
+|------|
+| `assistant.name` |
+| `assistant.id` (string) |
+| `assistant.language` |
+| `assistant.description` |
+
+### `conversation.*`
+
+| Field |
+|------|
+| `conversation.id` |
+| `conversation.identifier` |
+| `conversation.source` |
+| `conversation.direction` |
+| `conversation.created_date` (if available) |
+| `conversation.updated_date` (if available) |
+| `conversation.duration` (best effort) |
+
+### `session.*`
+
+| Field | Condition |
+|------|-----------|
+| `session.mode` | only when communication exposes `GetMode()` |
+
+### `message.*`
+
+| Field |
+|------|
+| `message.text` |
+| `message.language` |
+
+---
+
+## Args Behavior (Namespaced + Root)
+
+Conversation args are merged twice:
+
+| Access form | Example |
+|------------|---------|
+| namespaced | `{{ args.name }}` |
+| root-level | `{{ name }}` |
+
+Implementation merge:
+
+```go
+utils.MergeMaps(
+  map[string]interface{}{"args": args},
+  args,
+)
+```
+
+Behavior is validated by `TestBuildPromptContext_ArgumentsRemainRootLevel`.
+
+---
+
+## Template Rendering Contract
+
+`buildChatRequest()` renders prompt templates and prepends rendered system/template messages before runtime history.
+
+### Argument merge precedence for rendering
+
+```go
+utils.MergeMaps(
+  e.inputBuilder.PromptArguments(template.Variables),
+  promptArguments,
+)
+```
+
+| Source | Priority |
+|--------|----------|
+| template variable defaults (`promptVariables`) | lower |
+| runtime prompt args | higher |
+
+Parser behavior (`pongo2`):
+
+| Case | Result |
+|------|--------|
+| parse or execute error | returns original template string |
+| successful parse/execute | returns rendered text |
+
+---
+
+## Response + Tool Follow-up Argumentation
+
+On response handling, prompt args are rebuilt via `preparePromptArgumentsForResponse()` before tool follow-up send.
+
+Language precedence for response flow:
+
+| Priority | Source |
+|---------|--------|
+| 1 | latest user language in `communication.GetHistories()` |
+| 2 | `communication.GetMetadata()["client.language"]` |
+| 3 | empty string |
+
+Validated by:
+
+- `TestPreparePromptArgumentsForResponse_UsesLatestUserAndClientLanguage`
+- `TestPreparePromptArgumentsForResponse_PrefersLatestHistoryLanguage`
+- `TestHandleResponse_ToolFollowUpRetainsUserMessageContext`
+
+---
+
+## History Validation Rules
+
+Before sending chat requests, history must satisfy these rules:
+
+| Rule | Enforced by |
+|------|-------------|
+| assistant tool call must be immediately followed by tool response | `validateHistorySequence` |
+| tool response IDs must match tool call IDs | `validateToolIDMatch` |
+| orphan tool response not allowed | `validateHistorySequence` |
+| after tool response, next message (if any) must be assistant | `validateHistorySequence` |
+
+Validation coverage:
+
+- `TestValidateHistorySequence_*`
+
+---
+
+## Internal Reference
+
+- `api/assistant-api/internal/agent/executor/llm/internal/model/PROMPT_ARGUMENTS.md`

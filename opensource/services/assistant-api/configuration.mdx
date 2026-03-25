@@ -101,6 +101,83 @@ OpenSearch is only needed for knowledge base / RAG features. If `OPENSEARCH__HOS
 
 ---
 
+## Telemetry (Optional)
+
+`assistant-api` supports an optional environment-configured default telemetry exporter.
+
+Set exporter type:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TELEMETRY__TYPE` | *(empty)* | `otlp_http` · `otlp_grpc` · `xray` · `google_trace` · `azure_monitor` · `datadog` · `opensearch` · `logging` |
+
+Provider-specific keys:
+
+### OTLP HTTP
+
+| Variable | Description |
+|----------|-------------|
+| `TELEMETRY__OTLP_HTTP__ENDPOINT` | OTLP endpoint |
+| `TELEMETRY__OTLP_HTTP__PROTOCOL` | `http/protobuf` or `grpc` |
+| `TELEMETRY__OTLP_HTTP__HEADERS` | Comma-separated headers (`A=B, C=D`) |
+| `TELEMETRY__OTLP_HTTP__INSECURE` | `true`/`false` |
+
+### OTLP gRPC
+
+| Variable | Description |
+|----------|-------------|
+| `TELEMETRY__OTLP_GRPC__ENDPOINT` | OTLP endpoint |
+| `TELEMETRY__OTLP_GRPC__PROTOCOL` | Usually `grpc` |
+| `TELEMETRY__OTLP_GRPC__HEADERS` | Comma-separated headers |
+| `TELEMETRY__OTLP_GRPC__INSECURE` | `true`/`false` |
+
+### Datadog
+
+| Variable | Description |
+|----------|-------------|
+| `TELEMETRY__DATADOG__ENDPOINT` | Datadog OTLP/agent endpoint |
+| `TELEMETRY__DATADOG__PROTOCOL` | Protocol override |
+| `TELEMETRY__DATADOG__HEADERS` | Additional headers |
+| `TELEMETRY__DATADOG__API_KEY` | Datadog API key |
+| `TELEMETRY__DATADOG__INSECURE` | `true`/`false` |
+
+### AWS X-Ray
+
+| Variable | Description |
+|----------|-------------|
+| `TELEMETRY__XRAY__ENDPOINT` | ADOT/OTLP endpoint |
+| `TELEMETRY__XRAY__PROTOCOL` | Protocol override |
+| `TELEMETRY__XRAY__REGION` | AWS region |
+| `TELEMETRY__XRAY__INSECURE` | `true`/`false` |
+
+### Google Trace
+
+| Variable | Description |
+|----------|-------------|
+| `TELEMETRY__GOOGLE_TRACE__ENDPOINT` | Trace endpoint |
+| `TELEMETRY__GOOGLE_TRACE__HEADERS` | Additional headers |
+| `TELEMETRY__GOOGLE_TRACE__API_KEY` | API key |
+| `TELEMETRY__GOOGLE_TRACE__ACCESS_TOKEN` | OAuth bearer token |
+| `TELEMETRY__GOOGLE_TRACE__INSECURE` | `true`/`false` |
+
+### Azure Monitor
+
+| Variable | Description |
+|----------|-------------|
+| `TELEMETRY__AZURE_MONITOR__ENDPOINT` | Azure Monitor endpoint |
+| `TELEMETRY__AZURE_MONITOR__HEADERS` | Additional headers |
+| `TELEMETRY__AZURE_MONITOR__API_KEY` | API key/instrumentation key |
+| `TELEMETRY__AZURE_MONITOR__INSECURE` | `true`/`false` |
+
+### OpenSearch / Logging
+
+| Variable | Description |
+|----------|-------------|
+| `TELEMETRY__OPENSEARCH__INDEX_PREFIX` | Optional index prefix |
+| `TELEMETRY__LOGGING__*` | No options required |
+
+---
+
 ## Asterisk AudioSocket
 
 The AudioSocket server binds on a separate TCP port. Asterisk dials into this port directly.

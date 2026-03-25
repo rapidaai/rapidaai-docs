@@ -1,0 +1,195 @@
+---
+title: "Assistant Prompt Templating"
+description: "How to use runtime prompt variables correctly, with variable meaning tables and production-ready examples."
+sidebarTitle: "Prompt templating"
+---
+
+Prompt templating lets you inject runtime context into assistant instructions so responses are personalized, deterministic, and easier to control.
+
+<Info>
+Treat prompt templates like code: define a stable variable contract, review changes, and version updates before release.
+</Info>
+
+---
+
+## Why This Matters
+
+| Without templating | With templating |
+|--------------------|-----------------|
+| Generic responses | Context-aware responses |
+| Hard-coded business values | Runtime values from your app/call context |
+| Prompt duplication across use cases | One reusable prompt with variables |
+
+---
+
+## Variable Access Styles
+
+You can access runtime arguments in two equivalent ways:
+
+| Style | Example | When to prefer |
+|------|---------|----------------|
+| Namespaced | `{{ args.customer_name }}` | Best default, explicit and safer |
+| Root-level | `{{ customer_name }}` | Short prompts, low risk of key collisions |
+
+<Note>
+Use `args.*` for most custom business fields. It makes prompts easier to maintain as your variable set grows.
+</Note>
+
+<Tip>
+If your team has multiple developers editing prompts, enforce a naming convention like `args.customer_*`, `args.order_*`, `args.billing_*`.
+</Tip>
+
+---
+
+## General Jinja-Style Guidelines
+
+Rapida prompt rendering uses **Pongo2** (Jinja-style syntax).  
+Use this safe subset for predictable behavior:
+
+| Pattern | Example | Use for |
+|--------|---------|---------|
+| Variable interpolation | `{{ args.customer_name }}` | inject runtime values |
+| Conditionals | `{% if message.language %}...{% endif %}` | optional sections/fallback flow |
+| Loops | `{% for m in messages %}...{% endfor %}` | render repeated structures |
+| Autoescape control | `{% autoescape off %}...{% endautoescape %}` | preserve raw output blocks |
+
+<Info>
+Supported patterns above are validated by parser tests in `pkg/parsers/pongo2_template_parser_test.go`.
+</Info>
+
+<Warning>
+Keep template logic lightweight. Put business decision logic in instructions and runtime data, not deeply nested template control flow.
+</Warning>
+
+---
+
+## Built-in Variables (What + Why)
+
+### `system.*`
+
+| Variable | What it is | Why it is useful |
+|----------|------------|------------------|
+| `system.current_date` | Current UTC date | Date-sensitive flows (appointments, policy windows) |
+| `system.current_time` | Current UTC time | Time-gated behavior |
+| `system.current_datetime` | Full UTC timestamp | Logging-style prompts or strict audit wording |
+| `system.day_of_week` | Weekday name | Business-hour or weekday-specific logic |
+| `system.date_rfc1123` | RFC1123 timestamp | Interop with strict date formats |
+| `system.date_unix` | Unix seconds | Numeric date comparisons |
+| `system.date_unix_ms` | Unix milliseconds | High-precision timing context |
+
+### `assistant.*`
+
+| Variable | What it is | Why it is useful |
+|----------|------------|------------------|
+| `assistant.name` | Assistant display name | Consistent self-introduction |
+| `assistant.id` | Assistant ID | Tracing/debug references |
+| `assistant.language` | Default assistant language | Language fallback guidance |
+| `assistant.description` | Assistant description | Reinforce role/context in-system prompt |
+
+### `conversation.*`
+
+| Variable | What it is | Why it is useful |
+|----------|------------|------------------|
+| `conversation.id` | Conversation ID | Support/debug workflows |
+| `conversation.identifier` | User/caller identifier | Personalized behavior |
+| `conversation.source` | Channel/source | Channel-specific instructions |
+| `conversation.direction` | Inbound/outbound direction | Different call-opening behavior |
+| `conversation.created_date` | Conversation start time | SLA or timing-aware responses |
+| `conversation.updated_date` | Last update time | Freshness-sensitive flows |
+| `conversation.duration` | Best-effort elapsed duration | Escalation rules after long calls |
+
+### `session.*`
+
+| Variable | What it is | Why it is useful |
+|----------|------------|------------------|
+| `session.mode` | Session mode when exposed | Different style for voice vs text sessions |
+
+### `message.*`
+
+| Variable | What it is | Why it is useful |
+|----------|------------|------------------|
+| `message.text` | Latest user message text | Ground immediate response |
+| `message.language` | Detected/current message language | Multilingual behavior and response control |
+
+---
+
+## Practical Production Example
+
+```text
+You are {{ assistant.name }}, a billing support assistant for {{ args.company_name }}.
+
+Context:
+- Customer: {{ args.customer_name }}
+- Plan: {{ args.plan_name }}
+- Outstanding balance: {{ args.balance_amount }} {{ args.currency }}
+- Channel: {{ conversation.source }}
+- Current date: {{ system.current_date }}
+
+Behavior:
+1. If balance_amount is empty, ask for account verification before billing help.
+2. Keep replies under 2 short sentences for voice clarity.
+3. If message.language is set, respond in that language.
+4. Never invent invoice IDs. If missing, say data is unavailable and ask to verify.
+```
+
+---
+
+## Runtime Argument Example (from your app/backend)
+
+```json
+{
+  "company_name": "Acme Telecom",
+  "customer_name": "Priya",
+  "plan_name": "Business Pro",
+  "balance_amount": "129.00",
+  "currency": "USD"
+}
+```
+
+This enables both:
+
+- `{{ args.customer_name }}`
+- `{{ customer_name }}`
+
+<Info>
+Use one canonical style in production prompts (recommended: `args.*`) even though both styles resolve.
+</Info>
+
+---
+
+## UX Guidelines for Better Prompts
+
+| Guideline | Why |
+|-----------|-----|
+| Prefer explicit variable names (`customer_name`, not `name`) | Reduces ambiguity in long prompts |
+| Group business fields under `args.*` | Easier schema evolution |
+| Add fallback instruction for missing variables | Prevents hallucinated placeholders |
+| Keep voice responses short in instructions | Better TTS experience |
+| Keep key names stable across versions | Avoid silent prompt regressions |
+
+---
+
+## Common Mistakes
+
+| Mistake | Better approach |
+|---------|------------------|
+| Using many root-level short keys | Use `args.*` namespaced fields |
+| Assuming every field is always present | Add fallback rules in prompt |
+| Mixing formatting instructions with business logic randomly | Separate into `Context` and `Behavior` blocks |
+| Rewriting prompts per customer | Reuse one template with runtime args |
+
+<Warning>
+Do not assume every runtime variable is always present. Add explicit fallback behavior in the prompt for missing or empty values.
+</Warning>
+
+<Tip>
+For voice assistants, add a hard instruction such as: “Keep responses under 2 short sentences unless the user asks for details.”
+</Tip>
+
+---
+
+## Related Pages
+
+- [Create assistant](/assistants/create-assistant)
+- [Assistant Telemetry](/assistants/telemetry)
+- [Assistant API — Prompt Templating](/opensource/services/assistant-api/prompt-templating)

@@ -1,0 +1,178 @@
+---
+title: "Assistant API — Telemetry"
+description: "UI setup, runtime wiring, provider options, and telemetry query behavior for assistant-api."
+sidebarTitle: "Telemetry"
+---
+
+## Scope
+
+| Area | Implemented in |
+|------|----------------|
+| Configure telemetry in UI | `ui/src/app/pages/assistant/actions/configure-assistant-telemetry/*` |
+| Provider form/default/validation | `ui/src/app/components/providers/telemetry/*` |
+| Provider registry | `ui/src/providers/index.ts`, `ui/src/providers/provider.*.json` |
+| Provider CRUD API | `api/assistant-api/api/assistant/*assistant_telemetry_provider*.go` |
+| Runtime collector init | `api/assistant-api/internal/adapters/internal/requestor.go` |
+| Exporter factory | `api/assistant-api/internal/observe/exporters/factory.go`, `pkg/telemetry/providers/*` |
+| Conversation telemetry read API | `api/assistant-api/api/assistant/get_all_assistant_telemetry.go` |
+
+---
+
+## Configure Assistant Telemetry (UI)
+
+| Route | Purpose |
+|------|---------|
+| `/deployment/assistant/:assistantId/configure-telemetry` | List telemetry providers for assistant |
+| `/deployment/assistant/:assistantId/configure-telemetry/create` | Create provider |
+| `/deployment/assistant/:assistantId/configure-telemetry/:telemetryId` | Update provider |
+
+UI store and API calls:
+
+| Action | API |
+|-------|-----|
+| List providers | `GetAllAssistantTelemetryProvider` |
+| Create provider | `CreateAssistantTelemetryProvider` |
+| Read one provider | `GetAssistantTelemetryProvider` |
+| Update provider | `UpdateAssistantTelemetryProvider` |
+| Delete provider | `DeleteAssistantTelemetryProvider` |
+
+---
+
+## UI Provider Support
+
+### Provider list shown in UI
+
+| Provider code | Visible in UI |
+|--------------|---------------|
+| `otlp_http` | Yes |
+| `datadog` | Yes |
+| `xray` | Yes |
+| `google_trace` | Yes |
+| `azure_monitor` | Yes |
+
+### Backend-supported exporter types
+
+| Provider code | Supported by backend |
+|--------------|----------------------|
+| `otlp_http` | Yes |
+| `otlp_grpc` | Yes |
+| `xray` | Yes |
+| `google_trace` | Yes |
+| `azure_monitor` | Yes |
+| `datadog` | Yes |
+| `opensearch` | Yes |
+| `logging` | Yes |
+
+`provider-telemetry.test.ts` verifies UI registry parity and `telemetry.json` presence for UI-visible telemetry providers.
+
+---
+
+## UI Form Rules
+
+| Rule | Behavior |
+|------|----------|
+| Credential required | `rapida.credential_id` must be present |
+| Provider defaults | Loaded from `ui/src/providers/<provider>/telemetry.json` |
+| Required fields | Validated against `telemetry.json` parameter definitions |
+| On provider switch | Keeps only credential, then applies defaults for selected provider |
+
+### `telemetry.json` parameters used in UI
+
+| Provider | Parameters in JSON |
+|---------|---------------------|
+| `otlp_http` | `endpoint`, `protocol`, `insecure` |
+| `datadog` | `endpoint`, `insecure` |
+| `xray` | `endpoint`, `region`, `insecure` |
+| `google_trace` | `endpoint`, `insecure` |
+| `azure_monitor` | `endpoint`, `insecure` |
+
+---
+
+## Assistant Telemetry Provider Data Model
+
+Migration: `api/assistant-api/migrations/000008_assistant_telemetry_providers.up.sql`
+
+| Table | Purpose |
+|------|---------|
+| `assistant_telemetry_providers` | one provider attachment per assistant |
+| `assistant_telemetry_provider_options` | flat key/value options per provider |
+
+Update behavior in service (`telemetry.impl.service.go`):
+
+| Step | Behavior |
+|------|----------|
+| Update provider row | updates `provider_type`, `enabled` |
+| Existing options | archived (`status = archieve`) |
+| New options | inserted as active rows |
+
+---
+
+## Runtime Wiring in assistant-api
+
+Runtime collector initialization happens in `initializeCollectors()`.
+
+| Stage | Behavior |
+|------|----------|
+| Load providers | reads `AssistantTelemetryProviders` from assistant state |
+| Session metadata | sets assistant/conversation/project/org IDs |
+| Env exporter (optional) | creates one exporter from `TELEMETRY__TYPE` + provider config |
+| Credential merge | if `rapida.credential_id` exists, loads vault credential and merges string keys into options |
+| Exporter creation | resolves provider via exporter factory |
+| Collector build | creates fan-out event + metric collectors |
+
+Only `enabled = true` providers are injected when assistant is loaded (`assistant.impl.service.go`).
+
+---
+
+## Exporter Option Parsing Rules
+
+Option parsing code: `pkg/telemetry/providers/config.go`
+
+| Provider | Required | Optional keys |
+|---------|----------|---------------|
+| `otlp_http` / `otlp_grpc` | `endpoint` (effectively required; nil exporter if missing) | `protocol`, `headers`, `insecure` |
+| `datadog` | `endpoint` | `protocol`, `headers`, `api_key`, `insecure` |
+| `xray` | `endpoint` | `protocol`, `region`, `insecure` |
+| `google_trace` | `endpoint` | `headers`, `api_key`, `access_token`, `insecure` |
+| `azure_monitor` | `endpoint` | `headers`, `api_key`, `insecure` |
+| `opensearch` | none | `index_prefix` |
+| `logging` | none | none |
+
+Common parser behavior:
+
+| Key | Behavior |
+|-----|----------|
+| `headers` | accepts comma-separated `key=value` string |
+| `insecure` | accepts `true` / `1` |
+
+---
+
+## Conversation Telemetry Read API
+
+API: `GetAllAssistantTelemetry`
+
+| Source index | Mapped record |
+|-------------|---------------|
+| `rapida-events-*` | `TelemetryEvent` |
+| `rapida-metrics-*` | `TelemetryMetric` |
+
+Supported filters from criteria:
+
+| Criteria key | Applied to |
+|-------------|------------|
+| `conversationId` | event + metric query |
+| `messageId` | `messageId` in events, `contextId` in metrics |
+| `name` | events |
+| `scope` | metrics |
+
+Pagination behavior:
+
+| Input | Behavior |
+|------|----------|
+| page < 1 | coerced to 1 |
+| size < 1 or > 100 | coerced to 20 |
+
+UI consumer for this API:
+
+- `ui/src/app/components/base/modal/conversation-telemetry-modal/index.tsx`
+
