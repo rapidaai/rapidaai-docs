@@ -105,26 +105,46 @@
                         "group": "Knowledge",
                         "pages": [
                             "knowledge/overview",
-                            "knowledge/create-knowledge",
-                            "knowledge/add-new-document",
-                            "knowledge/manage-document-chunk"
+                            {
+                                "group": "Setup",
+                                "pages": [
+                                    "knowledge/create-knowledge"
+                                ]
+                            },
+                            {
+                                "group": "Documents",
+                                "pages": [
+                                    "knowledge/add-new-document",
+                                    "knowledge/manage-document-chunk"
+                                ]
+                            }
                         ]
                     },
                     {
                         "group": "LLM Endpoint",
                         "pages": [
                             "endpoint/overview",
-                            "endpoint/create-endpoint",
-                            "endpoint/create-new-version",
-                            "endpoint/monitor-endpoint-performance"
+                            {
+                                "group": "Setup",
+                                "pages": [
+                                    "endpoint/create-endpoint",
+                                    "endpoint/create-new-version"
+                                ]
+                            },
+                            {
+                                "group": "Operations",
+                                "pages": [
+                                    "endpoint/monitor-endpoint-performance"
+                                ]
+                            }
                         ]
                     },
                     {
-                        "group": "Activity and logs",
+                        "group": "Activity & Logs",
                         "pages": [
+                            "activity/conversation-logs",
                             "activity/llm-logs",
-                            "activity/webhook-logs",
-                            "activity/conversation-logs"
+                            "activity/webhook-logs"
                         ]
                     },
                     {
@@ -147,7 +167,7 @@
                                 ]
                             },
                             {
-                                "group": "Speech to Text",
+                                "group": "Speech-to-Text",
                                 "pages": [
                                     "integrations/stt/deepgram",
                                     "integrations/stt/assemblyai",
@@ -164,7 +184,7 @@
                                 ]
                             },
                             {
-                                "group": "Text to Speech",
+                                "group": "Text-to-Speech",
                                 "pages": [
                                     "integrations/tts/elevenlabs",
                                     "integrations/tts/deepgram",
@@ -205,27 +225,57 @@
                         "group": "Workspace",
                         "pages": [
                             "workspace/overview",
-                            "workspace/project-management",
-                            "workspace/create-new-project",
-                            "workspace/user-management",
-                            "workspace/invite-a-user"
+                            {
+                                "group": "Projects",
+                                "pages": [
+                                    "workspace/project-management",
+                                    "workspace/create-new-project"
+                                ]
+                            },
+                            {
+                                "group": "Users",
+                                "pages": [
+                                    "workspace/user-management",
+                                    "workspace/invite-a-user"
+                                ]
+                            }
                         ]
                     },
                     {
                         "group": "Governance",
                         "pages": [
                             "governances/overview",
-                            "governances/organization",
-                            "governances/project",
-                            "governances/roles-and-permission"
+                            {
+                                "group": "Structure",
+                                "pages": [
+                                    "governances/organization",
+                                    "governances/project"
+                                ]
+                            },
+                            {
+                                "group": "Access Control",
+                                "pages": [
+                                    "governances/roles-and-permission"
+                                ]
+                            }
                         ]
                     },
                     {
                         "group": "Deployment Options",
                         "pages": [
                             "deployments/deployment-options",
-                            "deployments/fully-managed",
-                            "deployments/self-hosted"
+                            {
+                                "group": "Managed",
+                                "pages": [
+                                    "deployments/fully-managed"
+                                ]
+                            },
+                            {
+                                "group": "Self-Hosted",
+                                "pages": [
+                                    "deployments/self-hosted"
+                                ]
+                            }
                         ]
                     }
                 ]
