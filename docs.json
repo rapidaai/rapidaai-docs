@@ -38,29 +38,44 @@
                         "pages": [
                             "assistants/overview",
                             {
-                                "group": "Create assistant",
+                                "group": "Setup",
                                 "pages": [
                                     "assistants/create-assistant",
                                     "assistants/prompt-templating",
-                                    "assistants/create-new-version"
+                                    "assistants/create-new-version",
+                                    "assistants/telemetry",
+                                    "assistants/agentkit"
                                 ]
                             },
-                            "assistants/telemetry",
-                            "assistants/voice-activity-detection",
-                            "assistants/end-of-speech",
-                            "assistants/agentkit",
                             {
-                                "group": "Voice Deployment",
+                                "group": "Voice Pipeline",
+                                "pages": [
+                                    "assistants/voice-activity-detection",
+                                    "assistants/end-of-speech"
+                                ]
+                            },
+                            {
+                                "group": "Deployments",
                                 "pages": [
                                     "voice-deployment-options/phone",
                                     "voice-deployment-options/web-widget",
                                     "voice-deployment-options/web-app",
-                                    "voice-deployment-options/whatsapp"
+                                    "voice-deployment-options/whatsapp",
+                                    "assistants/twilio-integration",
+                                    "assistants/twilio-credentials",
+                                    "assistants/twilio-handler"
                                 ]
                             },
                             {
-                                "group": "Tool",
+                                "group": "Knowledge",
                                 "pages": [
+                                    "assistants/knowledge/add-knowledge"
+                                ]
+                            },
+                            {
+                                "group": "Tools",
+                                "pages": [
+                                    "assistants/introduction-to-tools",
                                     "assistants/tools/add-knowledge-tool",
                                     "assistants/tools/add-endpoint-tool",
                                     "assistants/tools/add-api-tool",

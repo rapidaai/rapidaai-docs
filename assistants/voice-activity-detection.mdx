@@ -8,6 +8,10 @@ Voice Activity Detection (VAD) determines when a caller is speaking and when the
 
 All VAD providers in Rapida process **16 kHz LINEAR16 mono** audio and run locally — no network calls, no API keys, no added latency.
 
+<Warning>
+**Deprecation notice:** TEN VAD is being deprecated due to a licensing issue. Do not use it for new assistants.
+</Warning>
+
 ```mermaid
 flowchart LR
     A["Caller Audio\n16kHz LINEAR16"] --> B["VAD\nSpeech detection"]

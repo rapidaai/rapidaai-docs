@@ -16,25 +16,25 @@ Assistants are **version-controlled**. Every prompt or model change creates a ne
 
 <CardGroup cols={2}>
   <Card title="Prompt & Model" icon="cpu">
-    The system prompt defines persona, scope, and behaviour. The LLM provider and model (OpenAI, Anthropic, Gemini, Mistral, Bedrock, or a custom AgentKit backend) power the reasoning. Model parameters — temperature, max tokens, stop sequences — are tunable per version.
+    Define persona and behavior with a system prompt, then choose and tune the LLM model per version.
   </Card>
   <Card title="Voice Pipeline" icon="mic">
-    Converts caller audio to text and assistant text back to speech. Configurable STT provider, [VAD provider](/assistants/voice-activity-detection) (Silero, TEN, or FireRed), noise cancellation, [end-of-speech detection](/assistants/end-of-speech) (Silence-Based, Pipecat Smart Turn, or LiveKit Turn Detector), TTS provider, voice model, and pronunciation rules — independently tunable per deployment channel.
+    Tune STT, [VAD](/assistants/voice-activity-detection), noise cancellation, [end-of-speech detection](/assistants/end-of-speech), and TTS per deployment channel.
   </Card>
   <Card title="Knowledge Bases" icon="book-open">
-    One or more knowledge bases attached for retrieval-augmented generation. At call time, the assistant retrieves the most relevant document chunks and injects them as context before calling the LLM.
+    Attach one or more knowledge bases for retrieval-augmented responses during live calls.
   </Card>
   <Card title="Tools" icon="zap">
-    Functions the LLM can invoke mid-conversation: query knowledge, call external APIs, invoke endpoint LLM prompts, hold a call, or end the session. The LLM decides when to call each tool based on its description.
+    Let the LLM call tools mid-conversation: knowledge, APIs, endpoint prompts, hold, and end session.
   </Card>
   <Card title="Deployments" icon="phone">
-    Each channel — phone, web widget, web app, WhatsApp — is a separate deployment attached to the assistant. Deployments share the assistant's brain but can have per-channel voice and experience settings.
+    Run the same assistant across phone, web, and WhatsApp with channel-specific voice settings.
   </Card>
   <Card title="Webhooks" icon="activity">
-    Post-call webhooks fire at conversation start, completion, and failure. Deliver transcripts, metadata, and tool call results to your CRM, data warehouse, or alerting system in real time.
+    Stream conversation events, transcripts, and metadata to your external systems in real time.
   </Card>
   <Card title="Post-call Analysis" icon="bar-chart">
-    Analysis pipelines run LLM prompts against completed transcripts to produce sentiment scores, intent labels, CSAT predictions, compliance flags, and custom metrics.
+    Run post-call analysis for sentiment, intent, compliance, CSAT, and custom metrics.
   </Card>
 </CardGroup>
 
@@ -46,10 +46,10 @@ Every conversation follows the same pipeline from audio-in to audio-out. Underst
 
 ```mermaid
 flowchart TD
-    A(["🎙 Caller speaks"]) --> B["Voice Activity Detection\nSilero VAD · TEN VAD · FireRed VAD"]
+    A(["🎙 Caller speaks"]) --> B["Voice Activity Detection\nSilero VAD · FireRed VAD"]
     B --> C["Noise Cancellation\nRNNoise — removes background audio before transcription"]
     C --> D["Speech-to-Text\nDeepgram · Azure · AssemblyAI · OpenAI Whisper · Google"]
-    D --> E["End-of-Speech Detection\nSilence-Based · Pipecat Smart Turn · LiveKit Turn Detector"]
+    D --> E["End-of-Speech Detection\nSilence-Based · Pipecat Smart Turn"]
     E --> F["LLM Inference\nOpenAI · Anthropic · Gemini · Mistral · Bedrock · AgentKit"]
     F --> G{Tool call\nrequested?}
     G -->|Yes| H["Tool Execution\nAPI · Knowledge · Endpoint · Hold"]
@@ -75,22 +75,22 @@ The same assistant is deployable across every channel. Each deployment is indepe
 
 <CardGroup cols={2}>
   <Card title="Phone" icon="phone" href="/voice-deployment-options/phone">
-    Inbound and outbound PSTN calls. Connect Twilio, Vonage, Exotel, Asterisk, or any SIP trunk. The assistant handles full voice conversations with live call transfer and session controls.
+    Inbound and outbound PSTN calls via Twilio, Vonage, Exotel, Asterisk, or SIP.
   </Card>
   <Card title="Web Widget" icon="globe" href="/voice-deployment-options/web-widget">
-    Embeddable voice and chat widget. Add to any web page with a script tag. Supports text, voice input, and voice output — configurable per deployment.
+    Embeddable widget for text and voice on any site with a script tag.
   </Card>
   <Card title="Web App (React SDK)" icon="monitor" href="/voice-deployment-options/web-app">
-    Full-featured voice integration inside your own React application. Audio streams over WebRTC directly — no relay servers, no iframes.
+    Native React SDK integration with direct WebRTC audio streaming.
   </Card>
   <Card title="WhatsApp" icon="message-circle" href="/voice-deployment-options/whatsapp">
-    Conversational AI on WhatsApp Business via the Meta webhook API. Maintains multi-turn context across messages.
+    Deploy on WhatsApp Business with multi-turn context across messages.
   </Card>
   <Card title="API / SDK" icon="terminal" href="/api-reference/installation">
-    Trigger and manage assistants programmatically. Initiate calls, pass runtime variables, stream transcripts, and receive webhook events from Python, Node.js, Go, or React.
+    Programmatically create calls, pass variables, stream transcripts, and consume webhooks.
   </Card>
   <Card title="Debugger" icon="activity" href="/assistants/create-assistant">
-    Browser-based testing environment. Talk to your assistant before it touches production — inspect transcripts, tool calls, and LLM responses in real time.
+    Test live conversations in-browser before release, with real-time logs and tool traces.
   </Card>
 </CardGroup>
 
@@ -135,15 +135,15 @@ Use separate assistants for distinct products or personas rather than a single a
     Step-by-step guide through creation, prompt setup, model configuration, voice pipeline, and tools.
   </Card>
   <Card title="Voice Activity Detection" icon="shield" href="/assistants/voice-activity-detection">
-    Configure VAD providers (Silero, TEN, FireRed) — speech detection sensitivity, barge-in timing, and noise handling.
+    Configure VAD providers (Silero, FireRed) — speech detection sensitivity, barge-in timing, and noise handling.
   </Card>
   <Card title="End of Speech Detection" icon="clock" href="/assistants/end-of-speech">
-    Configure EOS providers (Silence-Based, Pipecat Smart Turn, LiveKit) — turn detection, latency tuning, and parameter guidance.
+    Configure EOS providers (Silence-Based, Pipecat Smart Turn) — turn detection, latency tuning, and parameter guidance.
   </Card>
   <Card title="Version Control" icon="git-branch" href="/assistants/create-new-version">
     Create, compare, and release new versions. Roll back instantly if something goes wrong.
   </Card>
-  <Card title="Tools" icon="zap" href="/assistants/tools/overview">
+  <Card title="Tools" icon="zap" href="/assistants/introduction-to-tools">
     Add knowledge retrieval, API calls, endpoint invocations, hold, and end-of-conversation tools.
   </Card>
   <Card title="Knowledge" icon="book-open" href="/assistants/knowledge/add-knowledge">

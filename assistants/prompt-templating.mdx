@@ -1,7 +1,7 @@
 ---
 title: "Assistant Prompt Templating"
 description: "How to use runtime prompt variables correctly, with variable meaning tables and production-ready examples."
-sidebarTitle: "Prompt templating"
+sidebarTitle: "Prompt Templating"
 ---
 
 Prompt templating lets you inject runtime context into assistant instructions so responses are personalized, deterministic, and easier to control.
@@ -69,21 +69,20 @@ Keep template logic lightweight. Put business decision logic in instructions and
 
 | Variable | What it is | Why it is useful |
 |----------|------------|------------------|
-| `system.current_date` | Current UTC date | Date-sensitive flows (appointments, policy windows) |
-| `system.current_time` | Current UTC time | Time-gated behavior |
-| `system.current_datetime` | Full UTC timestamp | Logging-style prompts or strict audit wording |
-| `system.day_of_week` | Weekday name | Business-hour or weekday-specific logic |
-| `system.date_rfc1123` | RFC1123 timestamp | Interop with strict date formats |
-| `system.date_unix` | Unix seconds | Numeric date comparisons |
-| `system.date_unix_ms` | Unix milliseconds | High-precision timing context |
+| `system.current_date` | UTC date (YYYY-MM-DD) | Date-sensitive flows (appointments, policy windows) |
+| `system.current_time` | UTC time (HH:MM:SS) | Time-gated behavior |
+| `system.current_datetime` | UTC datetime (RFC3339) | Logging-style prompts or strict audit wording |
+| `system.day_of_week` | UTC weekday name | Business-hour or weekday-specific logic |
+| `system.date_rfc1123` | UTC RFC1123 date string | Interop with strict date formats |
+| `system.date_unix` | UTC Unix timestamp (seconds) | Numeric date comparisons |
+| `system.date_unix_ms` | UTC Unix timestamp (milliseconds) | High-precision timing context |
 
 ### `assistant.*`
 
 | Variable | What it is | Why it is useful |
 |----------|------------|------------------|
-| `assistant.name` | Assistant display name | Consistent self-introduction |
-| `assistant.id` | Assistant ID | Tracing/debug references |
-| `assistant.language` | Default assistant language | Language fallback guidance |
+| `assistant.name` | Assistant name | Consistent self-introduction |
+| `assistant.id` | Assistant identifier | Tracing/debug references |
 | `assistant.description` | Assistant description | Reinforce role/context in-system prompt |
 
 ### `conversation.*`
@@ -91,25 +90,17 @@ Keep template logic lightweight. Put business decision logic in instructions and
 | Variable | What it is | Why it is useful |
 |----------|------------|------------------|
 | `conversation.id` | Conversation ID | Support/debug workflows |
-| `conversation.identifier` | User/caller identifier | Personalized behavior |
-| `conversation.source` | Channel/source | Channel-specific instructions |
+| `conversation.identifier` | Conversation identifier | Personalized behavior |
+| `conversation.source` | Conversation source | Channel-specific instructions |
 | `conversation.direction` | Inbound/outbound direction | Different call-opening behavior |
-| `conversation.created_date` | Conversation start time | SLA or timing-aware responses |
-| `conversation.updated_date` | Last update time | Freshness-sensitive flows |
-| `conversation.duration` | Best-effort elapsed duration | Escalation rules after long calls |
-
-### `session.*`
-
-| Variable | What it is | Why it is useful |
-|----------|------------|------------------|
-| `session.mode` | Session mode when exposed | Different style for voice vs text sessions |
+| `conversation.created_date` | Conversation created datetime | SLA or timing-aware responses |
 
 ### `message.*`
 
 | Variable | What it is | Why it is useful |
 |----------|------------|------------------|
-| `message.text` | Latest user message text | Ground immediate response |
-| `message.language` | Detected/current message language | Multilingual behavior and response control |
+| `message.language` | Current message language | Multilingual behavior and response control |
+| `message.text` | Current message text | Ground immediate response |
 
 ---
 

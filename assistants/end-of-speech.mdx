@@ -8,6 +8,10 @@ End of Speech (EOS) detection determines **when a caller has finished their turn
 
 EOS works downstream of VAD. While VAD detects whether the caller is actively making sound (frame-by-frame), EOS decides whether a period of silence means "I'm done talking" or "I'm pausing to think".
 
+<Warning>
+**Deprecation notice:** LiveKit Turn Detector EOS is being disabled and will be deprecated due to a licensing issue. Do not use it for new assistants.
+</Warning>
+
 ```mermaid
 flowchart LR
     A["VAD\nSpeech activity"] --> B["STT\nTranscription"]
