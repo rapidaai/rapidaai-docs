@@ -4,22 +4,35 @@ description: "Get Rapida up and running - Choose your setup method"
 sidebarTitle: "Installation"
 ---
 
-## Before you start — voice only or with knowledge base?
+## Choose deployment mode
 
-Rapida has two deployment modes. Choose before running any commands.
+Select one mode before running commands:
 
-| | Voice Assistant Only | Voice + Knowledge Base |
-|--|----------------------|----------------------|
-| **What it does** | Build voice assistants that call LLMs directly | Everything in Voice Only, plus upload documents and answer questions from your own content |
-| **Extra services** | — | `document-api` (Python) + `opensearch` |
-| **RAM** | 4 GB minimum | 8–16 GB (OpenSearch is memory-intensive) |
-| **Build command** | `make build-all` | `make build-all-with-knowledge` |
-| **Start command** | `make up-all` | `make up-all-with-knowledge` |
-| **Best for** | Most users — calling bots, IVR, voice agents | Assistants that answer questions from your PDFs, docs, or CSVs |
+### Voice Only (Recommended)
 
-<Tip>
-  **Start with Voice Only.** You can add the knowledge base later at any time by running `make up-all-with-knowledge`. No existing data is affected.
-</Tip>
+- Use this for voice assistants that call LLM providers directly.
+- Services started: `ui`, `nginx`, `web-api`, `assistant-api`, `integration-api`, `endpoint-api`, `postgres`, `redis`
+- Minimum RAM: 4 GB
+- Start command (builds and starts): `make up-all`
+- Optional pre-build command: `make build-all`
+
+```bash
+make up-all
+```
+
+### Voice + Knowledge Base
+
+- Use this if assistants need document retrieval (RAG).
+- Adds: `document-api` and `opensearch`
+- Minimum RAM: 8 to 16 GB
+- Start command (builds and starts): `make up-all-with-knowledge`
+- Optional pre-build command: `make build-all-with-knowledge`
+
+```bash
+make up-all-with-knowledge
+```
+
+You can start with Voice Only and switch later by running `make up-all-with-knowledge`. Existing PostgreSQL and Redis data is not changed.
 
 ---
 
@@ -35,9 +48,7 @@ Rapida has two deployment modes. Choose before running any commands.
     - 4GB+ RAM available
     - 10GB free disk space
 
-    <Note>
-      **Apple Silicon (M1/M2/M3/M4):** Rapida's base images are built for `linux/amd64`. The `Makefile` automatically sets `DOCKER_DEFAULT_PLATFORM=linux/amd64` so all `make` commands work correctly without any extra configuration. Always use `make build-all` rather than running `docker compose build` directly.
-    </Note>
+    **Apple Silicon (M1/M2/M3/M4):** Rapida base images are built for `linux/amd64`. The `Makefile` sets `DOCKER_DEFAULT_PLATFORM=linux/amd64` automatically for all `make` commands. Use `make` commands instead of running `docker compose build` directly.
 
     ### Installation Steps
 
@@ -118,7 +129,42 @@ Rapida has two deployment modes. Choose before running any commands.
     - `~/rapida-data/assets/opensearch` - OpenSearch (only used with the knowledge base profile)
 
 </Step>
-    <Step title="Build images">
+    <Step title="Run preflight checks (recommended)">
+
+    ```bash
+    make doctor
+    ```
+
+    This validates Docker daemon access, Docker Compose availability, memory/disk constraints, and common local port conflicts.
+
+</Step>
+    <Step title="Start Rapida">
+
+    <Tabs>
+      <Tab title="Voice Only (recommended)">
+        Starts all core services: web-api, assistant-api, integration-api, endpoint-api, UI, PostgreSQL, Redis, and Nginx.
+        `document-api` and `opensearch` are **not started**.
+        This command also builds required images in low-memory mode.
+
+        ```bash
+        make up-all
+        ```
+      </Tab>
+      <Tab title="With Knowledge Base">
+        Starts everything above **plus** `document-api` and `opensearch`.
+        Use this if you want to upload documents and use RAG / vector search in your assistants.
+        This command also builds required images in low-memory mode.
+
+        ```bash
+        make up-all-with-knowledge
+        ```
+      </Tab>
+    </Tabs>
+
+</Step>
+    <Step title="Optional: pre-build images separately">
+
+    If you want to pre-build before startup or use CI cache warming:
 
     <Tabs>
       <Tab title="Voice Only (recommended)">
@@ -139,28 +185,6 @@ Rapida has two deployment modes. Choose before running any commands.
     </Tabs>
 
     Initial build takes 5–10 minutes depending on your network speed.
-
-</Step>
-    <Step title="Start Rapida">
-
-    <Tabs>
-      <Tab title="Voice Only (recommended)">
-        Starts all core services: web-api, assistant-api, integration-api, endpoint-api, UI, PostgreSQL, Redis, and Nginx.
-        `document-api` and `opensearch` are **not started**.
-
-        ```bash
-        make up-all
-        ```
-      </Tab>
-      <Tab title="With Knowledge Base">
-        Starts everything above **plus** `document-api` and `opensearch`.
-        Use this if you want to upload documents and use RAG / vector search in your assistants.
-
-        ```bash
-        make up-all-with-knowledge
-        ```
-      </Tab>
-    </Tabs>
 
 </Step>
     
@@ -185,10 +209,7 @@ Rapida has two deployment modes. Choose before running any commands.
     Started with Voice Only and want to add knowledge base support? No reinstall needed:
 
     ```bash
-    # Build the document-api image (first time only)
-    make build-all-with-knowledge
-
-    # Start document-api and opensearch alongside existing services
+    # Build + start document-api and opensearch alongside existing services
     make up-all-with-knowledge
     ```
 
@@ -213,7 +234,7 @@ Rapida has two deployment modes. Choose before running any commands.
     make down-all
 
     # Stop specific service
-    docker compose stop web-api
+    make down-web
     ```
 
     ## Using Existing Infrastructure
