@@ -1,0 +1,471 @@
+openapi: 3.0.3
+info:
+  title: Rapida Talk API
+  version: 0.1.0
+  description: REST endpoints for starting outbound assistant phone calls.
+servers:
+  - url: https://assistant-01.in.rapida.ai
+    description: Rapida managed assistant API
+  - url: https://assistant-01.us.rapida.ai
+    description: Local assistant API
+tags:
+  - name: calls
+    x-group: Calls
+    description: Outbound call APIs.
+security:
+  - ProjectApiKey: []
+paths:
+  /v1/talk/create-phone-call:
+    post:
+      tags:
+        - calls
+      operationId: createPhoneCall
+      summary: Create an outbound phone call
+      description: Starts one outbound phone call using the configured assistant and returns the created conversation identifier.
+      parameters:
+        - $ref: "#/components/parameters/ClientSourceHeader"
+        - $ref: "#/components/parameters/AuthIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePhoneCallRequest"
+            examples:
+              basic:
+                summary: Start a phone call
+                value:
+                  assistant:
+                    assistantId: "2227823180112723968"
+                    version: latest
+                  toNumber: "+14155550123"
+                  fromNumber: "+14155550100"
+                  metadata:
+                    customerId: "cust_123"
+                  args:
+                    customerName: "Jane"
+                  options:
+                    priority: "standard"
+      responses:
+        "200":
+          description: Outbound phone call request accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatePhoneCallResponse"
+              examples:
+                accepted:
+                  summary: Call accepted
+                  value:
+                    code: 200
+                    success: true
+                    data:
+                      id: "2230142097179373568"
+        "400":
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Unauthenticated request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Failed to initiate outbound call.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/talk/create-bulk-phone-call:
+    post:
+      tags:
+        - calls
+      operationId: createBulkPhoneCall
+      summary: Create outbound phone calls in bulk
+      description: Starts multiple outbound phone calls using configured assistants and returns the created conversation identifiers.
+      parameters:
+        - $ref: "#/components/parameters/ClientSourceHeader"
+        - $ref: "#/components/parameters/AuthIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBulkPhoneCallRequest"
+            examples:
+              basic:
+                summary: Start multiple phone calls
+                value:
+                  phoneCalls:
+                    - assistant:
+                        assistantId: "2227823180112723968"
+                        version: latest
+                      toNumber: "+14155550123"
+                      fromNumber: "+14155550100"
+                      metadata:
+                        customerId: "cust_123"
+                    - assistant:
+                        assistantId: "2227823180112723968"
+                        version: latest
+                      toNumber: "+14155550124"
+                      metadata:
+                        customerId: "cust_124"
+      responses:
+        "200":
+          description: Bulk outbound phone call request accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateBulkPhoneCallResponse"
+              examples:
+                accepted:
+                  summary: Calls accepted
+                  value:
+                    code: 200
+                    success: true
+                    data:
+                      - id: "2230142097179373568"
+                      - id: "2230142097179373569"
+        "400":
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Unauthenticated request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Failed to initiate outbound calls.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  securitySchemes:
+    ProjectApiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: Project API key from Rapida credentials.
+  parameters:
+    ClientSourceHeader:
+      name: x-client-source
+      in: header
+      required: false
+      schema:
+        type: string
+        default: sdk
+        enum:
+          - sdk
+      description: Client source identifier. SDK clients send this automatically.
+    AuthIdHeader:
+      name: x-auth-id
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Optional user identifier to propagate with the request.
+  schemas:
+    Uint64String:
+      type: string
+      pattern: "^[0-9]+$"
+      example: "2227823180112723968"
+    AssistantDefinition:
+      type: object
+      required:
+        - assistantId
+      properties:
+        assistantId:
+          $ref: "#/components/schemas/Uint64String"
+          description: Assistant ID to use for the call.
+        version:
+          type: string
+          description: Assistant version. Use latest to run the latest published version.
+          example: latest
+    CreatePhoneCallRequest:
+      type: object
+      required:
+        - assistant
+        - toNumber
+      properties:
+        assistant:
+          $ref: "#/components/schemas/AssistantDefinition"
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Arbitrary metadata stored with the conversation for tracking and analytics.
+          example:
+            customerId: "cust_123"
+        args:
+          type: object
+          additionalProperties: true
+          description: Runtime arguments made available to the assistant.
+          example:
+            customerName: "Jane"
+        options:
+          type: object
+          additionalProperties: true
+          description: Runtime options for call behavior and configuration.
+          example:
+            priority: "standard"
+        fromNumber:
+          type: string
+          description: Caller ID phone number in E.164 format. If omitted, Rapida uses the configured default.
+          example: "+14155550100"
+        toNumber:
+          type: string
+          description: Destination phone number in E.164 format.
+          example: "+14155550123"
+    CreatePhoneCallResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/AssistantConversation"
+        error:
+          $ref: "#/components/schemas/Error"
+    CreateBulkPhoneCallRequest:
+      type: object
+      required:
+        - phoneCalls
+      properties:
+        phoneCalls:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/CreatePhoneCallRequest"
+    CreateBulkPhoneCallResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantConversation"
+        error:
+          $ref: "#/components/schemas/Error"
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 400
+        success:
+          type: boolean
+          example: false
+        error:
+          $ref: "#/components/schemas/Error"
+    Error:
+      type: object
+      properties:
+        errorCode:
+          $ref: "#/components/schemas/Uint64String"
+        errorMessage:
+          type: string
+          description: Developer-facing diagnostic message.
+          example: missing to_phone parameter
+        humanMessage:
+          type: string
+          description: User-facing error message.
+          example: Please provide the required to_phone parameter.
+    User:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+        status:
+          type: string
+        createdDate:
+          type: string
+          format: date-time
+    Metric:
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+        description:
+          type: string
+    Metadata:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        key:
+          type: string
+        value:
+          type: string
+    Argument:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        name:
+          type: string
+        value:
+          type: string
+    AssistantConversationMessage:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        assistantConversationId:
+          $ref: "#/components/schemas/Uint64String"
+        role:
+          type: string
+        content:
+          type: string
+        createdDate:
+          type: string
+          format: date-time
+        updatedDate:
+          type: string
+          format: date-time
+    AssistantConversationContext:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        assistantConversationId:
+          $ref: "#/components/schemas/Uint64String"
+        key:
+          type: string
+        value:
+          type: string
+        createdDate:
+          type: string
+          format: date-time
+        updatedDate:
+          type: string
+          format: date-time
+    AssistantConversationRecording:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        assistantRecordingUrl:
+          type: string
+          format: uri
+        userRecordingUrl:
+          type: string
+          format: uri
+        conversationRecordingUrl:
+          type: string
+          format: uri
+    AssistantConversationTelephonyEvent:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        assistantConversationId:
+          $ref: "#/components/schemas/Uint64String"
+        provider:
+          type: string
+        eventType:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+        createdDate:
+          type: string
+          format: date-time
+        updatedDate:
+          type: string
+          format: date-time
+    AssistantConversation:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        userId:
+          $ref: "#/components/schemas/Uint64String"
+        assistantId:
+          $ref: "#/components/schemas/Uint64String"
+        name:
+          type: string
+        projectId:
+          $ref: "#/components/schemas/Uint64String"
+        organizationId:
+          $ref: "#/components/schemas/Uint64String"
+        source:
+          type: string
+        createdBy:
+          $ref: "#/components/schemas/Uint64String"
+        updatedBy:
+          $ref: "#/components/schemas/Uint64String"
+        user:
+          $ref: "#/components/schemas/User"
+        assistantProviderModelId:
+          $ref: "#/components/schemas/Uint64String"
+        assistantConversationMessage:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantConversationMessage"
+        identifier:
+          type: string
+        status:
+          type: string
+        createdDate:
+          type: string
+          format: date-time
+        updatedDate:
+          type: string
+          format: date-time
+        contexts:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantConversationContext"
+        metrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/Metric"
+        arguments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Argument"
+        metadata:
+          type: array
+          items:
+            $ref: "#/components/schemas/Metadata"
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/Metadata"
+        direction:
+          type: string
+        recordings:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantConversationRecording"
+        telephonyEvents:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantConversationTelephonyEvent"

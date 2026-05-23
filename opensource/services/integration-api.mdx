@@ -158,7 +158,7 @@ For providers that use OAuth (e.g., Google, GitHub), integration-api manages the
 
 ## Configuration
 
-Edit `docker/integration-api/.integration.env` before starting the service.
+Edit `docker/integration-api/integration.yml` before starting the service. The variable names below map to nested YAML keys, so `POSTGRES__HOST` corresponds to `postgres.host`.
 
 ### Required variables
 
@@ -246,16 +246,14 @@ make rebuild-integration
 Requires Go 1.25, PostgreSQL 15, and Redis 7 running locally.
 
 ```bash
-# Load base env file
-export $(grep -v '^#' docker/integration-api/.integration.env | xargs)
-
-# Override Docker hostnames
-export POSTGRES__HOST=localhost
-export REDIS__HOST=localhost
-export WEB_HOST=localhost:9001
-
-# Run
+# Uses env/integration.yml by default when run from the repo root
 go run cmd/integration/integration.go
+```
+
+To use the Docker-local config instead:
+
+```bash
+ENV_PATH=docker/integration-api/integration.yml go run cmd/integration/integration.go
 ```
 
 </Tab>

@@ -1,12 +1,12 @@
 ---
 title: "Self-Hosting Rapida"
-description: "Run the full Rapida Voice AI platform on your own infrastructure. Docker Compose gets you from zero to a working deployment in under ten minutes."
+description: "Run the full Rapida Voice AI platform on your own infrastructure. Docker Compose gets agencies and enterprise teams to a working deployment quickly while keeping control of data, credentials, and runtime boundaries."
 sidebarTitle: "Overview"
 ---
 
 ## Choose your setup
 
-Rapida supports two deployment modes. Pick the one that fits your use case before you start.
+Rapida supports two self-hosted deployment modes. Pick the one that matches how much retrieval and infrastructure footprint you need before you start.
 
 <Tabs>
   <Tab title="Voice Assistant Only (Recommended)">
@@ -28,7 +28,7 @@ Rapida supports two deployment modes. Pick the one that fits your use case befor
     make up-all
     ```
 
-    That's it — open http://localhost:3000 and create your first assistant.
+    That's it — open http://localhost:3000 and create your first assistant in an environment you control.
   </Tab>
   <Tab title="Voice Assistant + Knowledge Base">
     **Add this when you need RAG.** Everything in Voice Only, plus the ability to upload documents (PDF, DOCX, CSV, etc.) and have the assistant search and answer questions from your own content using vector embeddings.
@@ -52,7 +52,7 @@ Rapida supports two deployment modes. Pick the one that fits your use case befor
 </Tabs>
 
 <Info>
-  **Not sure which to pick?** Start with Voice Only (`make up-all`). You can add the knowledge base at any time later — just run `make up-all-with-knowledge`. No existing data is lost.
+  **Not sure which to pick?** Start with Voice Only (`make up-all`). You can add the knowledge base at any time later — just run `make up-all-with-knowledge`. No existing data is lost and you keep the same deployment model.
 </Info>
 
 ---
@@ -77,7 +77,7 @@ The knowledge base lets your voice assistant answer questions grounded in your o
 
 ## What you are deploying
 
-Rapida is a microservices platform. Self-hosting means running all services on your own infrastructure — no data leaves your environment.
+Rapida is a microservices platform. Self-hosting means running all services on your own infrastructure so you control the runtime boundary, network path, and operational model.
 
 | Service | Port | Role |
 |---------|------|------|
@@ -142,20 +142,20 @@ Creates `~/rapida-data/assets/{db,redis,opensearch}` with the correct ownership 
 
 </Step>
 
-<Step title="Configure environment files">
+<Step title="Configure YAML files">
 
-Each service reads from an env file in `docker/<service>/`. The defaults work for a local deployment with no external providers. You do not need any API keys to start the platform.
+Each service reads from a YAML config file in `docker/<service>/`. The defaults work for a local deployment with no external providers. You do not need any API keys to start the platform.
 
 ```
-docker/web-api/.web.env
-docker/assistant-api/.assistant.env
-docker/integration-api/.integration.env
-docker/endpoint-api/.endpoint.env
+docker/web-api/web.yml
+docker/assistant-api/assistant.yml
+docker/integration-api/integration.yml
+docker/endpoint-api/endpoint.yml
 docker/document-api/config.yaml
 ```
 
 <Warning>
-  Before going to production, change `SECRET=rpd_pks` to a strong random value in every env file. All services share the same `SECRET` for JWT signing. Generate one with `openssl rand -hex 32`.
+  Before going to production, change `secret: "rpd_pks"` to a strong random value in every service config. All services share the same secret for JWT signing. Generate one with `openssl rand -hex 32`.
 </Warning>
 
 </Step>

@@ -175,7 +175,7 @@ curl -X POST http://localhost:9005/api/v1/endpoint/webhooks/{id}/test \
 
 ## Configuration
 
-Edit `docker/endpoint-api/.endpoint.env` before starting the service.
+Edit `docker/endpoint-api/endpoint.yml` before starting the service. The variable names below map to nested YAML keys, so `POSTGRES__HOST` corresponds to `postgres.host`.
 
 ### Required variables
 
@@ -253,11 +253,14 @@ make rebuild-endpoint
 Requires Go 1.25, PostgreSQL 15, and Redis 7 running locally.
 
 ```bash
-export $(grep -v '^#' docker/endpoint-api/.endpoint.env | xargs)
-export POSTGRES__HOST=localhost
-export REDIS__HOST=localhost
-
+# Uses env/endpoint.yml by default when run from the repo root
 go run cmd/endpoint/endpoint.go
+```
+
+To use the Docker-local config instead:
+
+```bash
+ENV_PATH=docker/endpoint-api/endpoint.yml go run cmd/endpoint/endpoint.go
 ```
 
 </Tab>

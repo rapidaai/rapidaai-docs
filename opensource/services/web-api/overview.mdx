@@ -209,7 +209,7 @@ make logs-web | head -40
 </Accordion>
 
 <Accordion title="JWT validation fails across services">
-All services must share the same `SECRET` value. Confirm it is identical in `.web.env`, `.assistant.env`, `.integration.env`, and `.endpoint.env`.
+All services must share the same secret value. Confirm `secret` is identical in `docker/web-api/web.yml`, `docker/assistant-api/assistant.yml`, `docker/integration-api/integration.yml`, and `docker/endpoint-api/endpoint.yml`.
 </Accordion>
 
 <Accordion title="gRPC proxy returns 'service unavailable'">

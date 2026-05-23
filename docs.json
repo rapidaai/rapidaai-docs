@@ -1,26 +1,36 @@
 {
     "$schema": "https://mintlify.com/docs.json",
-    "theme": "mint",
+    "theme": "aspen",
     "name": "rapida.ai documentation",
     "colors": {
-        "primary": "#0f62fe",
-        "light": "#0f62fe",
-        "dark": "#4589ff"
+        "primary": "#0253e9",
+        "light": "#0253e9",
+        "dark": "#0253e9"
     },
-    "fonts": {
-        "heading": {
-            "family": "IBM Plex Sans",
-            "weight": 600
-        },
-        "body": {
-            "family": "IBM Plex Sans",
-            "weight": 400
-        }
-    },
+    
     "rounded": "sharp",
     "favicon": "/favicon.png",
     "icons": {
         "library": "lucide"
+    },
+    "api": {
+        "openapi": {
+            "source": "openapi/talk-api.yaml",
+            "directory": "api-reference/rest"
+        },
+        "playground": {
+            "display": "interactive"
+        },
+        "examples": {
+            "languages": [
+                "curl",
+                "javascript",
+                "python",
+                "go"
+            ],
+            "defaults": "required",
+            "prefill": true
+        }
     },
     "navigation": {
         "tabs": [
@@ -427,6 +437,13 @@
                             "api-reference/installation",
                             "api-reference/authentication"
                         ]
+                    },
+                    {
+                        "group": "REST API",
+                        "openapi": {
+                            "source": "openapi/talk-api.yaml",
+                            "directory": "api-reference/rest"
+                        }
                     },
                     {
                         "group": "Calls",

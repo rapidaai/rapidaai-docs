@@ -314,7 +314,7 @@ sequenceDiagram
 
 ## Configuration
 
-The assistant-api reads its configuration from `docker/assistant-api/.assistant.env` (Docker) or environment variables (local).
+The assistant-api reads its configuration from `docker/assistant-api/assistant.yml` (Docker) or `env/assistant.yaml` / `ENV_PATH` when running from source.
 
 ### Required variables
 
@@ -426,19 +426,14 @@ make shell-assistant
 Requires Go 1.25, PostgreSQL 15, Redis 7, and OpenSearch 2.11 running locally.
 
 ```bash
-# Load base env file
-export $(grep -v '^#' docker/assistant-api/.assistant.env | xargs)
-
-# Override Docker hostnames for local connectivity
-export POSTGRES__HOST=localhost
-export REDIS__HOST=localhost
-export OPENSEARCH__HOST=localhost
-export INTEGRATION_HOST=localhost:9004
-export ENDPOINT_HOST=localhost:9005
-export WEB_HOST=localhost:9001
-
-# Run
+# Uses env/assistant.yaml by default when run from the repo root
 go run cmd/assistant/assistant.go
+```
+
+To use the Docker-local config instead:
+
+```bash
+ENV_PATH=docker/assistant-api/assistant.yml go run cmd/assistant/assistant.go
 ```
 
 </Tab>

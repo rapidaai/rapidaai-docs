@@ -4,7 +4,7 @@ description: "Understanding how to deploy the Rapida Voice AI Platform"
 sidebarTitle: "Deployment Options"
 ---
 
-The Rapida Voice AI Platform provides multiple deployment options to run your voice AI agents in production environments. Understanding these options helps you make the right choice for your specific use case.
+The Rapida Voice AI Platform supports multiple deployment options for teams that care about ownership, scale, and operational control. Agencies often need client-isolated deployments they can hand over. Enterprise teams often need governed environments that can scale without losing visibility. Rapida supports both.
 
 Rapida Voice AI Platform supports two primary deployment modes:
 
@@ -13,7 +13,7 @@ Rapida Voice AI Platform supports two primary deployment modes:
 
 ## Rapida Managed
 
-Rapida Managed is a fully-managed, globally distributed network of Rapida servers that provides all the power of the open-source platform with none of the operational complexity. It allows you to focus on building your voice AI applications while Rapida handles deployment, scaling, and maintenance.
+Rapida Managed is a fully-managed, globally distributed Rapida deployment for teams that want enterprise rollout speed without operating the platform themselves. You keep the APIs, SDKs, and product surface while Rapida handles deployment, scaling, and maintenance.
 
 - **Zero Infrastructure Management**: No need to manage servers, containers, or scaling
 - **Automatic Scaling**: Built-in load balancing and auto-scaling capabilities
@@ -22,19 +22,20 @@ Rapida Managed is a fully-managed, globally distributed network of Rapida server
 - **Regional Deployment**: Choose from multiple global regions to optimize latency
 - **Built-in Monitoring**: Integrated metrics, logging, and health monitoring
 
-Best for: Teams that want to focus on agent development rather than infrastructure management.
+Best for: Teams that want to move fast, plus agencies and enterprise groups that need scale before they need full infrastructure ownership.
 
 ## Self-Hosting (EC2, Docker, or Custom Infrastructure)
 
-Self-hosting gives you complete control over your deployment environment and infrastructure. When self-hosting:
+Self-hosting gives you full ownership of the runtime. This is the preferred path for agencies that need client-controlled environments and enterprise teams with strict data, networking, or governance requirements. When self-hosting:
 
 - **Full Control**: Complete control over hardware, networking, and configurations
+- **Client and Tenant Isolation**: Keep client programs, business units, or environments separated on your terms
 - **Custom Integrations**: Ability to integrate with existing infrastructure and tools
 - **Data Localization**: Maximum data security for high-compliance environments
 - **Custom Resource Allocation**: Optimize for your specific performance requirements
 - **Custom Scaling**: Implement your own scaling strategies and resource management
 
-Best for: Organizations with specific infrastructure, security compliance requirements.
+Best for: Agencies delivering client-owned deployments and enterprise platform teams with strict security, procurement, or compliance requirements.
 
 ## Why Choose Rapida Managed?
 
@@ -56,7 +57,9 @@ When building with Rapida, you can either self-host the open-source server or us
 | Runtime features | Full support | Full support |
 | Voice recording & streaming | Full support | Full support |
 | Voice agent framework | Full support | Full support |
+| Best fit | Client-owned deployments, strict control, private infrastructure | Fast rollout with managed operations |
 | Who manages it | You | Rapida |
+| Control boundary | You own infra, keys, networking, and data path | Rapida operates the platform with dedicated controls |
 | Architecture | Single-node deployment | Distributed mesh network |
 | Connection model | Direct connection to your server | Each user connects to the closest server |
 | Max concurrent calls | Depends on your hardware | No limit (auto-scaling) |

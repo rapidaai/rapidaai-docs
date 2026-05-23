@@ -141,7 +141,7 @@ sequenceDiagram
 
 ## Configuration
 
-Edit `docker/web-api/.web.env` before starting the service.
+Edit `docker/web-api/web.yml` before starting the service. The variable names below map to nested YAML keys, so `POSTGRES__HOST` corresponds to `postgres.host`.
 
 ### Required variables
 
@@ -247,19 +247,15 @@ make shell-web
 Requires Go 1.25, PostgreSQL 15, and Redis 7 running locally.
 
 ```bash
-# Load base env file
-export $(grep -v '^#' docker/web-api/.web.env | xargs)
-
-# Override Docker hostnames
-export POSTGRES__HOST=localhost
-export REDIS__HOST=localhost
-export INTEGRATION_HOST=localhost:9004
-export ENDPOINT_HOST=localhost:9005
-export ASSISTANT_HOST=localhost:9007
-export DOCUMENT_HOST=http://localhost:9010
-
-# Run
+# Uses env/web.yml by default when run from the repo root
 go run cmd/web/web.go
+```
+
+If you need a different config file, point `ENV_PATH` at it:
+
+```bash
+ENV_PATH=docker/web-api/web.yml go run cmd/web/web.go
+ENV_PATH=env/web.yml go run cmd/web/web.go
 ```
 
 </Tab>
@@ -318,11 +314,11 @@ make logs-web | head -40
 </Accordion>
 
 <Accordion title="JWT validation fails across services">
-All services must share the same `SECRET` value. Confirm it is identical in `.web.env`, `.assistant.env`, `.integration.env`, and `.endpoint.env`.
+All services must share the same secret value. Confirm `secret` is identical in `docker/web-api/web.yml`, `docker/assistant-api/assistant.yml`, `docker/integration-api/integration.yml`, and `docker/endpoint-api/endpoint.yml`.
 </Accordion>
 
 <Accordion title="OAuth login redirects fail">
-- Ensure `GOOGLE_CLIENT_ID` / `GITHUB_CLIENT_ID` are set in `.web.env`.
+- Ensure the relevant `oauth2` keys are set in `docker/web-api/web.yml`.
 - Verify the redirect URI registered with the OAuth provider exactly matches `UI_HOST`.
 </Accordion>
 

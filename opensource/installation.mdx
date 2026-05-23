@@ -1,6 +1,6 @@
 ---
 title: "Installation"
-description: "Get Rapida up and running - Choose your setup method"
+description: "Get Rapida up and running with the deployment model that fits your ownership and scale requirements"
 sidebarTitle: "Installation"
 ---
 
@@ -10,7 +10,7 @@ Select one mode before running commands:
 
 ### Voice Only (Recommended)
 
-- Use this for voice assistants that call LLM providers directly.
+- Use this for voice assistants that call LLM providers directly and you want the smallest controlled deployment footprint.
 - Services started: `ui`, `nginx`, `web-api`, `assistant-api`, `integration-api`, `endpoint-api`, `postgres`, `redis`
 - Minimum RAM: 4 GB
 - Start command (builds and starts): `make up-all`
@@ -22,7 +22,7 @@ make up-all
 
 ### Voice + Knowledge Base
 
-- Use this if assistants need document retrieval (RAG).
+- Use this if teams or clients need private document retrieval (RAG) in the same controlled environment.
 - Adds: `document-api` and `opensearch`
 - Minimum RAM: 8 to 16 GB
 - Start command (builds and starts): `make up-all-with-knowledge`
@@ -39,7 +39,7 @@ You can start with Voice Only and switch later by running `make up-all-with-know
 <Tabs>
   <Tab title="Docker (Recommended)">
 
-    The fastest way to get Rapida running with all services configured automatically.
+    The fastest way to get Rapida running on infrastructure your team controls. Best for agencies, internal platform teams, and enterprise environments that need ownership of keys, networking, and runtime behavior.
 
     ### Prerequisites
 
@@ -251,14 +251,16 @@ You can start with Voice Only and switch later by running `make up-all-with-know
     #   ...
     ```
 
-    Update PostgreSQL environment variables in `docker/web-api/.web.env`:
+    Update PostgreSQL settings in `docker/web-api/web.yml`:
 
-    ```env
-    POSTGRES__HOST=host.docker.internal  # Point to host machine
-    POSTGRES__PORT=5432
-    POSTGRES__DB_NAME=web_db
-    POSTGRES__AUTH__USER=your_user
-    POSTGRES__AUTH__PASSWORD=your_password
+    ```yaml
+    postgres:
+      host: host.docker.internal
+      port: 5432
+      db_name: web_db
+      auth:
+        user: your_user
+        password: your_password
     ```
 
     ### Example: Use Existing Redis
@@ -271,11 +273,12 @@ You can start with Voice Only and switch later by running `make up-all-with-know
     #   ...
     ```
 
-    Update Redis settings in service `.env` files:
+    Update Redis settings in the service YAML files:
 
-    ```env
-    REDIS__HOST=host.docker.internal  # Your Redis host
-    REDIS__PORT=6379
+    ```yaml
+    redis:
+      host: host.docker.internal
+      port: 6379
     ```
 
     ### Example: Use Existing OpenSearch
@@ -290,14 +293,16 @@ You can start with Voice Only and switch later by running `make up-all-with-know
     #   ...
     ```
 
-    Then set the OpenSearch vars in `docker/assistant-api/.assistant.env`:
+    Then update `docker/assistant-api/assistant.knowledge.yml`:
 
-    ```env
-    OPENSEARCH__SCHEMA=http
-    OPENSEARCH__HOST=host.docker.internal
-    OPENSEARCH__PORT=9200
-    OPENSEARCH__USER=admin
-    OPENSEARCH__PASSWORD=admin
+    ```yaml
+    opensearch:
+      schema: http
+      host: host.docker.internal
+      port: 9200
+      auth:
+        user: admin
+        password: admin
     ```
 
     And run with the knowledge profile:

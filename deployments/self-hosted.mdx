@@ -1,23 +1,23 @@
 ---
 title: "Self hosted Deployment"
-description: "Deploy the Rapida Voice AI Platform on your own infrastructure using Docker Compose"
+description: "Deploy the Rapida Voice AI Platform on infrastructure your team or clients control"
 sidebarTitle: "Self hosted"
 ---
 
 ## Choose Your Deployment Mode
 
-Rapida ships as two Docker Compose configurations. Pick one before you start.
+Rapida ships as two Docker Compose configurations. Self-hosted is the right starting point for agencies that need client ownership and enterprise teams that need scale, governance, and infrastructure control.
 
 | | Voice Assistant Only | Voice + Knowledge Base |
 |--|----------------------|------------------------|
-| **What it does** | Build voice assistants that call LLMs directly | Everything in Voice Only, plus upload documents and answer questions from your own content |
+| **What it does** | Build voice assistants that call LLMs directly on infrastructure you own | Everything in Voice Only, plus upload documents and answer questions from your own content |
 | **Extra services** | — | `document-api` (Python) + `opensearch` |
 | **RAM** | 4 GB minimum | 8–16 GB (OpenSearch is memory-intensive) |
 | **Build command** | `make build-all` | `make build-all-with-knowledge` |
 | **Start command** | `make up-all` | `make up-all-with-knowledge` |
 
 <Tip>
-  **Start with Voice Only.** You can add the knowledge base at any time by running `make up-all-with-knowledge` — no data is lost.
+  **Start with Voice Only.** You can add the knowledge base at any time by running `make up-all-with-knowledge` — no data is lost and your ownership model does not change.
 </Tip>
 
 ---
@@ -55,15 +55,17 @@ Rapida ships as two Docker Compose configurations. Pick one before you start.
     </Note>
   </Step>
 
-  <Step title="Configure environment files">
-    Each service has an env file under `docker/<service>/`. Edit them with your API keys and settings:
+  <Step title="Configure YAML files">
+    Each service has a YAML config file under `docker/<service>/`. Edit them with your API keys and settings:
 
     ```
-    docker/web-api/.web.env
-    docker/assistant-api/.assistant.env
-    docker/integration-api/.integration.env
-    docker/endpoint-api/.endpoint.env
+    docker/web-api/web.yml
+    docker/assistant-api/assistant.yml
+    docker/integration-api/integration.yml
+    docker/endpoint-api/endpoint.yml
     ```
+
+    This is where you define provider keys, networking, runtime behavior, and client- or environment-specific settings.
 
     See [Configuration](/opensource/configuration) for a full reference of all variables.
   </Step>
