@@ -1,0 +1,87 @@
+---
+title: "Authentication"
+description: "Authenticate REST API requests with an API key."
+---
+
+The REST API accepts an API key in the `x-api-key` header, the `x-api-key` query parameter, or the `Authentication` header. Create and rotate API keys from your Rapida project credentials.
+
+<CodeGroup>
+
+```bash x-api-key header
+curl --request POST "https://assistant-01.in.rapida.ai/v1/talk/create-phone-call" \
+  --header "Content-Type: application/json" \
+  --header "x-api-key: $RAPIDA_API_KEY" \
+  --data '{
+    "assistant": {
+      "assistantId": "2227823180112723968",
+      "version": "latest"
+    },
+    "toNumber": "+14155550123"
+  }'
+```
+
+```bash x-api-key query parameter
+curl --request POST "https://assistant-01.in.rapida.ai/v1/talk/create-phone-call?x-api-key=$RAPIDA_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "assistant": {
+      "assistantId": "2227823180112723968",
+      "version": "latest"
+    },
+    "toNumber": "+14155550123"
+  }'
+```
+
+```bash Authentication header
+curl --request POST "https://assistant-01.in.rapida.ai/v1/talk/create-phone-call" \
+  --header "Content-Type: application/json" \
+  --header "Authentication: $RAPIDA_API_KEY" \
+  --data '{
+    "assistant": {
+      "assistantId": "2227823180112723968",
+      "version": "latest"
+    },
+    "toNumber": "+14155550123"
+  }'
+```
+
+</CodeGroup>
+
+## Authentication parameters
+
+<ParamField header="x-api-key" type="string">
+  API key sent as a request header.
+</ParamField>
+
+<ParamField query="x-api-key" type="string">
+  API key sent as a query parameter.
+</ParamField>
+
+<ParamField header="Authentication" type="string">
+  API key sent as an `Authentication` header.
+</ParamField>
+
+Use one authentication method per request. Prefer headers for server-side integrations because query parameters can appear in logs.
+
+## Optional headers
+
+<ParamField header="x-auth-id" type="string">
+  Optional user identifier to propagate with the request.
+</ParamField>
+
+<ParamField header="x-client-source" type="string">
+  Optional client source identifier. SDK clients send this automatically.
+</ParamField>
+
+## Base URLs
+
+Use the endpoint for the region where your assistant API is hosted.
+
+```text
+https://assistant-01.in.rapida.ai
+https://assistant-01.us.rapida.ai
+```
+
+<Warning>
+  Do not expose project API keys in browser or mobile clients. Send REST API requests from a trusted backend service.
+</Warning>

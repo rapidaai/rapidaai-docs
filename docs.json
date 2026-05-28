@@ -406,21 +406,14 @@
         ]
       },
       {
-        "tab": "API Reference",
+        "tab": "SDK",
         "groups": [
           {
-            "group": "API Documentation",
+            "group": "Getting Started",
             "pages": [
               "api-reference/installation",
               "api-reference/authentication"
             ]
-          },
-          {
-            "group": "REST API",
-            "openapi": {
-              "source": "openapi/talk-api.yaml",
-              "directory": "api-reference/rest"
-            }
           },
           {
             "group": "Calls",
@@ -456,6 +449,23 @@
               "api-reference/assistant/get-all-assistant-webhook-log",
               "api-reference/assistant/get-assistant-analysis",
               "api-reference/assistant/get-all-assistant-analysis"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "pages": [
+          "api-reference/rest/authentication",
+          {
+            "group": "Assistant",
+            "openapi": {
+              "source": "openapi/talk-api.yaml",
+              "directory": "api-reference/rest"
+            },
+            "pages": [
+              "POST /v1/talk/create-phone-call",
+              "POST /v1/talk/create-bulk-phone-call"
             ]
           }
         ]

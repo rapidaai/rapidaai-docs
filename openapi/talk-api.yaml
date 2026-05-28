@@ -13,14 +13,16 @@ tags:
     x-group: Calls
     description: Outbound call APIs.
 security:
-  - ProjectApiKey: []
+  - ProjectApiKeyHeader: []
+  - ProjectApiKeyQuery: []
+  - AuthenticationHeader: []
 paths:
   /v1/talk/create-phone-call:
     post:
       tags:
         - calls
       operationId: createPhoneCall
-      summary: Create an outbound phone call
+      summary: create-phone-call
       description: Starts one outbound phone call using the configured assistant and returns the created conversation identifier.
       parameters:
         - $ref: "#/components/parameters/ClientSourceHeader"
@@ -84,7 +86,7 @@ paths:
       tags:
         - calls
       operationId: createBulkPhoneCall
-      summary: Create outbound phone calls in bulk
+      summary: create-bulk-phone-call
       description: Starts multiple outbound phone calls using configured assistants and returns the created conversation identifiers.
       parameters:
         - $ref: "#/components/parameters/ClientSourceHeader"
@@ -149,11 +151,21 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 components:
   securitySchemes:
-    ProjectApiKey:
+    ProjectApiKeyHeader:
       type: apiKey
       in: header
       name: x-api-key
-      description: Project API key from Rapida credentials.
+      description: API key from Rapida credentials.
+    ProjectApiKeyQuery:
+      type: apiKey
+      in: query
+      name: x-api-key
+      description: API key from Rapida credentials.
+    AuthenticationHeader:
+      type: apiKey
+      in: header
+      name: Authentication
+      description: API key from Rapida credentials.
   parameters:
     ClientSourceHeader:
       name: x-client-source
