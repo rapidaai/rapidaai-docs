@@ -41,24 +41,35 @@ With AgentKit, you can connect any LLM backend with Rapida over gRPC.
     </Info>
   </Step>
 
-  <Step title="Start from official GitHub example">
-    GitHub repository:
+  <Step title="Start from official examples">
+    Use the Python or Node.js starter depending on your backend stack.
 
-    - `https://github.com/rapidaai/rapida-python-recipes/`
+    <CodeGroup>
 
-    ```bash
+    ```bash Python
     git clone https://github.com/rapidaai/rapida-python-recipes.git
     cd rapida-python-recipes
     pip install -r requirements.txt
-    ```
 
-    Starter run command:
-
-    ```bash
     cd examples/python/agentkit
     export OPENAI_API_KEY="<your_key>"
     python main.py --host 0.0.0.0 --port 50051
     ```
+
+    ```bash Node.js
+    git clone https://github.com/rapidaai/rapida-nodejs-recipes.git
+    cd rapida-nodejs-recipes
+    npm install
+
+    export AGENTKIT_PORT=50051
+    # Optional. Enables token auth on gRPC metadata key: authorization
+    export AGENTKIT_TOKEN="<shared-token>"
+    node agentkit/index.js
+    ```
+
+    </CodeGroup>
+
+    Node.js reference implementation: `agentkit/index.js`.
   </Step>
 
   <Step title="Implement required stream flow">
@@ -95,6 +106,51 @@ With AgentKit, you can connect any LLM backend with Rapida over gRPC.
     <Warning>
       If `initialization` is not handled first, conversations can fail with request-shape errors.
     </Warning>
+
+    Node.js servers implement the same flow by extending `AgentKitAgent` and writing responses to the gRPC stream:
+
+    ```js
+    import { AgentKitAgent, AgentKitServer } from "@rapidaai/nodejs";
+
+    class EchoAgent extends AgentKitAgent {
+      talk(call) {
+        call.on("data", (request) => {
+          if (this.isInitializationRequest(request)) {
+            call.write(this.initializationResponse(request.getInitialization()));
+            return;
+          }
+
+          if (this.isConfigurationRequest(request)) {
+            call.write(this.configurationResponse(request.getConfiguration()));
+            return;
+          }
+
+          if (this.isTextMessage(request)) {
+            const messageId = this.getMessageId(request);
+            const text = this.getUserText(request);
+
+            call.write(this.assistantResponse(messageId, `You said: ${text}`, false));
+            call.write(
+              this.assistantResponse(
+                messageId,
+                "Thanks, I received your message.",
+                true
+              )
+            );
+          }
+        });
+
+        call.on("end", () => call.end());
+      }
+    }
+
+    const server = new AgentKitServer({
+      agent: new EchoAgent(),
+      port: Number(process.env.AGENTKIT_PORT || 50051),
+    });
+
+    await server.start();
+    ```
   </Step>
 
   <Step title="Implement tool lifecycle">
@@ -283,11 +339,15 @@ Development notes:
 
 ## Example Matrix (GitHub)
 
-Base path:
+Python base path:
 - `https://github.com/rapidaai/rapida-python-recipes/tree/main`
+
+Node.js base path:
+- `https://github.com/rapidaai/rapida-nodejs-recipes/tree/main`
 
 | Example | Purpose | GitHub |
 |---|---|---|
+| `agentkit/index.js` | Node.js EchoAgent gRPC server baseline | [Open](https://github.com/rapidaai/rapida-nodejs-recipes/blob/main/agentkit/index.js) |
 | `agentkit/main.py` | Minimal production-style AgentKit baseline | [Open](https://github.com/rapidaai/rapida-python-recipes/blob/main/agentkit/main.py) |
 | `executor/agentkit/openai-gpt.py` | OpenAI chat + tool lifecycle | [Open](https://github.com/rapidaai/rapida-python-recipes/blob/main/executor/agentkit/openai-gpt.py) |
 | `executor/agentkit/azure-openai-gpt.py` | Azure OpenAI + tool lifecycle | [Open](https://github.com/rapidaai/rapida-python-recipes/blob/main/executor/agentkit/azure-openai-gpt.py) |
