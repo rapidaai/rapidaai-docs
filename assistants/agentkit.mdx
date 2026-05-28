@@ -1,245 +1,311 @@
 ---
 title: "AgentKit — Custom LLM Backend"
-description: "Build a custom server-side LLM backend that Rapida calls over gRPC, giving you full control over reasoning, tool use, and context management."
+description: "Create an AgentKit assistant in Rapida, connect your own gRPC backend, and go live quickly with production-safe patterns."
 sidebarTitle: "AgentKit"
 ---
 
-AgentKit lets you run your own LLM logic on your own server. Instead of using Rapida's built-in LLM endpoint routing, Rapida calls your gRPC service in real time — streaming user speech transcripts to your server, which streams back assistant responses that are synthesized to audio and played to the caller.
+AgentKit lets you run your own backend for live voice conversations.
 
-This gives you complete control over:
-- Which LLM you call and how you call it
-- Custom tool definitions and execution
-- Multi-step reasoning chains (LangChain, CrewAI, AutoGen, etc.)
-- State management and memory
-- Any external API or database your logic needs
+Rapida handles telephony + STT + TTS, while your server handles reasoning and tool execution over a bidirectional gRPC stream.
 
-## How It Works
+With AgentKit, you can connect any LLM backend with Rapida over gRPC.
 
-```
-User speaks
-    ↓ (Rapida transcribes via STT)
-Your AgentKit server receives TalkInput (user text)
-    ↓ (your code calls OpenAI / Anthropic / custom model)
-Your server streams back TalkOutput (assistant text chunks)
-    ↓ (Rapida synthesizes via TTS and plays to user)
-User hears the response
-```
+---
 
-The protocol is a bidirectional gRPC stream. Rapida manages the audio pipeline (VAD, STT, TTS, telephony) — your server only handles text in / text out.
+## Quickstart
 
-## Python Quick Start
+<Steps>
+  <Step title="Create an AgentKit assistant in Rapida">
+    Do this first, before writing backend logic.
 
-### 1. Install the SDK
+    1. Open your Rapida dashboard and create (or edit) an assistant.
+    2. In provider/model settings, choose **AgentKit** as the LLM backend.
+    3. Configure the AgentKit connection:
+       - **URL**: your gRPC server address (for example: `your-host:50051`)
+       - **Auth token**: if your server enforces token auth
+       - **TLS certificate settings**: if your server uses TLS
+    4. Save the assistant version and release it.
+    5. Attach your voice deployment channel (phone/web/etc.) to this version.
 
-```bash
-pip install rapida-python
-```
+    <Info>
+      Your AgentKit server must be reachable from Rapida network. Localhost works only for local development setups where connectivity is bridged.
+    </Info>
+  </Step>
 
-### 2. Implement your agent
+  <Step title="Start from official GitHub example">
+    GitHub repository:
 
-Subclass `AgentKitAgent` and override the `Talk` method:
+    - `https://github.com/rapidaai/rapida-python-recipes/`
 
-```python
-import os
-from openai import OpenAI
-from rapida import AgentKitAgent, AgentKitServer
-from rapida.clients.protos.talk_api_pb2 import TalkInput, TalkOutput
+    ```bash
+    git clone https://github.com/rapidaai/rapida-python-recipes.git
+    cd rapida-python-recipes
+    pip install -r requirements.txt
+    ```
 
-openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    Starter run command:
 
-class MyVoiceAgent(AgentKitAgent):
+    ```bash
+    cd examples/python/agentkit
+    export OPENAI_API_KEY="<your_key>"
+    python main.py --host 0.0.0.0 --port 50051
+    ```
+  </Step>
+
+  <Step title="Implement required stream flow">
+    Implement `Talk(...)` using the lifecycle contract described in **Stream Lifecycle** below.
+
+    Minimum required order:
+
+    1. handle `initialization` first and acknowledge it
+    2. handle optional `configuration` updates
+    3. process `message` turns and stream assistant/tool outputs
+
+    ```python
     def Talk(self, request_iterator, context):
-        messages = [{"role": "system", "content": "You are a helpful voice assistant."}]
-
         for request in request_iterator:
-            # Acknowledge configuration handshake
-            if self.is_configuration_request(request):
+            if self.is_initialization_request(request):
+                yield self.initialization_response(request.initialization)
+
+            elif self.is_configuration_request(request):
                 yield self.configuration_response(request.configuration)
-                continue
 
-            # Get the user's transcribed text
-            user_text = self.get_user_text(request)
-            if not user_text:
-                continue
+            elif self.is_message_request(request):
+                if not self.is_text_message(request):
+                    yield self.error_response(501, "Audio not implemented")
+                    continue
 
-            messages.append({"role": "user", "content": user_text})
-            msg_id = self.get_message_id(request)
+                msg_id = self.get_message_id(request)
+                yield self.assistant_response(msg_id, "Working on it... ", completed=False)
+                yield self.assistant_response(msg_id, "Done.", completed=True)
 
-            # Stream the LLM response back
-            full_response = ""
-            stream = openai_client.chat.completions.create(
-                model="gpt-4o",
-                messages=messages,
-                stream=True,
-            )
-            for chunk in stream:
-                delta = chunk.choices[0].delta.content or ""
-                if delta:
-                    full_response += delta
-                    yield self.assistant_response(msg_id, delta, completed=False)
+            else:
+                yield self.error_response(400, "Unknown request type")
+    ```
 
-            # Signal end of response
-            yield self.assistant_response(msg_id, "", completed=True)
-            messages.append({"role": "assistant", "content": full_response})
+    <Warning>
+      If `initialization` is not handled first, conversations can fail with request-shape errors.
+    </Warning>
+  </Step>
 
+  <Step title="Implement tool lifecycle">
+    For each tool execution in your backend:
 
-if __name__ == "__main__":
+    1. emit `tool_call(...)`
+    2. execute tool locally
+    3. emit `tool_call_result(...)`
+    4. continue assistant response (or send call directive)
+
+    ```python
+    import uuid
+
+    tool_id = str(uuid.uuid4())
+
+    yield self.tool_call(msg_id, tool_id, "get_weather", {"city": "London"})
+    result = {"city": "London", "temp_c": 22}
+    yield self.tool_call_result(msg_id, tool_id, "get_weather", result, success=True)
+    yield self.assistant_response(msg_id, "In London it's 22°C.", completed=True)
+    ```
+
+    For call-ending directives (`END_CONVERSATION` / `TRANSFER_CONVERSATION`), include `toolId` and `name` in the directive payload.
+  </Step>
+
+  <Step title="Configure security">
+    Token auth:
+
+    ```python
     server = AgentKitServer(
-        agent=MyVoiceAgent(),
+        agent=MyAgent(),
         host="0.0.0.0",
         port=50051,
+        auth_config={"enabled": True, "token": os.getenv("AGENTKIT_TOKEN")},
     )
-    print("AgentKit server listening on port 50051")
-    server.start()
-    server.wait_for_termination()
-```
+    ```
 
-### 3. Point your assistant to your server
+    TLS:
 
-In the Rapida dashboard, when configuring your assistant's LLM provider, select **AgentKit** and enter the address of your server (e.g. `my-server.example.com:50051`).
-
-## Response Types
-
-Your `Talk` method yields `TalkOutput` objects. Use the convenience methods on `AgentKitAgent`:
-
-| Method | Use when |
-|--------|----------|
-| `assistant_response(msg_id, text, completed)` | Streaming text response chunks |
-| `configuration_response(config)` | Acknowledging the initial handshake |
-| `tool_call(msg_id, tool_id, name, args)` | Requesting Rapida to execute a tool |
-| `tool_call_result(msg_id, tool_id, name, result, success)` | Returning a tool result |
-| `transfer_call(msg_id, args)` | Transferring the call to another number |
-| `terminate_call(msg_id, args)` | Ending the call programmatically |
-| `error_response(code, message)` | Signalling an error |
-
-## Handling Tool Calls
-
-Rapida can execute tools on your behalf (knowledge retrieval, endpoint invocation) and send results back to your server. Here's how to request a tool call and receive its result:
-
-```python
-for request in request_iterator:
-    if self.is_configuration_request(request):
-        yield self.configuration_response(request.configuration)
-        continue
-
-    user_text = self.get_user_text(request)
-    msg_id = self.get_message_id(request)
-
-    # Request a tool call from Rapida
-    yield self.tool_call(
-        msg_id=msg_id,
-        tool_id="tool_001",
-        name="get_weather",
-        args={"location": "London"}
+    ```python
+    server = AgentKitServer(
+        agent=MyAgent(),
+        host="0.0.0.0",
+        port=50051,
+        ssl_config={
+            "cert_path": "/etc/ssl/server.crt",
+            "key_path": "/etc/ssl/server.key",
+        },
     )
-
-    # The next message will contain the tool result
-    tool_result_request = next(request_iterator)
-    # Process tool result and continue...
-```
-
-## SSL / TLS Configuration
-
-For production deployments, enable TLS:
-
-```python
-server = AgentKitServer(
-    agent=MyVoiceAgent(),
-    host="0.0.0.0",
-    port=50051,
-    ssl_config={
-        "cert_path": "/etc/ssl/server.crt",
-        "key_path": "/etc/ssl/server.key",
-        "ca_cert_path": "/etc/ssl/ca.crt",  # Optional: for mutual TLS
-    }
-)
-```
-
-## Authentication
-
-Protect your server with a bearer token:
-
-```python
-server = AgentKitServer(
-    agent=MyVoiceAgent(),
-    host="0.0.0.0",
-    port=50051,
-    auth_config={
-        "enabled": True,
-        "token": os.getenv("AGENTKIT_TOKEN"),
-    }
-)
-```
-
-## Framework Examples
-
-AgentKit works with any Python code. Here are some common patterns:
-
-<AccordionGroup>
-  <Accordion title="LangChain ReAct agent">
-    ```python
-    from langchain.agents import AgentExecutor, create_react_agent
-    from langchain_openai import ChatOpenAI
-    from langchain.tools import tool
-
-    @tool
-    def get_account_balance(account_id: str) -> str:
-        """Get the balance for a customer account."""
-        # Call your database or API
-        return f"Account {account_id} balance: $1,234.56"
-
-    llm = ChatOpenAI(model="gpt-4o", streaming=True)
-    tools = [get_account_balance]
-    agent = create_react_agent(llm, tools, prompt)
-    agent_executor = AgentExecutor(agent=agent, tools=tools)
-
-    class LangChainAgent(AgentKitAgent):
-        def Talk(self, request_iterator, context):
-            for request in request_iterator:
-                if self.is_configuration_request(request):
-                    yield self.configuration_response(request.configuration)
-                    continue
-                user_text = self.get_user_text(request)
-                msg_id = self.get_message_id(request)
-                for chunk in agent_executor.stream({"input": user_text}):
-                    if "output" in chunk:
-                        yield self.assistant_response(msg_id, chunk["output"], completed=False)
-                yield self.assistant_response(msg_id, "", completed=True)
     ```
-  </Accordion>
+  </Step>
 
-  <Accordion title="Anthropic Claude">
-    ```python
-    import anthropic
-    client = anthropic.Anthropic()
+  <Step title="Validate before customer traffic">
+    Use the test client:
 
-    class ClaudeAgent(AgentKitAgent):
-        def Talk(self, request_iterator, context):
-            messages = []
-            for request in request_iterator:
-                if self.is_configuration_request(request):
-                    yield self.configuration_response(request.configuration)
-                    continue
-                user_text = self.get_user_text(request)
-                msg_id = self.get_message_id(request)
-                messages.append({"role": "user", "content": user_text})
-                with client.messages.stream(
-                    model="claude-opus-4-6",
-                    max_tokens=1024,
-                    messages=messages,
-                ) as stream:
-                    full = ""
-                    for text in stream.text_stream:
-                        full += text
-                        yield self.assistant_response(msg_id, text, completed=False)
-                yield self.assistant_response(msg_id, "", completed=True)
-                messages.append({"role": "assistant", "content": full})
+    ```bash
+    python examples/python/executor/agentkit/test_client.py localhost:50051
     ```
-  </Accordion>
-</AccordionGroup>
+
+    Validate:
+    - initialization acknowledgement
+    - assistant chunks and final response
+    - tool call and tool call result events (for tooling flows)
+  </Step>
+</Steps>
+
+---
+
+
+## Stream Lifecycle
+
+The AgentKit stream is long-lived and stateful. Treat it as a lifecycle, not as isolated RPC requests.
+
+### Lifecycle phases
+
+| Phase | Inbound frame from Rapida | Outbound frame from your backend | Required | Purpose |
+|---|---|---|---|---|
+| 1. Handshake | `initialization` | `initialization_response(...)` | Yes | Establish conversation identity and runtime context. |
+| 2. Runtime config | `configuration` | `configuration_response(...)` | Optional | Apply stream-mode/runtime updates. |
+| 3. User turn | `message` | `assistant_response(...)` chunks + final | Yes (per turn) | Return assistant output for each user turn. |
+| 4. Tool execution | Internal tool decision during turn | `tool_call(...)` then `tool_call_result(...)` | Optional | Report tool lifecycle and results. |
+| 5. Call directive | Internal decision to transfer/end | `toolCall` with action + `toolId` + `name` | Optional | Signal call transfer or termination. |
+| 6. Termination | Client/server closes stream | none (or final error/event) | Yes | End stream cleanly and release resources. |
+
+### Turn-level sequence (recommended)
+
+1. Receive `message` and extract `msg_id` + text.
+2. Emit one or more `assistant_response(..., completed=False)` chunks.
+3. If tool is needed:
+   - emit `tool_call(msg_id, tool_id, name, args)`
+   - execute tool
+   - emit `tool_call_result(msg_id, tool_id, name, result, success=...)`
+4. Emit final `assistant_response(..., completed=True)` for that turn.
+5. Repeat for next `message` frame until stream closes.
+
+### State and correlation rules
+
+- `initialization` is always first and must be acknowledged.
+- `assistant.id`, `toolCall.id`, and `toolCallResult.id` should match the current `message.id`.
+- `tool_id` must be stable between `tool_call` and `tool_call_result`.
+- Final assistant frame per user turn must set `completed=True`.
+- For call-ending/transfer directives, include `toolId` and `name` for correlation.
+
+
+---
+
+## Request Types (`TalkInput`)
+
+| Request Type | What it is | Why it exists | What your backend should do |
+|---|---|---|---|
+| `initialization` | First frame of every stream (`assistantConversationId`, assistant metadata, runtime args). | Establishes conversation/session context before user turns start. | Always acknowledge using `initialization_response(request.initialization)`. |
+| `configuration` | Optional runtime configuration update frame. | Allows stream behavior updates mid-session. | Acknowledge with `configuration_response(request.configuration)`. |
+| `message` | User turn payload (`id`, `text`/`audio`, `completed`, `time`). | Carries the actual user input to process. | Parse with helpers (`is_text_message`, `get_user_text`, `get_message_id`) and emit assistant/tool responses. |
+
+---
+
+## Response Types (`TalkOutput`)
+
+| Response Type | What it is | Why it exists | When to emit |
+|---|---|---|---|
+| `code` / `success` | Base response envelope fields. | Standard status signaling for each frame. | On every response (`200/true` by default). |
+| `initialization` | Initialization acknowledgement payload. | Confirms handshake accepted. | Via `initialization_response(...)`. |
+| `assistant` | Assistant chunk/final text (`id`, `text`, `completed`). | Streams voice response content back to Rapida. | Via `assistant_response(...)` for chunks and final frame. |
+| `toolCall` | Tool lifecycle or directive event (`id`, `toolId`, `name`, `action`, `args`). | Announces tool start or call-level action (transfer/end). | Via `tool_call(...)` or explicit directive payload. |
+| `toolCallResult` | Tool execution result (`id`, `toolId`, `name`, `result`). | Closes the tool lifecycle and reports output. | Via `tool_call_result(...)` after tool execution. |
+| `interruption` | Optional interruption signal. | Represents interruption events in stream. | When interruption handling is implemented. |
+| `error` | Error frame (`errorCode`, `errorMessage`). | Signals unrecoverable backend failures. | Via `error_response(code, message)`. |
+
+<Note>
+Keep the same `tool_id` between `tool_call` and `tool_call_result`. For call-ending directives, include `toolId` and `name` for correlation.
+</Note>
+
+---
+
+## Utilities
+
+### Response Builder Utilities (`AgentKitAgent`)
+
+| Utility | Input | What it returns | Why/When to use |
+|---|---|---|---|
+| `response(code=200, success=True, **kwargs)` | Base status + payload fields | `TalkOutput` | Low-level custom frame builder. |
+| `initialization_response(initialization)` | `ConversationInitialization` | `TalkOutput.initialization` | Required ack for first frame. |
+| `configuration_response(configuration)` | `ConversationConfiguration` | `TalkOutput` ack | Optional config ack frame. |
+| `assistant_response(msg_id, content, completed=False)` | message id + text + completion flag | `TalkOutput.assistant` | Streaming/final assistant text frames. |
+| `error_response(code, message)` | code + message | `TalkOutput.error` | Error signaling in stream. |
+| `tool_call(msg_id, tool_id, name, args)` | tool start metadata | `TalkOutput.toolCall` | Start tool lifecycle event. |
+| `tool_call_result(msg_id, tool_id, name, result, success=True)` | tool result metadata | `TalkOutput.toolCallResult` | Finish tool lifecycle event. |
+| `transfer_call(msg_id, args)` | transfer args | `TalkOutput.toolCall` directive | Transfer call action. |
+| `terminate_call(msg_id, args)` | termination args | `TalkOutput.toolCall` directive | End-conversation action. |
+
+### Request Helper Utilities (`AgentKitAgent`)
+
+| Utility | What it checks/returns | Why/When to use |
+|---|---|---|
+| `is_initialization_request(request)` | `True` if initialization frame | First branch in `Talk`. |
+| `is_configuration_request(request)` | `True` if configuration frame | Handle optional config updates. |
+| `is_message_request(request)` | `True` if message frame | Main user-turn branch. |
+| `is_text_message(request)` | `True` for text turn | Process user text safely. |
+| `is_audio_message(request)` | `True` for audio turn | Handle/decline audio mode explicitly. |
+| `get_user_text(request)` | User text or `None` | Extract text payload. |
+| `get_message_id(request)` | Message id or `None` | Correlate assistant/tool frames. |
+| `get_conversation_id(request)` | Conversation id or `None` | Conversation-scoped state mapping. |
+| `get_assistant_id(request)` | Assistant id or `None` | Logging/routing/debug context. |
+
+---
+
+## Local Development Setup (ngrok)
+
+For local development, expose your AgentKit server to Rapida with ngrok:
+
+```bash
+ngrok tcp 50051
+```
+
+ngrok prints a forwarding endpoint like:
+
+- `tcp://0.tcp.ngrok.io:12345`
+
+Use the host and port (`0.tcp.ngrok.io:12345`) as the AgentKit URL in your Rapida assistant configuration.
+
+Development notes:
+- keep the local AgentKit server running on port `50051` during testing
+- if auth is enabled, set the same token in Rapida AgentKit provider config
+- if ngrok restarts, the endpoint changes unless a reserved domain is configured
+
+---
+
+## Example Matrix (GitHub)
+
+Base path:
+- `https://github.com/rapidaai/rapida-python-recipes/tree/main`
+
+| Example | Purpose | GitHub |
+|---|---|---|
+| `agentkit/main.py` | Minimal production-style AgentKit baseline | [Open](https://github.com/rapidaai/rapida-python-recipes/blob/main/agentkit/main.py) |
+| `executor/agentkit/openai-gpt.py` | OpenAI chat + tool lifecycle | [Open](https://github.com/rapidaai/rapida-python-recipes/blob/main/executor/agentkit/openai-gpt.py) |
+| `executor/agentkit/azure-openai-gpt.py` | Azure OpenAI + tool lifecycle | [Open](https://github.com/rapidaai/rapida-python-recipes/blob/main/executor/agentkit/azure-openai-gpt.py) |
+| `executor/agentkit/anthropic-claude.py` | Anthropic Claude + tool lifecycle | [Open](https://github.com/rapidaai/rapida-python-recipes/blob/main/executor/agentkit/anthropic-claude.py) |
+| `executor/agentkit/gemini-example.py` | Google Gemini + function/tool flow | [Open](https://github.com/rapidaai/rapida-python-recipes/blob/main/executor/agentkit/gemini-example.py) |
+| `executor/agentkit/langchain-agent.py` | LangChain orchestrated backend | [Open](https://github.com/rapidaai/rapida-python-recipes/blob/main/executor/agentkit/langchain-agent.py) |
+| `executor/agentkit/crewai-multi-agent.py` | CrewAI multi-agent orchestration | [Open](https://github.com/rapidaai/rapida-python-recipes/blob/main/executor/agentkit/crewai-multi-agent.py) |
+| `executor/agentkit/autogen-collaborative.py` | AutoGen collaborative agents | [Open](https://github.com/rapidaai/rapida-python-recipes/blob/main/executor/agentkit/autogen-collaborative.py) |
+| `executor/agentkit/n8n-workflow.py` | n8n workflow automation integration | [Open](https://github.com/rapidaai/rapida-python-recipes/blob/main/executor/agentkit/n8n-workflow.py) |
+| `executor/agentkit/example-with-ssl-option.py` | TLS/auth focused server setup | [Open](https://github.com/rapidaai/rapida-python-recipes/blob/main/executor/agentkit/example-with-ssl-option.py) |
+| `executor/agentkit/test_client.py` | Local stream validation client | [Open](https://github.com/rapidaai/rapida-python-recipes/blob/main/executor/agentkit/test_client.py) |
+
+---
+
+## Production Checklist
+
+- handle `initialization` first on every stream
+- always send final `assistant_response(..., completed=True)`
+- keep `tool_id` consistent between `tool_call` and `tool_call_result`
+- include `toolId` + `name` for call-ending directives
+- do not hardcode secrets in source code
+- configure TLS + auth for production
+
+---
 
 ## Related
 
-- [Python SDK Reference](/api-reference/installation)
 - [Create Assistant](/assistants/create-assistant)
-- [Endpoint Tool](/assistants/tools/add-endpoint-tool)
+- [Tools Overview](/assistants/introduction-to-tools)
+- [Python SDK Installation](/api-reference/installation)

@@ -1,517 +1,494 @@
 {
-    "$schema": "https://mintlify.com/docs.json",
-    "theme": "aspen",
-    "name": "rapida.ai documentation",
-    "colors": {
-        "primary": "#0253e9",
-        "light": "#0253e9",
-        "dark": "#0253e9"
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "almond",
+  "name": "rapida.ai documentation",
+  "colors": {
+    "primary": "#0253e9",
+    "light": "#0253e9",
+    "dark": "#0253e9"
+  },
+  "fonts": {
+    "family": "IBM Plex Sans"
+  },
+
+  "rounded": "sharp",
+  "favicon": "/favicon.png",
+  "icons": {
+    "library": "lucide"
+  },
+  "api": {
+    "openapi": {
+      "source": "openapi/talk-api.yaml",
+      "directory": "api-reference/rest"
     },
-    
-    "rounded": "sharp",
-    "favicon": "/favicon.png",
-    "icons": {
-        "library": "lucide"
+    "playground": {
+      "display": "interactive"
     },
-    "api": {
-        "openapi": {
-            "source": "openapi/talk-api.yaml",
-            "directory": "api-reference/rest"
-        },
-        "playground": {
-            "display": "interactive"
-        },
-        "examples": {
-            "languages": [
-                "curl",
-                "javascript",
-                "python",
-                "go"
-            ],
-            "defaults": "required",
-            "prefill": true
-        }
-    },
-    "navigation": {
-        "tabs": [
-            {
-                "tab": "Documentation",
-                "groups": [
-                    {
-                        "group": "Getting Started",
-                        "pages": [
-                            "introduction/overview"
-                        ]
-                    },
-                    {
-                        "group": "Assistants",
-                        "pages": [
-                            "assistants/overview",
-                            {
-                                "group": "Setup",
-                                "pages": [
-                                    "assistants/create-assistant",
-                                    "assistants/prompt-templating",
-                                    "assistants/create-new-version",
-                                    "assistants/telemetry",
-                                    "assistants/agentkit"
-                                ]
-                            },
-                            {
-                                "group": "Voice Pipeline",
-                                "pages": [
-                                    "assistants/voice-activity-detection",
-                                    "assistants/end-of-speech"
-                                ]
-                            },
-                            {
-                                "group": "Deployments",
-                                "pages": [
-                                    "voice-deployment-options/phone",
-                                    "voice-deployment-options/web-widget",
-                                    "voice-deployment-options/web-app",
-                                    "voice-deployment-options/whatsapp",
-                                    "assistants/twilio-integration",
-                                    "assistants/twilio-credentials",
-                                    "assistants/twilio-handler"
-                                ]
-                            },
-                            {
-                                "group": "Knowledge",
-                                "pages": [
-                                    "assistants/knowledge/add-knowledge"
-                                ]
-                            },
-                            {
-                                "group": "Tools",
-                                "pages": [
-                                    "assistants/introduction-to-tools",
-                                    "assistants/tools/add-knowledge-tool",
-                                    "assistants/tools/add-endpoint-tool",
-                                    "assistants/tools/add-api-tool",
-                                    "assistants/tools/add-put-on-hold-tool",
-                                    "assistants/tools/add-end-of-conversation-tool"
-                                ]
-                            },
-                            {
-                                "group": "Analysis",
-                                "pages": [
-                                    "assistants/analysis/overview",
-                                    "assistants/analysis/create-analysis",
-                                    "assistants/analysis/update-analysis"
-                                ]
-                            },
-                            {
-                                "group": "Webhooks",
-                                "pages": [
-                                    "assistants/webhook/overview",
-                                    "assistants/webhook/create-webhook",
-                                    "assistants/webhook/update-webhook"
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        "group": "Knowledge",
-                        "pages": [
-                            "knowledge/overview",
-                            {
-                                "group": "Setup",
-                                "pages": [
-                                    "knowledge/create-knowledge"
-                                ]
-                            },
-                            {
-                                "group": "Documents",
-                                "pages": [
-                                    "knowledge/add-new-document",
-                                    "knowledge/manage-document-chunk"
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        "group": "LLM Endpoint",
-                        "pages": [
-                            "endpoint/overview",
-                            {
-                                "group": "Setup",
-                                "pages": [
-                                    "endpoint/create-endpoint",
-                                    "endpoint/create-new-version"
-                                ]
-                            },
-                            {
-                                "group": "Operations",
-                                "pages": [
-                                    "endpoint/monitor-endpoint-performance"
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        "group": "Activity & Logs",
-                        "pages": [
-                            "activity/conversation-logs",
-                            "activity/llm-logs",
-                            "activity/webhook-logs"
-                        ]
-                    },
-                    {
-                        "group": "External Integrations",
-                        "pages": [
-                            {
-                                "group": "LLM Integrations",
-                                "pages": [
-                                    "integrations/llm/openai",
-                                    "integrations/llm/anthropic",
-                                    "integrations/llm/azure-openai",
-                                    "integrations/llm/gemini",
-                                    "integrations/llm/google-ai",
-                                    "integrations/llm/google-vertex-ai",
-                                    "integrations/llm/cohere",
-                                    "integrations/llm/mistral",
-                                    "integrations/llm/huggingface",
-                                    "integrations/llm/bedrock",
-                                    "integrations/llm/voyageai"
-                                ]
-                            },
-                            {
-                                "group": "Speech-to-Text",
-                                "pages": [
-                                    "integrations/stt/deepgram",
-                                    "integrations/stt/assemblyai",
-                                    "integrations/stt/google-speech-service",
-                                    "integrations/stt/azure-speech-service",
-                                    "integrations/stt/openai-whisper",
-                                    "integrations/stt/aws-transcribe",
-                                    "integrations/stt/cartesia",
-                                    "integrations/stt/revai",
-                                    "integrations/stt/speechmatics",
-                                    "integrations/stt/sarvam",
-                                    "integrations/stt/groq",
-                                    "integrations/stt/nvidia"
-                                ]
-                            },
-                            {
-                                "group": "Text-to-Speech",
-                                "pages": [
-                                    "integrations/tts/elevenlabs",
-                                    "integrations/tts/deepgram",
-                                    "integrations/tts/azure-speech-service",
-                                    "integrations/tts/google-speech-service",
-                                    "integrations/tts/openai-tts",
-                                    "integrations/tts/aws-polly",
-                                    "integrations/tts/cartesia",
-                                    "integrations/tts/resemble",
-                                    "integrations/tts/rime",
-                                    "integrations/tts/sarvam",
-                                    "integrations/tts/neuphonic",
-                                    "integrations/tts/minimax",
-                                    "integrations/tts/groq",
-                                    "integrations/tts/speechmatics",
-                                    "integrations/tts/nvidia"
-                                ]
-                            },
-                            {
-                                "group": "Telephony Integrations",
-                                "pages": [
-                                    "integrations/telephony/twilio",
-                                    "integrations/telephony/vonage",
-                                    "integrations/telephony/exotel",
-                                    "integrations/telephony/asterisk",
-                                    "integrations/telephony/sip"
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        "group": "Credentials",
-                        "pages": [
-                            "credential/rapida-credentials"
-                        ]
-                    },
-                    {
-                        "group": "Workspace",
-                        "pages": [
-                            "workspace/overview",
-                            {
-                                "group": "Projects",
-                                "pages": [
-                                    "workspace/project-management",
-                                    "workspace/create-new-project"
-                                ]
-                            },
-                            {
-                                "group": "Users",
-                                "pages": [
-                                    "workspace/user-management",
-                                    "workspace/invite-a-user"
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        "group": "Governance",
-                        "pages": [
-                            "governances/overview",
-                            {
-                                "group": "Structure",
-                                "pages": [
-                                    "governances/organization",
-                                    "governances/project"
-                                ]
-                            },
-                            {
-                                "group": "Access Control",
-                                "pages": [
-                                    "governances/roles-and-permission"
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        "group": "Deployment Options",
-                        "pages": [
-                            "deployments/deployment-options",
-                            {
-                                "group": "Managed",
-                                "pages": [
-                                    "deployments/fully-managed"
-                                ]
-                            },
-                            {
-                                "group": "Self-Hosted",
-                                "pages": [
-                                    "deployments/self-hosted"
-                                ]
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                "tab": "Open Source",
-                "groups": [
-                    {
-                        "group": "Getting Started",
-                        "pages": [
-                            "opensource/overview",
-                            "opensource/installation",
-                            "opensource/architecture",
-                            "opensource/configuration",
-                            "opensource/troubleshooting"
-                        ]
-                    },
-                    {
-                        "group": "Dashboard (UI)",
-                        "pages": [
-                            "opensource/services/web-console"
-                        ]
-                    },
-                    {
-                        "group": "Web API",
-                        "pages": [
-                            "opensource/services/web-api/overview",
-                            "opensource/services/web-api/configuration"
-                        ]
-                    },
-                    {
-                        "group": "Assistant API",
-                        "pages": [
-                            "opensource/services/assistant-api/overview",
-                            "opensource/services/assistant-api/configuration",
-                            "opensource/services/assistant-api/telemetry",
-                            "opensource/services/assistant-api/prompt-templating",
-                            "opensource/services/assistant-api/ngrok",
-                            {
-                                "group": "Telephony",
-                                "pages": [
-                                    "opensource/services/assistant-api/telephony/overview",
-                                    "opensource/services/assistant-api/telephony/twilio",
-                                    "opensource/services/assistant-api/telephony/vonage",
-                                    "opensource/services/assistant-api/telephony/exotel",
-                                    "opensource/services/assistant-api/telephony/asterisk",
-                                    "opensource/services/assistant-api/telephony/sip",
-                                    "opensource/services/assistant-api/telephony/custom"
-                                ]
-                            },
-                            {
-                                "group": "Voice Activity Detection",
-                                "pages": [
-                                    "opensource/services/assistant-api/vad/overview",
-                                    "opensource/services/assistant-api/vad/silero",
-                                    "opensource/services/assistant-api/vad/ten",
-                                    "opensource/services/assistant-api/vad/firered"
-                                ]
-                            },
-                            {
-                                "group": "End of Speech",
-                                "pages": [
-                                    "opensource/services/assistant-api/eos/overview",
-                                    "opensource/services/assistant-api/eos/silence-based",
-                                    "opensource/services/assistant-api/eos/pipecat",
-                                    "opensource/services/assistant-api/eos/livekit"
-                                ]
-                            },
-                            {
-                                "group": "Speech-to-Text",
-                                "pages": [
-                                    "opensource/services/assistant-api/stt/overview",
-                                    "opensource/services/assistant-api/stt/deepgram",
-                                    "opensource/services/assistant-api/stt/google",
-                                    "opensource/services/assistant-api/stt/azure",
-                                    "opensource/services/assistant-api/stt/assemblyai",
-                                    "opensource/services/assistant-api/stt/revai",
-                                    "opensource/services/assistant-api/stt/sarvamai",
-                                    "opensource/services/assistant-api/stt/groq",
-                                    "opensource/services/assistant-api/stt/speechmatics",
-                                    "opensource/services/assistant-api/stt/nvidia",
-                                    "opensource/services/assistant-api/stt/aws",
-                                    "opensource/services/assistant-api/stt/custom"
-                                ]
-                            },
-                            {
-                                "group": "Text-to-Speech",
-                                "pages": [
-                                    "opensource/services/assistant-api/tts/overview",
-                                    "opensource/services/assistant-api/tts/deepgram",
-                                    "opensource/services/assistant-api/tts/elevenlabs",
-                                    "opensource/services/assistant-api/tts/cartesia",
-                                    "opensource/services/assistant-api/tts/google",
-                                    "opensource/services/assistant-api/tts/azure",
-                                    "opensource/services/assistant-api/tts/sarvamai",
-                                    "opensource/services/assistant-api/tts/rime",
-                                    "opensource/services/assistant-api/tts/resembleai",
-                                    "opensource/services/assistant-api/tts/neuphonic",
-                                    "opensource/services/assistant-api/tts/minimax",
-                                    "opensource/services/assistant-api/tts/groq",
-                                    "opensource/services/assistant-api/tts/speechmatics",
-                                    "opensource/services/assistant-api/tts/nvidia",
-                                    "opensource/services/assistant-api/tts/aws",
-                                    "opensource/services/assistant-api/tts/custom"
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        "group": "Integration API",
-                        "pages": [
-                            "opensource/services/integration-api/overview",
-                            "opensource/services/integration-api/configuration",
-                            {
-                                "group": "LLM Providers",
-                                "pages": [
-                                    "opensource/services/integration-api/llm/overview",
-                                    "opensource/services/integration-api/llm/openai",
-                                    "opensource/services/integration-api/llm/anthropic",
-                                    "opensource/services/integration-api/llm/gemini",
-                                    "opensource/services/integration-api/llm/azure",
-                                    "opensource/services/integration-api/llm/custom"
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        "group": "Endpoint API",
-                        "pages": [
-                            "opensource/services/endpoint-api/overview",
-                            "opensource/services/endpoint-api/configuration"
-                        ]
-                    },
-                    {
-                        "group": "Document API",
-                        "pages": [
-                            "opensource/services/document-api/overview",
-                            "opensource/services/document-api/configuration"
-                        ]
-                    }
-                ]
-            },
-            {
-                "tab": "API Reference",
-                "groups": [
-                    {
-                        "group": "API Documentation",
-                        "pages": [
-                            "api-reference/installation",
-                            "api-reference/authentication"
-                        ]
-                    },
-                    {
-                        "group": "REST API",
-                        "openapi": {
-                            "source": "openapi/talk-api.yaml",
-                            "directory": "api-reference/rest"
-                        }
-                    },
-                    {
-                        "group": "Calls",
-                        "pages": [
-                            "api-reference/call/create-call",
-                            "api-reference/call/create-bulk-call"
-                        ]
-                    },
-                    {
-                        "group": "Endpoint",
-                        "pages": [
-                            "api-reference/endpoint/invoke",
-                            "api-reference/endpoint/get-endpoint",
-                            "api-reference/endpoint/get-all-endpoint",
-                            "api-reference/endpoint/get-endpoint-log",
-                            "api-reference/endpoint/get-all-endpoint-log"
-                        ]
-                    },
-                    {
-                        "group": "Assistant",
-                        "pages": [
-                            "api-reference/assistant/get-assistant",
-                            "api-reference/assistant/get-all-assistant",
-                            "api-reference/assistant/get-assistant-conversation",
-                            "api-reference/assistant/get-all-assistant-conversation",
-                            "api-reference/assistant/get-assistant-webhook",
-                            "api-reference/assistant/get-all-assistant-webhook",
-                            "api-reference/assistant/get-assistant-knowledge",
-                            "api-reference/assistant/get-all-assistant-knowledge",
-                            "api-reference/assistant/get-assistant-tool",
-                            "api-reference/assistant/get-all-assistant-tool",
-                            "api-reference/assistant/get-assistant-webhook-log",
-                            "api-reference/assistant/get-all-assistant-webhook-log",
-                            "api-reference/assistant/get-assistant-analysis",
-                            "api-reference/assistant/get-all-assistant-analysis"
-                        ]
-                    }
-                ]
-            }
-        ]
-    },
-    "logo": {
-        "light": "/logo/rapida-db.svg",
-        "dark": "/logo/rapida-lb.svg"
-    },
-    "navbar": {
-        "links": [
-            {
-                "label": "Support",
-                "href": "mailto:prashant@rapida.ai"
-            }
-        ],
-        "primary": {
-            "type": "button",
-            "label": "Dashboard",
-            "href": "https://app.rapida.ai/dashboard"
-        }
-    },
-    "integrations": {
-        "ga4": {
-            "measurementId": "G-C635KMN11R"
-        }
-    },
-    "footer": {
-        "socials": {
-            "twitter": "https://x.com/rapidaai",
-            "github": "https://github.com/rapidaai",
-            "linkedin": "https://www.linkedin.com/company/rapida-ai/"
-        }
+    "examples": {
+      "languages": ["curl", "javascript", "python", "go"],
+      "defaults": "required",
+      "prefill": true
     }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["introduction/overview"]
+          },
+          {
+            "group": "Assistants",
+            "pages": [
+              "assistants/overview",
+              "assistants/create-assistant",
+              {
+                "group": "Agent Executor",
+                "pages": [
+                  "assistants/create-new-version",
+                  "assistants/agentkit",
+                  "assistants/prompt-templating"
+                ]
+              },
+              {
+                "group": "Voice Pipeline",
+                "pages": [
+                  "assistants/voice-activity-detection",
+                  "assistants/end-of-speech"
+                ]
+              },
+              {
+                "group": "Deployments",
+                "pages": [
+                  "voice-deployment-options/phone",
+                  "voice-deployment-options/web-widget",
+                  "voice-deployment-options/web-app",
+                  "voice-deployment-options/whatsapp",
+                  "assistants/twilio-integration",
+                  "assistants/twilio-credentials",
+                  "assistants/twilio-handler"
+                ]
+              },
+              {
+                "group": "Knowledge",
+                "pages": ["assistants/knowledge/add-knowledge"]
+              },
+              {
+                "group": "Tools",
+                "pages": [
+                  "assistants/introduction-to-tools",
+                  "assistants/tools/add-knowledge-tool",
+                  "assistants/tools/add-endpoint-tool",
+                  "assistants/tools/add-api-tool",
+                  "assistants/tools/add-put-on-hold-tool",
+                  "assistants/tools/add-end-of-conversation-tool"
+                ]
+              },
+              {
+                "group": "Analysis",
+                "pages": [
+                  "assistants/analysis/overview",
+                  "assistants/analysis/create-analysis",
+                  "assistants/analysis/update-analysis"
+                ]
+              },
+              {
+                "group": "Webhooks",
+                "pages": [
+                  "assistants/webhook/overview",
+                  "assistants/webhook/create-webhook",
+                  "assistants/webhook/update-webhook"
+                ]
+              },
+              "assistants/telemetry"
+            ]
+          },
+          {
+            "group": "Knowledge",
+            "pages": [
+              "knowledge/overview",
+              {
+                "group": "Setup",
+                "pages": ["knowledge/create-knowledge"]
+              },
+              {
+                "group": "Documents",
+                "pages": [
+                  "knowledge/add-new-document",
+                  "knowledge/manage-document-chunk"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "LLM Endpoint",
+            "pages": [
+              "endpoint/overview",
+              {
+                "group": "Setup",
+                "pages": [
+                  "endpoint/create-endpoint",
+                  "endpoint/create-new-version"
+                ]
+              },
+              {
+                "group": "Operations",
+                "pages": ["endpoint/monitor-endpoint-performance"]
+              }
+            ]
+          },
+          {
+            "group": "Activity & Logs",
+            "pages": [
+              "activity/conversation-logs",
+              "activity/llm-logs",
+              "activity/webhook-logs"
+            ]
+          },
+          {
+            "group": "External Integrations",
+            "pages": [
+              {
+                "group": "LLM Integrations",
+                "pages": [
+                  "integrations/llm/openai",
+                  "integrations/llm/anthropic",
+                  "integrations/llm/azure-openai",
+                  "integrations/llm/gemini",
+                  "integrations/llm/google-ai",
+                  "integrations/llm/google-vertex-ai",
+                  "integrations/llm/cohere",
+                  "integrations/llm/mistral",
+                  "integrations/llm/huggingface",
+                  "integrations/llm/bedrock",
+                  "integrations/llm/voyageai"
+                ]
+              },
+              {
+                "group": "Speech-to-Text",
+                "pages": [
+                  "integrations/stt/deepgram",
+                  "integrations/stt/assemblyai",
+                  "integrations/stt/google-speech-service",
+                  "integrations/stt/azure-speech-service",
+                  "integrations/stt/openai-whisper",
+                  "integrations/stt/aws-transcribe",
+                  "integrations/stt/cartesia",
+                  "integrations/stt/revai",
+                  "integrations/stt/speechmatics",
+                  "integrations/stt/sarvam",
+                  "integrations/stt/groq",
+                  "integrations/stt/nvidia"
+                ]
+              },
+              {
+                "group": "Text-to-Speech",
+                "pages": [
+                  "integrations/tts/elevenlabs",
+                  "integrations/tts/deepgram",
+                  "integrations/tts/azure-speech-service",
+                  "integrations/tts/google-speech-service",
+                  "integrations/tts/openai-tts",
+                  "integrations/tts/aws-polly",
+                  "integrations/tts/cartesia",
+                  "integrations/tts/resemble",
+                  "integrations/tts/rime",
+                  "integrations/tts/sarvam",
+                  "integrations/tts/neuphonic",
+                  "integrations/tts/minimax",
+                  "integrations/tts/groq",
+                  "integrations/tts/speechmatics",
+                  "integrations/tts/nvidia"
+                ]
+              },
+              {
+                "group": "Telephony Integrations",
+                "pages": [
+                  "integrations/telephony/twilio",
+                  "integrations/telephony/vonage",
+                  "integrations/telephony/exotel",
+                  "integrations/telephony/asterisk",
+                  "integrations/telephony/sip"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Credentials",
+            "pages": ["credential/rapida-credentials"]
+          },
+          {
+            "group": "Workspace",
+            "pages": [
+              "workspace/overview",
+              {
+                "group": "Projects",
+                "pages": [
+                  "workspace/project-management",
+                  "workspace/create-new-project"
+                ]
+              },
+              {
+                "group": "Users",
+                "pages": [
+                  "workspace/user-management",
+                  "workspace/invite-a-user"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Governance",
+            "pages": [
+              "governances/overview",
+              {
+                "group": "Structure",
+                "pages": ["governances/organization", "governances/project"]
+              },
+              {
+                "group": "Access Control",
+                "pages": ["governances/roles-and-permission"]
+              }
+            ]
+          },
+          {
+            "group": "Deployment Options",
+            "pages": [
+              "deployments/deployment-options",
+              {
+                "group": "Managed",
+                "pages": ["deployments/fully-managed"]
+              },
+              {
+                "group": "Self-Hosted",
+                "pages": ["deployments/self-hosted"]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Open Source",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "opensource/overview",
+              "opensource/installation",
+              "opensource/architecture",
+              "opensource/configuration",
+              "opensource/troubleshooting"
+            ]
+          },
+          {
+            "group": "Dashboard (UI)",
+            "pages": ["opensource/services/web-console"]
+          },
+          {
+            "group": "Web API",
+            "pages": [
+              "opensource/services/web-api/overview",
+              "opensource/services/web-api/configuration"
+            ]
+          },
+          {
+            "group": "Assistant API",
+            "pages": [
+              "opensource/services/assistant-api/overview",
+              "opensource/services/assistant-api/configuration",
+              "opensource/services/assistant-api/telemetry",
+              "opensource/services/assistant-api/prompt-templating",
+              "opensource/services/assistant-api/ngrok",
+              {
+                "group": "Telephony",
+                "pages": [
+                  "opensource/services/assistant-api/telephony/overview",
+                  "opensource/services/assistant-api/telephony/twilio",
+                  "opensource/services/assistant-api/telephony/vonage",
+                  "opensource/services/assistant-api/telephony/exotel",
+                  "opensource/services/assistant-api/telephony/asterisk",
+                  "opensource/services/assistant-api/telephony/sip",
+                  "opensource/services/assistant-api/telephony/custom"
+                ]
+              },
+              {
+                "group": "Voice Activity Detection",
+                "pages": [
+                  "opensource/services/assistant-api/vad/overview",
+                  "opensource/services/assistant-api/vad/silero",
+                  "opensource/services/assistant-api/vad/ten",
+                  "opensource/services/assistant-api/vad/firered"
+                ]
+              },
+              {
+                "group": "End of Speech",
+                "pages": [
+                  "opensource/services/assistant-api/eos/overview",
+                  "opensource/services/assistant-api/eos/silence-based",
+                  "opensource/services/assistant-api/eos/pipecat",
+                  "opensource/services/assistant-api/eos/livekit"
+                ]
+              },
+              {
+                "group": "Speech-to-Text",
+                "pages": [
+                  "opensource/services/assistant-api/stt/overview",
+                  "opensource/services/assistant-api/stt/deepgram",
+                  "opensource/services/assistant-api/stt/google",
+                  "opensource/services/assistant-api/stt/azure",
+                  "opensource/services/assistant-api/stt/assemblyai",
+                  "opensource/services/assistant-api/stt/revai",
+                  "opensource/services/assistant-api/stt/sarvamai",
+                  "opensource/services/assistant-api/stt/groq",
+                  "opensource/services/assistant-api/stt/speechmatics",
+                  "opensource/services/assistant-api/stt/nvidia",
+                  "opensource/services/assistant-api/stt/aws",
+                  "opensource/services/assistant-api/stt/custom"
+                ]
+              },
+              {
+                "group": "Text-to-Speech",
+                "pages": [
+                  "opensource/services/assistant-api/tts/overview",
+                  "opensource/services/assistant-api/tts/deepgram",
+                  "opensource/services/assistant-api/tts/elevenlabs",
+                  "opensource/services/assistant-api/tts/cartesia",
+                  "opensource/services/assistant-api/tts/google",
+                  "opensource/services/assistant-api/tts/azure",
+                  "opensource/services/assistant-api/tts/sarvamai",
+                  "opensource/services/assistant-api/tts/rime",
+                  "opensource/services/assistant-api/tts/resembleai",
+                  "opensource/services/assistant-api/tts/neuphonic",
+                  "opensource/services/assistant-api/tts/minimax",
+                  "opensource/services/assistant-api/tts/groq",
+                  "opensource/services/assistant-api/tts/speechmatics",
+                  "opensource/services/assistant-api/tts/nvidia",
+                  "opensource/services/assistant-api/tts/aws",
+                  "opensource/services/assistant-api/tts/custom"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Integration API",
+            "pages": [
+              "opensource/services/integration-api/overview",
+              "opensource/services/integration-api/configuration",
+              {
+                "group": "LLM Providers",
+                "pages": [
+                  "opensource/services/integration-api/llm/overview",
+                  "opensource/services/integration-api/llm/openai",
+                  "opensource/services/integration-api/llm/anthropic",
+                  "opensource/services/integration-api/llm/gemini",
+                  "opensource/services/integration-api/llm/azure",
+                  "opensource/services/integration-api/llm/custom"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Endpoint API",
+            "pages": [
+              "opensource/services/endpoint-api/overview",
+              "opensource/services/endpoint-api/configuration"
+            ]
+          },
+          {
+            "group": "Document API",
+            "pages": [
+              "opensource/services/document-api/overview",
+              "opensource/services/document-api/configuration"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "API Documentation",
+            "pages": [
+              "api-reference/installation",
+              "api-reference/authentication"
+            ]
+          },
+          {
+            "group": "REST API",
+            "openapi": {
+              "source": "openapi/talk-api.yaml",
+              "directory": "api-reference/rest"
+            }
+          },
+          {
+            "group": "Calls",
+            "pages": [
+              "api-reference/call/create-call",
+              "api-reference/call/create-bulk-call"
+            ]
+          },
+          {
+            "group": "Endpoint",
+            "pages": [
+              "api-reference/endpoint/invoke",
+              "api-reference/endpoint/get-endpoint",
+              "api-reference/endpoint/get-all-endpoint",
+              "api-reference/endpoint/get-endpoint-log",
+              "api-reference/endpoint/get-all-endpoint-log"
+            ]
+          },
+          {
+            "group": "Assistant",
+            "pages": [
+              "api-reference/assistant/get-assistant",
+              "api-reference/assistant/get-all-assistant",
+              "api-reference/assistant/get-assistant-conversation",
+              "api-reference/assistant/get-all-assistant-conversation",
+              "api-reference/assistant/get-assistant-webhook",
+              "api-reference/assistant/get-all-assistant-webhook",
+              "api-reference/assistant/get-assistant-knowledge",
+              "api-reference/assistant/get-all-assistant-knowledge",
+              "api-reference/assistant/get-assistant-tool",
+              "api-reference/assistant/get-all-assistant-tool",
+              "api-reference/assistant/get-assistant-webhook-log",
+              "api-reference/assistant/get-all-assistant-webhook-log",
+              "api-reference/assistant/get-assistant-analysis",
+              "api-reference/assistant/get-all-assistant-analysis"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/rapida-db.svg",
+    "dark": "/logo/rapida-lb.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:prashant@rapida.ai"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://app.rapida.ai/dashboard"
+    }
+  },
+  "integrations": {
+    "ga4": {
+      "measurementId": "G-C635KMN11R"
+    }
+  },
+  "footer": {
+    "socials": {
+      "twitter": "https://x.com/rapidaai",
+      "github": "https://github.com/rapidaai",
+      "linkedin": "https://www.linkedin.com/company/rapida-ai/"
+    }
+  }
 }
