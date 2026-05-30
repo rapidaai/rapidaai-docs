@@ -36,8 +36,9 @@
         "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting Started",
-            "pages": ["introduction/overview"]
+            "group": "The Platform",
+            "root": "introduction/overview",
+            "pages": []
           },
           {
             "group": "Assistants",
@@ -55,6 +56,10 @@
               {
                 "group": "Voice Pipeline",
                 "pages": [
+                  "assistants/voice-pipeline",
+                  "assistants/noise-cancellation",
+                  "assistants/speech-to-text",
+                  "assistants/text-to-speech",
                   "assistants/voice-activity-detection",
                   "assistants/end-of-speech"
                 ]
@@ -181,7 +186,8 @@
                   "integrations/stt/speechmatics",
                   "integrations/stt/sarvam",
                   "integrations/stt/groq",
-                  "integrations/stt/nvidia"
+                  "integrations/stt/nvidia",
+                  "integrations/stt/custom"
                 ]
               },
               {
@@ -201,7 +207,8 @@
                   "integrations/tts/minimax",
                   "integrations/tts/groq",
                   "integrations/tts/speechmatics",
-                  "integrations/tts/nvidia"
+                  "integrations/tts/nvidia",
+                  "integrations/tts/custom"
                 ]
               },
               {

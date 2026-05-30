@@ -1,0 +1,379 @@
+---
+title: "Custom Text-to-Speech"
+description: "Configure a custom WebSocket TTS provider with query parameters, request rules, response rules, and the Rapida WebSocket DSL."
+sidebarTitle: "Custom TTS"
+---
+
+Custom Text-to-Speech lets you connect Rapida to a WebSocket speech synthesis service that is not available as a built-in provider. You configure the provider URL, handshake headers, audio settings, and a small JSON DSL that maps assistant text packets to your provider's WebSocket protocol.
+
+Use Custom TTS when your provider can receive text over WebSocket and return audio as binary frames or base64 audio in JSON frames.
+
+**Provider identifier:** `custom-tts`
+
+<Info>
+Custom TTS is an end-user configuration feature. You do not need to write a new Rapida transformer when your provider can be described with the WebSocket DSL below.
+</Info>
+
+## Setup flow
+
+<Steps>
+  <Step title="Create the Custom TTS credential">
+    Open **Credentials** or **Integrations > Models**, choose **Custom TTS**, and create a credential with your WebSocket connection details.
+  </Step>
+
+  <Step title="Select Custom TTS in Voice Output">
+    Open your assistant deployment, go to **Voice Output**, and select **Custom TTS** as the text-to-speech provider.
+  </Step>
+
+  <Step title="Set voice and audio arguments">
+    Configure voice ID, model, language, audio encoding, and sample rate so Rapida can interpret provider audio correctly.
+  </Step>
+
+  <Step title="Write WebSocket DSL rules">
+    Define query parameters, request rules, and response rules so Rapida knows how to send text and receive audio.
+  </Step>
+
+  <Step title="Test interruption behavior">
+    Run a test conversation and interrupt the assistant while it is speaking. Add an `interrupt` rule if your provider requires explicit cancellation.
+  </Step>
+</Steps>
+
+## Credential fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `apiCompatibility` | Yes | Must be `websocket_v1`. |
+| `baseUrl` | Yes | WebSocket URL for your TTS service, for example `wss://tts.example.com/v1/speak`. |
+| `headers` | No | Header map sent during the WebSocket handshake, for example `{"Authorization":"Bearer sk_..."}`. |
+
+The runtime also accepts snake case keys: `api_compatibility` and `base_url`.
+
+<Warning>
+Headers are copied from the credential as static values. The DSL cannot template headers or change the WebSocket path dynamically.
+</Warning>
+
+## TTS arguments
+
+| Option key | Required | Default | Description |
+|------------|----------|---------|-------------|
+| `speak.voice.id` | Yes | None | Provider voice identifier. Available as `voice_id` in query params and `config.voice.id` in request rules. |
+| `speak.model` | No | Empty | Provider model identifier. Available as `model` in query params and `config.model` in request rules. |
+| `speak.language` | No | Empty | Provider language code. Available as `language` in query params and `config.language` in request rules. |
+| `speak.audio.encoding` | Yes | `LINEAR16` | Audio encoding expected back from the provider. Supported values: `LINEAR16`, `MuLaw8`. |
+| `speak.audio.sample_rate` | Yes | `16000` | Audio sample rate expected back from the provider. Common values include `8000`, `16000`, `24000`, `44100`, and `48000`. |
+| `speak.ws.query_params` | No | `{}` | Flat JSON object appended to `baseUrl` as query parameters. |
+| `speak.ws.request_rules` | Yes | None | Ordered JSON array that maps Rapida TTS packets to outbound WebSocket frames. Must contain at least one `text` rule. |
+| `speak.ws.response_rules` | Yes | None | Ordered JSON array that maps provider frames to audio, done, or error events. |
+
+## DSL sections
+
+Custom TTS has three DSL sections:
+
+| Section | Purpose |
+|---------|---------|
+| Query parameters | Add static or dynamic query params to the WebSocket URL. |
+| Request rules | Convert Rapida text, done, and interrupt packets into provider WebSocket messages. |
+| Response rules | Convert provider WebSocket frames into Rapida audio, done, or error events. |
+
+The DSL is intentionally small. It does not run JavaScript, call functions, read environment variables, use regex, concatenate strings, or perform compound conditions.
+
+## Query parameters
+
+Use `speak.ws.query_params` when your provider expects configuration in the WebSocket URL.
+
+Supported variables:
+
+| Variable | Source |
+|----------|--------|
+| `message_id` | Current synthesis message ID |
+| `voice_id` | `speak.voice.id` |
+| `model` | `speak.model` |
+| `language` | `speak.language` |
+| `encoding` | `speak.audio.encoding` |
+| `sample_rate` | `speak.audio.sample_rate` |
+
+```json
+{
+  "voice": { "$var": "voice_id" },
+  "model": { "$var": "model" },
+  "language": { "$var": "language" },
+  "sample_rate": {
+    "$cast": "number",
+    "value": { "$var": "sample_rate" }
+  }
+}
+```
+
+Rules:
+
+- Query params must be a flat JSON object.
+- Values must resolve to a primitive: string, number, boolean, or null.
+- Existing query params in `baseUrl` are preserved unless the rendered DSL uses the same key.
+- `text` is not a supported query parameter variable. Use `packet.text` in request rules instead.
+
+## Request rules
+
+Request rules are evaluated for normalized TTS packets produced by Rapida.
+
+| Packet | When it is sent | Available paths |
+|--------|-----------------|-----------------|
+| `text` | LLM text is ready for synthesis | `packet.kind`, `packet.message_id`, `packet.text`, `config.voice.id`, `config.model`, `config.language`, `config.audio.encoding`, `config.audio.sample_rate` |
+| `done` | The LLM response is complete | `packet.kind`, `packet.message_id`, `packet.text`, `config.*` |
+| `interrupt` | User interruption is detected | `packet.kind`, `packet.message_id`, `packet.text`, `config.*` |
+
+Supported outbound frames:
+
+| Frame | Body must resolve to |
+|-------|----------------------|
+| `binary` | Bytes or string. |
+| `json` | Valid JSON value. |
+| `text` | Value convertible to string. |
+
+### One-shot synthesis
+
+Use this when the provider synthesizes each text packet immediately.
+
+```json
+[
+  {
+    "when": { "packet": "text" },
+    "send": {
+      "frame": "json",
+      "body": {
+        "text": { "$path": "packet.text" },
+        "voice_id": { "$path": "config.voice.id" },
+        "message_id": { "$path": "packet.message_id" },
+        "model": { "$path": "config.model" },
+        "language": { "$path": "config.language" },
+        "audio": {
+          "encoding": { "$path": "config.audio.encoding" },
+          "sample_rate": {
+            "$cast": "number",
+            "value": { "$path": "config.audio.sample_rate" }
+          }
+        }
+      }
+    }
+  }
+]
+```
+
+### Text, done, and interrupt
+
+Use this when the provider expects text payloads, an explicit final message, and an explicit cancel message.
+
+```json
+[
+  {
+    "when": { "packet": "text" },
+    "send": {
+      "frame": "json",
+      "body": {
+        "type": "speak",
+        "text": { "$path": "packet.text" },
+        "voice": { "$path": "config.voice.id" },
+        "request_id": { "$path": "packet.message_id" },
+        "audio": {
+          "encoding": { "$path": "config.audio.encoding" },
+          "sample_rate": {
+            "$cast": "number",
+            "value": { "$path": "config.audio.sample_rate" }
+          }
+        }
+      }
+    }
+  },
+  {
+    "when": { "packet": "done" },
+    "send": {
+      "frame": "json",
+      "body": {
+        "type": "done",
+        "request_id": { "$path": "packet.message_id" }
+      }
+    }
+  },
+  {
+    "when": { "packet": "interrupt" },
+    "send": {
+      "frame": "json",
+      "body": {
+        "type": "interrupt",
+        "request_id": { "$path": "packet.message_id" }
+      }
+    }
+  }
+]
+```
+
+<Warning>
+Add an `interrupt` rule if your provider needs an explicit cancel or clear message. Without it, queued provider audio can continue after the user starts speaking.
+</Warning>
+
+## Response rules
+
+Response rules parse provider WebSocket frames into Rapida audio packets. The first matching rule is evaluated and later rules are skipped for that frame.
+
+Supported inbound frames:
+
+| Frame | Use when |
+|-------|----------|
+| `binary` | Provider streams raw audio frames. |
+| `json` | Provider returns JSON with base64 audio, done, or error fields. |
+
+Supported emit keys:
+
+| Emit key | Type | Effect |
+|----------|------|--------|
+| `audio` | bytes | Emits a TTS audio chunk. |
+| `message_id` | string | Associates audio, error, or done with a message. Falls back to the current context ID when omitted. |
+| `done` | boolean | Ends synthesis for the message, closes the connection, and emits a TTS end packet. |
+| `error` | string | Emits a TTS error. |
+
+### Binary audio response
+
+Use this when the provider streams raw audio as binary WebSocket frames.
+
+```json
+[
+  {
+    "when": { "frame": "binary" },
+    "emit": {
+      "audio": { "$frame": "binary" }
+    }
+  }
+]
+```
+
+### JSON base64 audio response
+
+Use `$decode` when the provider returns base64-encoded audio inside JSON.
+
+```json
+[
+  {
+    "when": { "frame": "json", "path": "type", "equals": "chunk" },
+    "emit": {
+      "audio": {
+        "$decode": "base64",
+        "value": { "$path": "audio" }
+      },
+      "message_id": { "$path": "request_id" }
+    }
+  },
+  {
+    "when": { "frame": "json", "path": "type", "equals": "done" },
+    "emit": {
+      "message_id": { "$path": "request_id" },
+      "done": true
+    }
+  },
+  {
+    "when": { "frame": "json", "path": "type", "equals": "error" },
+    "emit": {
+      "message_id": { "$path": "request_id" },
+      "error": { "$path": "error.message" },
+      "done": true
+    }
+  }
+]
+```
+
+## Operators
+
+Every operator object must contain only that operator and its required fields.
+
+| Operator | Where supported | Description |
+|----------|-----------------|-------------|
+| `$var` | Query parameters | Reads `message_id`, `voice_id`, `model`, `language`, `encoding`, or `sample_rate`. |
+| `$path` | Request rules, response rules | Reads a dot path from request scope or a JSON response frame. |
+| `$cast` | Query parameters, request rules, response rules | Casts to `string`, `number`, or `boolean`. |
+| `$frame` | Response rules | Reads the full current binary response frame. |
+| `$decode` | Response rules | Decodes a base64 string into bytes. Only `base64` is supported. |
+
+Unsupported for Custom TTS:
+
+- Text response frames
+- `$frame: "text"`
+- `$frame: "json"`
+- Decode formats other than `base64`
+
+### Cast behavior
+
+| Cast | Behavior |
+|------|----------|
+| `string` | Converts strings, bytes, numbers, booleans, and null to string form. |
+| `number` | Converts JSON numbers, numeric values, or numeric strings to an integer or float. |
+| `boolean` | Converts booleans, boolean strings, and numeric values. JSON numbers are accepted as `0` or `1`; typed numeric values use zero as `false` and non-zero as `true`. |
+
+### Path behavior
+
+`$path` uses dot-separated paths.
+
+```json
+{ "$path": "packet.text" }
+```
+
+Objects are traversed by key. Arrays are traversed by numeric index.
+
+```json
+{ "$path": "chunks.0.audio" }
+```
+
+Limits:
+
+- Keys containing a literal dot are not addressable.
+- Request rules can only read from `config` and `packet`.
+- Response rules can use `$path` only with JSON response frames.
+- A missing path in `when.path` means the rule does not match.
+- A missing path in `emit` or `send.body` is an error.
+
+## Runtime behavior
+
+- The connection URL is built from `baseUrl` and `speak.ws.query_params`.
+- A connection is opened per active message or context. A new context closes the previous connection.
+- `text` packets open the WebSocket connection if needed.
+- `done` and `interrupt` rules are optional. If no rule exists for that packet, nothing is sent.
+- On interruption, Rapida sends the optional `interrupt` rule first, then closes the connection.
+- Audio returned by the provider is interpreted as `speak.audio.encoding` and `speak.audio.sample_rate`, then resampled internally when needed.
+- If no response rule matches an inbound frame, the frame is ignored.
+- If a response emits `error`, Rapida emits a TTS error packet.
+- If a response emits `done`, Rapida closes the connection and emits a TTS end packet.
+
+## Current limits
+
+- No regex, contains, starts-with, greater-than, or compound match conditions.
+- No string interpolation or concatenation.
+- No fallback values inside expressions.
+- No dynamic headers or dynamic WebSocket path segments.
+- No text response handling for TTS.
+- No `$frame: "json"` selector in emit rules.
+- `$decode` supports only base64.
+
+## Troubleshooting
+
+| Symptom | Likely cause | What to check |
+|---------|--------------|---------------|
+| WebSocket does not connect | Bad `baseUrl`, headers, or compatibility value | Confirm `apiCompatibility`, `baseUrl`, and auth headers. |
+| Provider receives no text | Missing `text` request rule | Add a `when.packet = text` rule. |
+| Audio never plays | Response rule does not emit `audio` | Check binary frames or base64 `$decode` mapping. |
+| Audio sounds distorted | Encoding or sample rate mismatch | Confirm `speak.audio.encoding` and `speak.audio.sample_rate`. |
+| Audio keeps playing after interruption | Missing provider cancel message | Add an `interrupt` request rule. |
+| Session never ends cleanly | Missing done handling | Emit `done: true` from the provider's done frame. |
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Text-to-Speech" icon="volume-2" href="/assistants/text-to-speech">
+    Configure standard TTS providers and speech delivery.
+  </Card>
+  <Card title="Custom STT" icon="mic" href="/integrations/stt/custom">
+    Configure a custom WebSocket STT provider.
+  </Card>
+  <Card title="Voice Pipeline Overview" icon="workflow" href="/assistants/voice-pipeline">
+    See how TTS fits into the full pipeline.
+  </Card>
+  <Card title="Open-source runtime reference" icon="code" href="/opensource/services/assistant-api/tts/custom">
+    Review the assistant-api implementation reference.
+  </Card>
+</CardGroup>

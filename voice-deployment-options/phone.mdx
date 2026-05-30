@@ -10,6 +10,10 @@ The Phone Call deployment connects your assistant to the telephone network. Call
 Phone deployments require a telephony provider (Twilio, Vonage, Exotel, Asterisk, or SIP) with valid credentials configured in your [credential vault](/credential/rapida-credentials).
 </Info>
 
+<Tip>
+Use the [Voice Pipeline Overview](/assistants/voice-pipeline) to choose STT, TTS, VAD, noise cancellation, EOS, pronunciation, and latency settings before going live.
+</Tip>
+
 ## Deployment channels
 
 | Channel | Direction | Protocol |
@@ -156,6 +160,7 @@ Use the Rapida SDK or REST API to programmatically initiate outbound calls:
 ## Related
 
 - [Create an Assistant](/assistants/create-assistant) — Set up your assistant before deploying
+- [Voice Pipeline Overview](/assistants/voice-pipeline) — Choose and tune STT, TTS, VAD, EOS, and pronunciation settings
 - [Twilio Integration](/integrations/telephony/twilio) — Detailed Twilio setup guide
 - [Conversation Logs](/activity/conversation-logs) — Monitor call transcripts and metrics
 - [Webhooks](/assistants/webhook/overview) — Receive post-call events

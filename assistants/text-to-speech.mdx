@@ -1,0 +1,175 @@
+---
+title: "Text-to-Speech"
+description: "Configure TTS providers, voices, languages, pronunciation, ambient audio, and speech delivery for Rapida voice assistants."
+sidebarTitle: "Text-to-Speech"
+---
+
+Text-to-Speech (TTS) converts the assistant's text response into spoken audio. It controls how the assistant sounds, how quickly users hear the first audio, and how clearly domain-specific terms are pronounced.
+
+```mermaid
+flowchart LR
+    A["LLM + tools"] --> B["Assistant text"]
+    B --> C["Text-to-Speech"]
+    C --> D["User hears response"]
+```
+
+<Info>
+TTS is configured in the **Voice Output** step of a Phone Call, Web Widget, or Web App / SDK deployment.
+</Info>
+
+## Setup flow
+
+<Steps>
+  <Step title="Create the provider credential">
+    Add the TTS provider credential in **Credentials** before configuring the deployment.
+  </Step>
+
+  <Step title="Open the deployment voice output step">
+    Go to **Configure Assistant** -> **Deployments**, create or edit a voice-capable deployment, then open **Voice Output**.
+  </Step>
+
+  <Step title="Choose the TTS provider">
+    Select the provider that will synthesize assistant responses.
+  </Step>
+
+  <Step title="Choose the model">
+    Select the provider-specific model. Some providers optimize for lowest latency, while others optimize for voice quality.
+  </Step>
+
+  <Step title="Choose the voice">
+    Select the voice ID. For providers that support custom voices, use the custom voice ID when the field allows custom values.
+  </Step>
+
+  <Step title="Set the language">
+    Match the TTS language to the assistant's expected response language and selected voice.
+  </Step>
+</Steps>
+
+## Supported providers
+
+| Provider | Typical use |
+|----------|-------------|
+| ElevenLabs | Natural voices, custom voices, and brand voice workflows. |
+| Deepgram | Low-latency streaming voice output. |
+| Azure Cognitive Services | Enterprise Microsoft environments and broad voice catalog support. |
+| Google Speech Service | Google Cloud text-to-speech workflows. |
+| OpenAI | OpenAI TTS models and voices. |
+| AWS Polly | AWS-native neural and standard voices. |
+| Cartesia | Low-latency voice AI and expressive voice controls. |
+| Rime | Real-time voice synthesis with provider voices. |
+| Sarvam AI | Indian language voice output. |
+| Resemble AI | Custom and cloned voice workflows. |
+| Neuphonic | Low-latency conversational TTS. |
+| MiniMax | Voice models from MiniMax. |
+| Groq | Low-latency TTS through Groq-supported models. |
+| Speechmatics | Speechmatics voice output. |
+| NVIDIA | NVIDIA-hosted voice models. |
+| Custom TTS | Your own WebSocket-compatible TTS backend. |
+
+## Configuration fields
+
+The exact fields vary by provider, but TTS configuration usually includes:
+
+| Field | What it controls |
+|-------|------------------|
+| Credential | Which stored provider credential Rapida uses. |
+| Model | The speech synthesis model. |
+| Voice | The voice ID or custom voice identifier. |
+| Language | The output language or locale. |
+| Speed or emotion | Provider-specific controls for speaking style. |
+
+## Advanced speech settings
+
+Open **Show advanced settings** in Voice Output to tune delivery.
+
+| Setting | What it controls | Default |
+|---------|------------------|---------|
+| Ambient | Optional background ambience mixed into output audio. | `none` |
+| Ambient Volume | Volume of the selected ambience. | `18` |
+| Pronunciation Dictionaries | Built-in pronunciation rules for currencies, dates, times, numbers, addresses, URLs, abbreviations, and symbols. | none |
+| Conjunction Boundaries | Words where Rapida can add natural pause boundaries. | none |
+| Pause Duration | Pause length at configured conjunction boundaries. | `240 ms` |
+
+### Pronunciation dictionaries
+
+Use pronunciation dictionaries when the assistant must say structured or domain-specific text clearly.
+
+| Dictionary type | Helps with |
+|-----------------|------------|
+| `currency` | Prices, amounts, and currency symbols. |
+| `date` and `time` | Dates, appointment times, and schedules. |
+| `numeral` | Account numbers, quantities, and IDs. |
+| `address` | Street addresses and postal details. |
+| `url` | Websites and links. |
+| `tech-abbreviation`, `role-abbreviation`, `general-abbreviation` | Acronyms and abbreviations. |
+| `symbol` | Symbols that should be spoken naturally. |
+
+<Tip>
+Add pronunciation dictionaries before user testing. Mispronounced product names, acronyms, prices, dates, and addresses are easy for users to notice.
+</Tip>
+
+### Conjunction boundaries
+
+Conjunction boundaries let Rapida add natural pauses around selected words such as `and`, `but`, `or`, `because`, and `while`. This can make long responses easier to listen to.
+
+Use them when:
+
+- The assistant often speaks multi-clause sentences.
+- Users need time to understand instructions.
+- TTS output feels rushed even when the voice is good.
+
+Avoid overusing them when:
+
+- The assistant already speaks in very short sentences.
+- The added pauses make responses feel slow.
+
+## Choosing a provider
+
+| Need | Recommended direction |
+|------|-----------------------|
+| Lowest response latency | Use a streaming TTS provider and keep assistant responses short. |
+| Natural voice quality | Use a neural or conversational voice model. |
+| Brand voice | Use a provider that supports cloned or custom voice IDs. |
+| Multilingual speech | Choose a voice that supports the required language, not only a model that lists it. |
+| Phone calls | Test the voice over phone audio, not only in browser previews. |
+| Private provider | Use [Custom TTS](/integrations/tts/custom). |
+
+## Prompt guidance for better TTS
+
+TTS quality depends on the text the LLM produces. Tune the assistant prompt for spoken responses:
+
+- Keep responses under one or two short sentences.
+- Avoid markdown, bullet lists, long tables, and symbols.
+- Ask one question at a time.
+- Confirm critical values slowly, especially emails, phone numbers, dates, and addresses.
+- Write instructions in natural spoken language.
+
+## Troubleshooting
+
+| Symptom | Likely cause | What to adjust |
+|---------|--------------|----------------|
+| First audio starts slowly | TTS model latency or long LLM response | Use lower-latency TTS and shorten assistant responses. |
+| Voice mispronounces product names | Missing pronunciation handling | Enable pronunciation dictionaries or use a provider custom voice/pronunciation feature. |
+| Voice sounds rushed | Long clauses or no pauses | Add conjunction boundaries and lower prompt response length. |
+| Voice sounds unnatural on phone | Voice tested only on browser audio | Test through the target phone deployment and try a clearer voice. |
+| Wrong language or accent | Voice and language mismatch | Select a language-matched voice and provider model. |
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Voice Pipeline Overview" icon="workflow" href="/assistants/voice-pipeline">
+    See where TTS fits into the full audio flow.
+  </Card>
+  <Card title="Speech-to-Text" icon="mic" href="/assistants/speech-to-text">
+    Configure user speech transcription.
+  </Card>
+  <Card title="Custom TTS" icon="settings" href="/integrations/tts/custom">
+    Connect a custom WebSocket speech synthesis provider with DSL rules.
+  </Card>
+  <Card title="Phone Call Deployment" icon="phone" href="/voice-deployment-options/phone">
+    Configure required voice output for phone calls.
+  </Card>
+  <Card title="Web App / SDK Deployment" icon="monitor" href="/voice-deployment-options/web-app">
+    Configure optional voice output for custom apps.
+  </Card>
+</CardGroup>
