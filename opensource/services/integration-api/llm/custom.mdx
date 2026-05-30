@@ -1,141 +1,219 @@
 ---
-title: "Configure Your Own LLM Provider"
-description: "Implement the LargeLanguageCaller interface to add a new LLM provider to integration-api."
-sidebarTitle: "Configure Your Own"
+title: "Custom LLM"
+description: "Configure a custom LLM endpoint through integration-api."
+sidebarTitle: "Custom"
 ---
 
-Adding a new LLM provider means implementing the `LargeLanguageCaller` interface and registering it in the router.
+Custom LLM lets you connect Rapida to a self-hosted or third-party chat endpoint. The UI stores provider credentials and model options; `integration-api` resolves the `custom-llm` provider and routes requests through the selected API compatibility.
 
----
-
-## Directory Structure
-
-```
-api/integration-api/internal/caller/<provider>/
-├── llm.go      # LargeLanguageCaller implementation
-└── <provider>.go  # Optional — client initialisation helpers
-```
+**Provider identifier:** `custom-llm`
 
 ---
 
-## Step 1 — Create the Provider Directory
+## Where it is configured
 
-```bash
-mkdir api/integration-api/internal/caller/myprovider
-```
+<Steps>
 
----
+<Step title="Create the provider credential">
+In the Rapida dashboard, open **Integrations > Models**, choose **Custom LLM**, and create a credential.
 
-## Step 2 — Implement `LargeLanguageCaller`
+| Credential field | Required | Value |
+|---|---:|---|
+| `apiCompatibility` | Yes | API shape to call. See compatibility values below. |
+| `baseUrl` | Yes | Base URL for the model server. |
+| `headers` | No | Header map sent with every request, for example `{"Authorization":"Bearer sk_..."}`. |
 
-```go
-// api/integration-api/internal/caller/myprovider/llm.go
-package myprovider
+The backend also accepts snake case keys: `api_compatibility` and `base_url`.
+</Step>
 
-type myProviderCaller struct {
-    logger *zap.SugaredLogger
-}
+<Step title="Choose the custom model in the assistant">
+Open the assistant model settings, choose **Custom LLM**, and enter the model ID. The UI stores both `model.id` and `model.name` for custom model values.
+</Step>
 
-func NewMyProviderCaller(logger *zap.SugaredLogger) *myProviderCaller {
-    return &myProviderCaller{logger: logger}
-}
+<Step title="Add model parameters">
+Use **Model Parameters** for provider-specific JSON. These parameters are merged into the request after standard `model.*` keys.
+</Step>
 
-// GetChatCompletion returns a complete (non-streaming) response.
-func (c *myProviderCaller) GetChatCompletion(
-    ctx         context.Context,
-    messages    []caller.ChatMessage,
-    opts        caller.ChatCompletionOptions,
-    credentials map[string]interface{},
-) (*caller.ChatCompletion, error) {
-    // Read credentials from the vault map
-    apiKey := credentials["key"].(string)
-
-    // Read model parameters
-    modelName, _ := opts.ModelParameter["model.name"].(string)
-    temperature, _ := opts.ModelParameter["model.temperature"].(float64)
-
-    // Call your provider API
-    // Return &caller.ChatCompletion{Content: "...", ...}
-    _ = apiKey
-    _ = modelName
-    _ = temperature
-    return nil, nil
-}
-
-// StreamChatCompletion streams tokens via callbacks.
-func (c *myProviderCaller) StreamChatCompletion(
-    ctx         context.Context,
-    messages    []caller.ChatMessage,
-    opts        caller.ChatCompletionOptions,
-    credentials map[string]interface{},
-    onStream    func(token string),          // call for each token
-    onMetrics   func(caller.LLMMetrics),     // call once at end with token counts
-    onError     func(err error),             // call on error
-) error {
-    apiKey := credentials["key"].(string)
-    modelName, _ := opts.ModelParameter["model.name"].(string)
-
-    // Stream tokens from your provider
-    // For each token: onStream(token)
-    // On completion: onMetrics(metrics)
-    // On error: onError(err)
-    _ = apiKey
-    _ = modelName
-    return nil
-}
-```
-
-**Credential convention:** use `credentials["key"]` for the primary API key. Add additional keys (`endpoint`, `region`, etc.) as needed and document them in your vault credential.
+</Steps>
 
 ---
 
-## Step 3 — Register in the Router / Factory
+## Compatibility values
 
-Open `api/integration-api/internal/caller/callers.go` and add your provider to the factory switch:
+| `apiCompatibility` value | Endpoint shape | Runtime status |
+|---|---|---|
+| `openai_chat_completions` | OpenAI Chat Completions compatible, usually `/v1/chat/completions` | Supported |
+| `openai_compatible` | OpenAI-compatible chat servers such as vLLM, Ollama, LM Studio, or TGI | Supported |
+| `openai_responses` | OpenAI Responses compatible, usually `/v1/responses` | Supported |
+| `anthropic_messages` | Anthropic Messages, usually `/v1/messages` | Credential option exists, chat execution is not implemented yet |
+| `gemini_generate_content` | Gemini `generateContent` | Credential option exists, chat execution is not implemented yet |
 
-```go
-func GetLargeLanguageCaller(provider string, logger *zap.SugaredLogger) (LargeLanguageCaller, error) {
-    switch provider {
-    case "openai":
-        return openai.NewOpenAICaller(logger), nil
-    // ... existing cases ...
-    case "my-provider":
-        return myprovider.NewMyProviderCaller(logger), nil
-    default:
-        return nil, fmt.Errorf("unsupported LLM provider: %s", provider)
-    }
+If `apiCompatibility` is omitted, `integration-api` defaults to `openai_chat_completions`.
+
+---
+
+## Credential arguments
+
+| Field | Required | Type | Description |
+|---|---:|---|---|
+| `apiCompatibility` | Yes | `string` | Selects the request/stream implementation. Use one of the compatibility values above. |
+| `baseUrl` | Yes | `string` | Base URL passed to the HTTP client. For OpenAI-compatible servers, include the API root expected by the server, for example `http://localhost:8000/v1`. |
+| `headers` | No | object of string values | Request headers. Use this for `Authorization`, provider routing headers, tenant IDs, or local server keys. |
+
+Example credential value:
+
+```json
+{
+  "apiCompatibility": "openai_chat_completions",
+  "baseUrl": "https://llm.example.com/v1",
+  "headers": {
+    "Authorization": "Bearer sk_example"
+  }
 }
 ```
 
 ---
 
-## Step 4 — Rebuild
+## Model arguments
 
-```bash
-make rebuild-integration
-make logs-integration
+| Option key | Required | Description |
+|---|---:|---|
+| `model.id` | Yes | UI model selector value. For custom models, this can be any non-empty model/deployment ID. |
+| `model.name` | Yes | Model ID sent to the provider. Usually the same value as `model.id`. |
+| `model.parameters` | No | JSON object containing extra provider options. Merged into the request after direct `model.*` keys. |
+
+Example model parameters:
+
+```json
+{
+  "temperature": 0.7,
+  "max_tokens": 512,
+  "top_p": 0.9
+}
 ```
 
-The new provider is now selectable in the assistant's LLM configuration.
+You can also pass direct `model.*` metadata keys. For example, `model.temperature` becomes `temperature` in the provider request.
 
 ---
 
-## Reference Implementations
+## Supported request parameters
 
-| Provider | File | Pattern |
-|----------|------|---------|
-| OpenAI | `caller/openai/llm.go` | SSE streaming, tool calls, per-token `onStream` |
-| Anthropic | `caller/anthropic/llm.go` | `max_tokens` required, thinking mode |
-| Gemini | `caller/gemini/llm.go` | Google Gen AI SDK, content parts |
-| Azure | `caller/azure/llm.go` | Same as OpenAI but custom endpoint |
+For `openai_chat_completions` and `openai_compatible`, these keys are mapped to first-class Chat Completions fields when possible:
+
+| Parameter | Type | Description |
+|---|---|---|
+| `model.name` | `string` | Model name sent as `model`. |
+| `temperature` or `model.temperature` | `number` | Sampling temperature. |
+| `top_p` or `model.top_p` | `number` | Nucleus sampling value. |
+| `max_tokens` or `model.max_tokens` | `number` | Maximum output tokens. |
+| `max_completion_tokens` or `model.max_completion_tokens` | `number` | Maximum completion tokens. |
+| `frequency_penalty` or `model.frequency_penalty` | `number` | Frequency penalty. |
+| `presence_penalty` or `model.presence_penalty` | `number` | Presence penalty. |
+| `seed` or `model.seed` | `number` | Deterministic sampling seed. |
+| `stop` or `model.stop` | `string[]` | Stop sequences. |
+| `tool_choice` or `model.tool_choice` | `string` | `auto`, `required`, or `none`. Applied only when tools are present. |
+| `response_format` or `model.response_format` | object | `{"type":"json_object"}`, `{"type":"text"}`, or `{"type":"json_schema", ...}`. |
+| `reasoning_effort` or `model.reasoning_effort` | `string` | Reasoning effort for compatible models. |
+| `user` or `model.user` | `string` | End-user identifier. |
+| `metadata` or `model.metadata` | object of string values | Provider metadata. |
+| `top_logprobs` or `model.top_logprobs` | `number` | Number of top log probabilities. |
+
+Unknown parameters are passed as extra request fields. Use `model.parameters` for provider-specific fields such as `top_k` or `chat_template_kwargs`.
+
+For `openai_responses`, these keys are mapped when possible:
+
+| Parameter | Type | Description |
+|---|---|---|
+| `model.name` | `string` | Model name sent as `model`. |
+| `temperature` / `model.temperature` | `number` | Sampling temperature. |
+| `top_p` / `model.top_p` | `number` | Nucleus sampling value. |
+| `max_output_tokens`, `max_completion_tokens`, or `max_tokens` | `number` | Maximum output tokens. |
+| `store` / `model.store` | `boolean` | Whether the provider should store the response. Defaults to `false`. |
+| `tool_choice` / `model.tool_choice` | `string` | `auto`, `required`, or `none`. Applied only when tools are present. |
+| `response_format` / `model.response_format` | object | Maps to Responses text format. |
+| `reasoning_effort` / `model.reasoning_effort` | `string` | Reasoning effort. |
+| `service_tier` / `model.service_tier` | `string` | Provider service tier. |
+| `user` / `model.user` | `string` | End-user identifier. |
+| `metadata` / `model.metadata` | object of string values | Provider metadata. |
+| `top_logprobs` / `model.top_logprobs` | `number` | Number of top log probabilities. |
 
 ---
+
+## Examples
+
+### OpenAI-compatible server
+
+Credential:
+
+```json
+{
+  "apiCompatibility": "openai_compatible",
+  "baseUrl": "http://localhost:8000/v1",
+  "headers": {
+    "Authorization": "Bearer local-dev-key"
+  }
+}
+```
+
+Assistant model:
+
+```json
+{
+  "model.id": "meta-llama/Llama-3.1-8B-Instruct",
+  "model.name": "meta-llama/Llama-3.1-8B-Instruct",
+  "model.parameters": {
+    "temperature": 0.4,
+    "max_tokens": 400,
+    "top_k": 40
+  }
+}
+```
+
+### OpenAI Responses compatible server
+
+Credential:
+
+```json
+{
+  "apiCompatibility": "openai_responses",
+  "baseUrl": "https://api.openai.com/v1",
+  "headers": {
+    "Authorization": "Bearer sk_example"
+  }
+}
+```
+
+Assistant model:
+
+```json
+{
+  "model.id": "gpt-4.1-mini",
+  "model.name": "gpt-4.1-mini",
+  "model.parameters": {
+    "max_output_tokens": 512,
+    "reasoning_effort": "low",
+    "store": false
+  }
+}
+```
+
+---
+
+## Backend mapping
+
+`integration-api` resolves `custom-llm` in `api/integration-api/internal/caller/caller.go`. Chat and streaming requests route through `api/integration-api/internal/caller/custom_llm`.
+
+The credential parser validates:
+
+- `baseUrl` is present and non-empty.
+- `apiCompatibility` is a non-empty string when provided.
+- `headers` is a string map when provided.
 
 <CardGroup cols={2}>
-  <Card title="LLM Overview" icon="network" href="/opensource/services/integration-api/llm/overview">
-    LargeLanguageCaller interface and ChatCompletionOptions
+  <Card title="LLM overview" icon="network" href="/opensource/services/integration-api/llm/overview">
+    Caller interfaces and model options.
   </Card>
-  <Card title="Configure Your Own STT" icon="audio-waveform" href="/opensource/services/assistant-api/stt/custom">
-    Same pattern in assistant-api
+  <Card title="Custom STT" icon="audio-waveform" href="/opensource/services/assistant-api/stt/custom">
+    Configure custom speech-to-text.
   </Card>
 </CardGroup>

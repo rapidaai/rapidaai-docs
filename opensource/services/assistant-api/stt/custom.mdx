@@ -1,148 +1,471 @@
 ---
-title: "Configure Your Own STT Provider"
-description: "Implement the SpeechToTextTransformer interface to add a new STT provider to assistant-api."
-sidebarTitle: "Configure Your Own"
+title: "Custom STT"
+description: "Configure a custom WebSocket speech-to-text provider in Rapida."
+sidebarTitle: "Custom"
 ---
 
-Every STT provider implements three methods. Adding a new provider means creating the implementation, reading vault credentials, and registering in the factory.
+Custom STT lets you connect Rapida to any WebSocket-based transcription service without writing a new Go transformer. The UI stores provider credentials and assistant options; `assistant-api` reads them through the `custom-stt` transformer and maps audio packets and provider responses with WebSocket DSL rules.
 
----
-
-## Directory Structure
-
-```
-api/assistant-api/internal/transformer/<provider>/
-├── <provider>.go   # Option struct — reads vault credentials, initialises client config
-├── stt.go          # SpeechToTextTransformer implementation
-└── normalizer.go   # Optional — text normalisation for transcripts
-```
+**Provider identifier:** `custom-stt`
 
 ---
 
-## Step 1 — Add a Constant
+## Where it is configured
 
-Open `api/assistant-api/internal/transformer/transformer.go`:
+<Steps>
 
-```go
-const (
-    DEEPGRAM    AudioTransformer = "deepgram"
-    // ...
-    MY_PROVIDER AudioTransformer = "my-provider"  // add this
-)
-```
+<Step title="Create the provider credential">
+In the Rapida dashboard, open **Integrations > Models**, choose **Custom STT**, and create a credential.
+
+| Credential field | Required | Value |
+|---|---:|---|
+| `apiCompatibility` | Yes | `websocket_v1` |
+| `baseUrl` | Yes | WebSocket URL for your STT service, for example `wss://stt.example.com/v1/listen` |
+| `headers` | No | Header map sent on the WebSocket handshake, for example `{"Authorization":"Bearer sk_..."}` |
+
+The backend also accepts snake case keys: `api_compatibility` and `base_url`.
+</Step>
+
+<Step title="Select Custom STT on the assistant">
+Open the assistant voice settings and select **Custom STT** as the speech-to-text provider.
+</Step>
+
+<Step title="Fill the STT arguments">
+Set the model, language, audio format, query parameters, request rules, and response rules. The argument reference below maps one-to-one to the UI fields.
+</Step>
+
+</Steps>
 
 ---
 
-## Step 2 — Implement the Option Struct
+## STT arguments
 
-```go
-// api/assistant-api/internal/transformer/myprovider/myprovider.go
-package myprovider
+The UI stores these keys with the `microphone.` metadata prefix, but the transformer reads the option keys shown below.
 
-type myProviderOption struct {
-    apiKey  string
-    logger  commons.Logger
-    opts    utils.Option
+| Option key | Required | Default | Description |
+|---|---:|---|---|
+| `listen.model` | No | Empty | Provider model identifier. Reference it in DSL as `model` or `config.model`. |
+| `listen.language` | No | Empty | Provider language code. Reference it in DSL as `language` or `config.language`. |
+| `listen.audio.encoding` | Yes | `LINEAR16` | Audio encoding sent to the provider. Supported values: `LINEAR16`, `MuLaw8`. |
+| `listen.audio.sample_rate` | Yes | `16000` | Audio sample rate sent to the provider. Supported UI values: `8000`, `16000`, `22050`, `24000`, `32000`, `44100`, `48000`. |
+| `listen.ws.query_params` | No | `{}` | Flat JSON object appended to `baseUrl` as query parameters. Values can use DSL expressions. |
+| `listen.ws.request_rules` | Yes | See example below | Ordered JSON array that tells Rapida what to send for each outbound packet. Must contain at least one `audio` rule. |
+| `listen.ws.response_rules` | Yes | None | Ordered JSON array that tells Rapida how to parse provider WebSocket frames into transcripts or errors. |
+
+---
+
+## Query parameters
+
+Use `listen.ws.query_params` when your provider expects configuration in the WebSocket URL.
+
+Supported variables:
+
+| Variable | Source |
+|---|---|
+| `model` | `listen.model` |
+| `language` | `listen.language` |
+| `encoding` | `listen.audio.encoding` |
+| `sample_rate` | `listen.audio.sample_rate` |
+
+```json
+{
+  "language": { "$var": "language" },
+  "model": { "$var": "model" },
+  "encoding": { "$var": "encoding" },
+  "sample_rate": {
+    "$cast": "number",
+    "value": { "$var": "sample_rate" }
+  }
 }
+```
 
-func NewMyProviderOption(
-    logger          commons.Logger,
-    vaultCredential *protos.VaultCredential,
-    opts            utils.Option,
-) *myProviderOption {
-    credentials := vaultCredential.GetValue().AsMap()
-    return &myProviderOption{
-        apiKey: credentials["key"].(string),   // read the vault key
-        logger: logger,
-        opts:   opts,
+---
+
+## Request rules
+
+Request rules are evaluated for normalized packets produced by Rapida.
+
+| Packet | When it is sent | Available paths |
+|---|---|---|
+| `turn_change` | A new turn/context starts | `packet.kind`, `packet.context_id`, `config.model`, `config.language`, `config.audio.encoding`, `config.audio.sample_rate` |
+| `audio` | Audio is ready to stream | `packet.kind`, `packet.context_id`, `packet.audio.bytes`, `packet.audio.base64`, `config.*` |
+| `interrupt` | User interruption is detected | `packet.kind`, `packet.context_id`, `config.*` |
+
+Supported outbound frame types are `binary`, `json`, and `text`.
+
+<Note>
+`packet.audio.bytes` is raw audio bytes for binary frames. Use `packet.audio.base64` when the provider expects audio inside a JSON payload.
+</Note>
+
+### Binary audio stream
+
+```json
+[
+  {
+    "when": { "packet": "audio" },
+    "send": {
+      "frame": "binary",
+      "body": { "$path": "packet.audio.bytes" }
     }
-}
+  }
+]
+```
+
+### JSON audio payload
+
+```json
+[
+  {
+    "when": { "packet": "audio" },
+    "send": {
+      "frame": "json",
+      "body": {
+        "audio": { "$path": "packet.audio.base64" },
+        "encoding": { "$path": "config.audio.encoding" },
+        "sample_rate": {
+          "$cast": "number",
+          "value": { "$path": "config.audio.sample_rate" }
+        }
+      }
+    }
+  }
+]
 ```
 
 ---
 
-## Step 3 — Implement `SpeechToTextTransformer`
+## Response rules
 
-```go
-// api/assistant-api/internal/transformer/myprovider/stt.go
-package myprovider
+Response rules parse provider WebSocket frames into Rapida transcript packets.
 
-type myProviderSTT struct {
-    opt      *myProviderOption
-    onPacket func(STTPacket)  // callback invoked with each transcript
-    client   interface{}      // your provider's streaming client
-}
+Supported inbound frame types:
 
-func NewMyProviderSTT(opt *myProviderOption, onPacket func(STTPacket)) *myProviderSTT {
-    return &myProviderSTT{opt: opt, onPacket: onPacket}
-}
+| Frame | Use when |
+|---|---|
+| `json` | The provider returns JSON messages. |
+| `text` | The provider returns plain transcript text. |
 
-// Initialize opens the streaming connection to your provider.
-func (s *myProviderSTT) Initialize() error {
-    // Connect to your provider's real-time STT endpoint
-    // Register s.onPacket to be called with each transcription result
-    return nil
-}
+Supported emit keys:
 
-// Transform sends one audio packet — in.Audio is raw PCM 16-bit mono 16kHz.
-func (s *myProviderSTT) Transform(ctx context.Context, in UserAudioPacket) error {
-    // Forward in.Audio bytes to your provider's streaming client
-    return nil
-}
+| Emit key | Type | Description |
+|---|---|---|
+| `script` | `string` | Transcript text. When present, Rapida emits an STT transcript packet. |
+| `confidence` | `number` | Optional transcript confidence. |
+| `language` | `string` | Optional language code for the transcript. |
+| `interim` | `boolean` | `true` for partial transcripts, `false` for final transcripts. |
+| `error` | Any | Provider error value. When present, Rapida treats the frame as an error. |
 
-// Close tears down the connection.
-func (s *myProviderSTT) Close(ctx context.Context) error {
-    return nil
-}
-```
-
-**Input format:** `UserAudioPacket.Audio` = raw PCM 16-bit signed mono, 16000 Hz sample rate.
-
----
-
-## Step 4 — Register in the Factory
-
-```go
-// api/assistant-api/internal/transformer/transformer.go
-
-// In GetSpeechToTextTransformer switch:
-case MY_PROVIDER:
-    opt := myprovider.NewMyProviderOption(logger, credential, opts)
-    return myprovider.NewMyProviderSTT(opt, onPacket), nil
-```
-
----
-
-## Step 5 — Rebuild
-
-```bash
-make rebuild-assistant
-make logs-assistant
-```
-
-The new provider is now selectable in the assistant settings STT Provider dropdown.
-
----
-
-## Reference: Deepgram Implementation
-
-The Deepgram transformer is the primary reference:
-
-```
-api/assistant-api/internal/transformer/deepgram/
-├── deepgram.go    # Option struct, credential extraction
-├── stt.go         # WebSocket streaming to Deepgram
-├── tts.go         # Deepgram Aura TTS
-└── normalizer.go  # Text normalisation
+```json
+[
+  {
+    "when": { "frame": "json", "path": "type", "equals": "partial" },
+    "emit": {
+      "script": { "$path": "text" },
+      "confidence": {
+        "$cast": "number",
+        "value": { "$path": "confidence" }
+      },
+      "language": { "$path": "language" },
+      "interim": true
+    }
+  },
+  {
+    "when": { "frame": "json", "path": "type", "equals": "final" },
+    "emit": {
+      "script": { "$path": "text" },
+      "confidence": {
+        "$cast": "number",
+        "value": { "$path": "confidence" }
+      },
+      "language": { "$path": "language" },
+      "interim": false
+    }
+  },
+  {
+    "when": { "frame": "json", "path": "type", "equals": "error" },
+    "emit": {
+      "error": { "$path": "error.message" }
+    }
+  }
+]
 ```
 
 ---
+
+## STT DSL design
+
+Custom STT uses a JSON-template DSL with three sections: query parameters, request rules, and response rules. The DSL is intentionally small. It does not run scripts, call functions, concatenate strings, perform regex matching, or read environment variables.
+
+### STT frame support
+
+| Frame type | Outbound request | Inbound response | Notes |
+|---|---:|---:|---|
+| `binary` | Yes | No | Use for raw provider audio input. |
+| `json` | Yes | Yes | Use for provider control packets and structured transcripts. |
+| `text` | Yes | Yes | Use for providers that accept or return plain text frames. |
+
+Inbound parsing rules:
+
+- WebSocket message type `2` is treated as `binary`, but STT response rules do not support binary response frames.
+- Non-binary messages are parsed as JSON when they contain exactly one valid JSON value.
+- Non-JSON messages are treated as `text`.
+- For STT, JSON string primitives and non-object JSON values are treated as `text`; JSON response rules operate on JSON objects.
+
+### STT operators
+
+Every operator object must contain only that operator and its required field.
+
+| Operator | Where supported | Description |
+|---|---|---|
+| `$var` | Query parameters | Reads `model`, `language`, `encoding`, or `sample_rate`. |
+| `$path` | Request rules, response rules | Reads a dot path from request scope or a JSON response frame. |
+| `$cast` | Query parameters, request rules, response rules | Casts to `string`, `number`, or `boolean`. |
+| `$frame` | Response rules | Reads the full current `text` response frame. |
+
+Unsupported STT operators:
+
+- `$decode` is not supported for STT.
+- `$frame: "binary"` and `$frame: "json"` are not supported for STT emit rules.
+
+### Cast behavior
+
+| Cast | Behavior |
+|---|---|
+| `string` | Converts strings, bytes, numbers, booleans, and null to string form. |
+| `number` | Converts JSON numbers, numeric values, or numeric strings to an integer or float. |
+| `boolean` | Converts booleans, boolean strings, and numeric values. JSON numbers are accepted as `0` or `1`; typed numeric values use zero as `false` and non-zero as `true`. |
+
+### JSON path behavior
+
+`$path` uses dot-separated paths.
+
+```json
+{ "$path": "packet.audio.base64" }
+```
+
+Objects are traversed by key. Arrays are traversed by numeric index.
+
+```json
+{ "$path": "results.0.transcript" }
+```
+
+Limits:
+
+- Keys containing a literal dot are not addressable.
+- Request rules can only read from `config` and `packet`.
+- Response rules can use `$path` only with JSON response frames.
+- A missing path in `when.path` means the rule does not match.
+- A missing path in `emit` or `send.body` is an error.
+
+### Query parameter rules
+
+`listen.ws.query_params` must be a flat JSON object. Each value must resolve to a primitive value: string, number, boolean, or null. Nested objects and arrays are rejected unless the object is a DSL expression.
+
+```json
+{
+  "language": { "$var": "language" },
+  "model": { "$var": "model" },
+  "sample_rate": {
+    "$cast": "number",
+    "value": { "$var": "sample_rate" }
+  }
+}
+```
+
+The rendered query parameters are appended to `baseUrl`. Existing query parameters in `baseUrl` are preserved unless the same key is rendered by `listen.ws.query_params`.
+
+### Request rule shape
+
+`listen.ws.request_rules` is an ordered JSON array. Every matching rule is sent, so one packet can produce multiple WebSocket messages.
+
+| Field | Required | Description |
+|---|---:|---|
+| `when.packet` | Yes | `turn_change`, `audio`, or `interrupt`. |
+| `send.frame` | Yes | `binary`, `json`, or `text`. |
+| `send.body` | Yes | Static value or DSL expression tree. |
+
+Body validation depends on `send.frame`:
+
+| `send.frame` | `send.body` must resolve to |
+|---|---|
+| `binary` | Bytes or string. |
+| `json` | Valid JSON value. Byte arrays are not valid JSON bodies. |
+| `text` | Value convertible to string. |
+
+### STT request scope
+
+The request scope is the data available to `$path` in request rules.
+
+```json
+{
+  "config": {
+    "model": "model-a",
+    "language": "en-US",
+    "audio": {
+      "encoding": "LINEAR16",
+      "sample_rate": 16000
+    }
+  },
+  "packet": {
+    "kind": "audio",
+    "context_id": "ctx_123",
+    "audio": {
+      "bytes": "<raw bytes>",
+      "base64": "AAE="
+    }
+  }
+}
+```
+
+`packet.audio` exists only for `audio` packets.
+
+### Response rule shape
+
+`listen.ws.response_rules` is an ordered JSON array. The first matching rule is evaluated; later rules are skipped for that frame.
+
+| Field | Required | Description |
+|---|---:|---|
+| `when.frame` | Yes | `json` or `text`. |
+| `when.path` | No | Dot path inside a JSON frame. Must be paired with `when.equals`. |
+| `when.equals` | No | Primitive value compared against `when.path`, or against the full text frame. |
+| `emit` | Yes | Object containing supported STT emit keys. |
+
+Match behavior:
+
+| Frame | Match behavior |
+|---|---|
+| `json` | If `when.path` and `when.equals` are omitted, matches any JSON object. If provided, both fields are required and compared exactly. |
+| `text` | If `when.equals` is omitted, matches any text frame. If provided, compares the full text frame exactly. `when.path` is not allowed. |
+
+### STT emit keys
+
+| Emit key | Type after evaluation | Effect |
+|---|---|---|
+| `script` | string | Transcript text. Empty transcripts are ignored. |
+| `confidence` | number | Transcript confidence. Defaults to `0` when omitted. |
+| `language` | string | Transcript language. Falls back to `listen.language` when omitted. |
+| `interim` | boolean | `true` emits an interim transcript; `false` emits a completed transcript. |
+| `error` | string | Emits an STT error instead of a transcript. |
+
+### Plain text transcript response
+
+Use this for providers that return transcript chunks as raw text frames.
+
+```json
+[
+  {
+    "when": { "frame": "text" },
+    "emit": {
+      "script": { "$frame": "text" },
+      "interim": false
+    }
+  }
+]
+```
+
+### Nested JSON transcript response
+
+```json
+[
+  {
+    "when": { "frame": "json", "path": "result.final", "equals": false },
+    "emit": {
+      "script": { "$path": "result.transcript" },
+      "interim": true
+    }
+  },
+  {
+    "when": { "frame": "json", "path": "result.final", "equals": true },
+    "emit": {
+      "script": { "$path": "result.transcript" },
+      "confidence": {
+        "$cast": "number",
+        "value": { "$path": "result.confidence" }
+      },
+      "language": { "$path": "result.language" },
+      "interim": false
+    }
+  }
+]
+```
+
+### Start, audio, and interrupt recipe
+
+Use this pattern when the provider expects a session-start message, binary audio frames, and a flush message on interruption.
+
+```json
+[
+  {
+    "when": { "packet": "turn_change" },
+    "send": {
+      "frame": "json",
+      "body": {
+        "type": "start",
+        "language": { "$path": "config.language" },
+        "sample_rate": {
+          "$cast": "number",
+          "value": { "$path": "config.audio.sample_rate" }
+        }
+      }
+    }
+  },
+  {
+    "when": { "packet": "audio" },
+    "send": {
+      "frame": "binary",
+      "body": { "$path": "packet.audio.bytes" }
+    }
+  },
+  {
+    "when": { "packet": "interrupt" },
+    "send": {
+      "frame": "json",
+      "body": { "type": "flush" }
+    }
+  }
+]
+```
+
+### Runtime behavior
+
+- The connection URL is built from `baseUrl` and `listen.ws.query_params`.
+- Headers are copied from the credential and are not templated.
+- Audio is resampled from Rapida's internal audio format to `listen.audio.encoding` and `listen.audio.sample_rate` before request rules are evaluated.
+- `turn_change` and `audio` packets open the WebSocket connection if needed.
+- `interrupt` rules are sent only when a connection is already active.
+- If no response rule matches an inbound frame, the frame is ignored.
+- If a response emits `error`, Rapida emits an STT error packet.
+- If a response emits non-empty `script`, Rapida emits a transcript packet and conversation event.
+
+### Current STT limits
+
+- No regex, contains, starts-with, greater-than, or compound match conditions.
+- No string interpolation or concatenation.
+- No fallback values inside expressions.
+- No dynamic headers or dynamic WebSocket path segments.
+- No `$decode`.
+- No binary response handling for STT.
+- No `$frame: "json"` selector in emit rules.
+
+---
+
+## Backend mapping
+
+`assistant-api` resolves `custom-stt` in `api/assistant-api/internal/transformer/transformer.go`, then dispatches to the WebSocket v1 implementation in `api/assistant-api/internal/transformer/custom/stt_websocket_v1`.
+
+The WebSocket v1 transformer validates:
+
+- `baseUrl` is present in the credential.
+- `listen.audio.encoding` is not empty.
+- `listen.audio.sample_rate` is positive.
+- `listen.ws.request_rules` contains at least one `audio` packet rule.
+- `listen.ws.response_rules` contains at least one rule.
 
 <CardGroup cols={2}>
-  <Card title="STT Overview" icon="audio-waveform" href="/opensource/services/assistant-api/stt/overview">
-    Transformer interface and factory reference
+  <Card title="Custom TTS" icon="volume" href="/opensource/services/assistant-api/tts/custom">
+    Configure WebSocket text-to-speech.
   </Card>
-  <Card title="Configure Your Own TTS" icon="volume" href="/opensource/services/assistant-api/tts/custom">
-    Same pattern for text-to-speech
+  <Card title="STT overview" icon="audio-waveform" href="/opensource/services/assistant-api/stt/overview">
+    Transformer interface and supported providers.
   </Card>
 </CardGroup>

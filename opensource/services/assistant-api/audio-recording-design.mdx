@@ -1,0 +1,148 @@
+# Audio Recording Design
+
+This note captures the target recording model for assistant-api audio streams.
+The goal is to make recording match the audio that was actually sent or received,
+while keeping the recorder format simple and consistent.
+
+## Canonical Recording Format
+
+The recorder should receive audio in one canonical format:
+
+```text
+linear16, 16 kHz, mono
+```
+
+Transport-specific codecs and sample rates should stay inside the streamer or
+audio processor. The recorder should not need to understand WebRTC Opus, SIP
+PCMU/PCMA, Twilio mulaw, Exotel 8 kHz linear16, or AudioSocket framing.
+
+## Recording Boundary
+
+Use two recording boundaries for every audio transport.
+
+For user audio:
+
+```text
+provider/client audio
+-> decode and/or convert
+-> resample to linear16/16k/mono
+-> Record(User, timestamp, audio16k)
+-> send to assistant pipeline
+```
+
+For assistant audio:
+
+```text
+assistant/TTS audio as linear16/16k/mono
+-> buffer in canonical format
+-> pacer emits actual 20 ms canonical frame
+-> Record(Assistant, timestamp, frame16k)
+-> convert/resample/encode to provider format
+-> send to client/provider
+```
+
+Do not record assistant audio before buffering or pacing. Recording too early can
+capture audio that is later cleared by interruption, dropped by queue policy,
+delayed, or never sent.
+
+## WebRTC First Change
+
+Current WebRTC output converts assistant audio from internal 16 kHz linear16 to
+48 kHz linear16 before buffering. The target change is to keep the output buffer
+and pacer in internal 16 kHz linear16, then convert only at the final send edge.
+
+Target WebRTC output flow:
+
+```text
+ConversationAssistantMessage_Audio
+-> Send() keeps content.Audio as linear16/16k/mono
+-> BufferAndSendOutput(audio16k)
+-> runOutputWriter()
+-> enqueuePendingAudio(audio16k)
+-> output pacer
+-> ConsumeFrame(frame16k)
+-> Record(Assistant, timestamp, frame16k)
+-> resample frame16k to linear16/48k/mono
+-> Opus encode
+-> write WebRTC sample
+```
+
+WebRTC user hook stays after Opus decode and resample to internal format:
+
+```text
+RTP Opus payload
+-> Opus decode to linear16/48k/mono
+-> resample to linear16/16k/mono
+-> Record(User, timestamp, audio16k)
+-> BufferAndSendInput(audio16k)
+```
+
+Exact WebRTC hook locations:
+
+- User: `api/assistant-api/internal/channel/webrtc/streamer.go`, after
+  `s.resampler.Resample(pcm, WEBRTC_AUDIO_CONFIG, RAPIDA_INTERNAL_AUDIO_CONFIG)`
+  and before `s.BufferAndSendInput(resampled)`.
+- Assistant: `api/assistant-api/internal/channel/webrtc/streamer.go`, at the
+  start of `ConsumeFrame(frame []byte)`, before provider conversion and
+  `s.opusCodec.Encode(...)`.
+
+## Telephony Follow-Up
+
+Telephony should follow the same canonical model.
+
+User audio should be recorded after provider input conversion to
+`linear16/16k/mono`.
+
+Assistant audio should be paced in `linear16/16k/mono`, recorded at
+`ConsumeFrame`, then converted to the provider format.
+
+Provider output formats after recording:
+
+```text
+SIP:        PCMU 8k or PCMA 8k, depending negotiated codec
+Twilio:     PCMU/mulaw 8k
+Telnyx:     PCMU/mulaw 8k
+Exotel:     linear16 8k
+Vonage:     linear16 16k
+AudioSocket: linear16 8k
+WebRTC:     linear16 48k -> Opus RTP
+```
+
+## Packet Contract
+
+The recording packet should carry at least:
+
+```text
+speaker: user | assistant
+audio: linear16/16k/mono bytes
+timestamp: media/send timestamp
+```
+
+Optional future metadata:
+
+```text
+duration_ms
+sequence_number
+source_transport
+```
+
+The timestamp should be assigned at the recording boundary, not later in the
+recorder. This avoids drift caused by async queues, denoising, TTS latency, or
+transport pacing.
+
+## Tests To Add With Implementation
+
+For WebRTC first:
+
+- User recording receives only post-resample `linear16/16k/mono` audio.
+- Assistant recording happens in `ConsumeFrame` before Opus encode.
+- Assistant output is still sent as Opus after resampling to 48 kHz.
+- Cleared or dropped assistant audio is not recorded.
+- Recorded assistant frames use paced 20 ms canonical chunks.
+
+For telephony follow-up:
+
+- Each provider records user audio after conversion to `linear16/16k/mono`.
+- Each provider records assistant audio before provider conversion.
+- Provider output bytes remain unchanged after moving conversion later.
+- Interruption/clear behavior does not record flushed assistant audio.

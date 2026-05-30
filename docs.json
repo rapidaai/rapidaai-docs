@@ -163,7 +163,8 @@
                   "integrations/llm/mistral",
                   "integrations/llm/huggingface",
                   "integrations/llm/bedrock",
-                  "integrations/llm/voyageai"
+                  "integrations/llm/voyageai",
+                  "integrations/llm/custom"
                 ]
               },
               {

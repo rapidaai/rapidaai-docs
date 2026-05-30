@@ -1,144 +1,548 @@
 ---
-title: "Configure Your Own TTS Provider"
-description: "Implement the TextToSpeechTransformer interface to add a new TTS provider to assistant-api."
-sidebarTitle: "Configure Your Own"
+title: "Custom TTS"
+description: "Configure a custom WebSocket text-to-speech provider in Rapida."
+sidebarTitle: "Custom"
 ---
 
-Adding a new TTS provider follows the same pattern as STT. The key difference is that `Transform` receives `LLMPacket` variants and must handle interruptions.
+Custom TTS lets you connect Rapida to any WebSocket-based speech synthesis service without writing a new Go transformer. The UI stores provider credentials and assistant options; `assistant-api` reads them through the `custom-tts` transformer and maps LLM text packets and provider audio frames with WebSocket DSL rules.
+
+**Provider identifier:** `custom-tts`
 
 ---
 
-## Directory Structure
+## Where it is configured
 
+<Steps>
+
+<Step title="Create the provider credential">
+In the Rapida dashboard, open **Integrations > Models**, choose **Custom TTS**, and create a credential.
+
+| Credential field | Required | Value |
+|---|---:|---|
+| `apiCompatibility` | Yes | `websocket_v1` |
+| `baseUrl` | Yes | WebSocket URL for your TTS service, for example `wss://tts.example.com/v1/speak` |
+| `headers` | No | Header map sent on the WebSocket handshake, for example `{"Authorization":"Bearer sk_..."}` |
+
+The backend also accepts snake case keys: `api_compatibility` and `base_url`.
+</Step>
+
+<Step title="Select Custom TTS on the assistant">
+Open the assistant voice settings and select **Custom TTS** as the text-to-speech provider.
+</Step>
+
+<Step title="Fill the TTS arguments">
+Set the voice, model, language, audio format, query parameters, request rules, and response rules. The argument reference below maps one-to-one to the UI fields.
+</Step>
+
+</Steps>
+
+---
+
+## TTS arguments
+
+The UI stores these keys with the `speaker.` metadata prefix, but the transformer reads the option keys shown below.
+
+| Option key | Required | Default | Description |
+|---|---:|---|---|
+| `speak.voice.id` | Yes | None | Provider voice identifier. Reference it in DSL as `voice_id` or `config.voice.id`. |
+| `speak.model` | No | Empty | Provider model identifier. Reference it in DSL as `model` or `config.model`. |
+| `speak.language` | No | Empty | Provider language code. Reference it in DSL as `language` or `config.language`. |
+| `speak.audio.encoding` | Yes | `LINEAR16` | Audio encoding expected back from the provider. Supported values: `LINEAR16`, `MuLaw8`. |
+| `speak.audio.sample_rate` | Yes | `16000` | Audio sample rate expected back from the provider. Supported UI values: `8000`, `16000`, `22050`, `24000`, `32000`, `44100`, `48000`. |
+| `speak.ws.query_params` | No | `{}` | Flat JSON object appended to `baseUrl` as query parameters. Values can use DSL expressions. |
+| `speak.ws.request_rules` | Yes | See example below | Ordered JSON array that tells Rapida what to send for each outbound packet. Must contain at least one `text` rule. |
+| `speak.ws.response_rules` | Yes | None | Ordered JSON array that tells Rapida how to parse provider WebSocket frames into audio, done, or error events. |
+
+---
+
+## Query parameters
+
+Use `speak.ws.query_params` when your provider expects configuration in the WebSocket URL.
+
+Supported variables:
+
+| Variable | Source |
+|---|---|
+| `message_id` | Current synthesis message ID |
+| `voice_id` | `speak.voice.id` |
+| `model` | `speak.model` |
+| `language` | `speak.language` |
+| `encoding` | `speak.audio.encoding` |
+| `sample_rate` | `speak.audio.sample_rate` |
+
+```json
+{
+  "voice": { "$var": "voice_id" },
+  "model": { "$var": "model" },
+  "language": { "$var": "language" },
+  "sample_rate": {
+    "$cast": "number",
+    "value": { "$var": "sample_rate" }
+  }
+}
 ```
-api/assistant-api/internal/transformer/<provider>/
-├── <provider>.go   # Option struct — credential extraction, client config
-├── tts.go          # TextToSpeechTransformer implementation
-└── normalizer.go   # Optional — strip markdown, apply pronunciation dict
-```
 
 ---
 
-## Step 1 — Add a Constant
+## Request rules
 
-Open `api/assistant-api/internal/transformer/transformer.go`:
+Request rules are evaluated for normalized TTS packets produced by Rapida.
 
-```go
-const (
-    DEEPGRAM    AudioTransformer = "deepgram"
-    // ...
-    MY_PROVIDER AudioTransformer = "my-provider"  // add this
-)
-```
+| Packet | When it is sent | Available paths |
+|---|---|---|
+| `text` | LLM text is ready for synthesis | `packet.kind`, `packet.message_id`, `packet.text`, `config.voice.id`, `config.model`, `config.language`, `config.audio.encoding`, `config.audio.sample_rate` |
+| `done` | The LLM response is complete | `packet.kind`, `packet.message_id`, `packet.text`, `config.*` |
+| `interrupt` | User interruption is detected | `packet.kind`, `packet.message_id`, `packet.text`, `config.*` |
 
----
+Supported outbound frame types are `binary`, `json`, and `text`.
 
-## Step 2 — Implement `TextToSpeechTransformer`
+<Warning>
+Add an `interrupt` rule if your provider needs an explicit cancel/clear message. Without it, queued provider audio can continue after the user starts speaking.
+</Warning>
 
-```go
-// api/assistant-api/internal/transformer/myprovider/tts.go
-package myprovider
+### One-shot synthesis
 
-type myProviderTTS struct {
-    opt      *myProviderOption
-    onPacket func(AudioPacket)  // callback invoked with each synthesised audio chunk
-    conn     *websocket.Conn    // or your provider's streaming client
-}
+Use this when the provider synthesizes each text packet immediately.
 
-func NewMyProviderTTS(opt *myProviderOption, onPacket func(AudioPacket)) *myProviderTTS {
-    return &myProviderTTS{opt: opt, onPacket: onPacket}
-}
-
-// Initialize opens the streaming connection to your provider.
-func (t *myProviderTTS) Initialize() error {
-    var err error
-    t.conn, _, err = websocket.DefaultDialer.Dial(t.opt.GetConnectionString(), nil)
-    if err != nil {
-        return err
-    }
-    // Start a goroutine to read audio chunks and call t.onPacket
-    go t.readAudioChunks()
-    return nil
-}
-
-// Transform handles three LLMPacket variants.
-func (t *myProviderTTS) Transform(ctx context.Context, in LLMPacket) error {
-    switch pkt := in.(type) {
-    case InterruptionPacket:
-        // User started speaking — cancel queued audio immediately
-        return t.conn.WriteJSON(map[string]string{"type": "cancel"})
-
-    case LLMResponseDeltaPacket:
-        // A text token arrived — stream to TTS
-        return t.conn.WriteJSON(map[string]interface{}{
-            "type": "synthesise",
-            "text": pkt.Text,
-        })
-
-    case LLMResponseDonePacket:
-        // LLM finished — flush/finalise synthesis
-        return t.conn.WriteJSON(map[string]string{"type": "flush"})
-    }
-    return nil
-}
-
-// Close tears down the connection.
-func (t *myProviderTTS) Close(ctx context.Context) error {
-    return t.conn.Close()
-}
-
-// readAudioChunks reads synthesised audio from the provider and calls onPacket.
-func (t *myProviderTTS) readAudioChunks() {
-    for {
-        _, data, err := t.conn.ReadMessage()
-        if err != nil {
-            return
+```json
+[
+  {
+    "when": { "packet": "text" },
+    "send": {
+      "frame": "json",
+      "body": {
+        "text": { "$path": "packet.text" },
+        "voice_id": { "$path": "config.voice.id" },
+        "message_id": { "$path": "packet.message_id" },
+        "model": { "$path": "config.model" },
+        "language": { "$path": "config.language" },
+        "audio": {
+          "encoding": { "$path": "config.audio.encoding" },
+          "sample_rate": {
+            "$cast": "number",
+            "value": { "$path": "config.audio.sample_rate" }
+          }
         }
-        t.onPacket(AudioPacket{Audio: data})
+      }
     }
+  }
+]
+```
+
+### Two-step synthesis with done
+
+Use this when the provider expects text first and a final flush/done packet.
+
+```json
+[
+  {
+    "when": { "packet": "text" },
+    "send": {
+      "frame": "json",
+      "body": {
+        "text": { "$path": "packet.text" },
+        "voice_id": { "$path": "config.voice.id" },
+        "message_id": { "$path": "packet.message_id" }
+      }
+    }
+  },
+  {
+    "when": { "packet": "done" },
+    "send": {
+      "frame": "json",
+      "body": {
+        "type": "done",
+        "message_id": { "$path": "packet.message_id" }
+      }
+    }
+  },
+  {
+    "when": { "packet": "interrupt" },
+    "send": {
+      "frame": "json",
+      "body": {
+        "type": "interrupt",
+        "message_id": { "$path": "packet.message_id" }
+      }
+    }
+  }
+]
+```
+
+---
+
+## Response rules
+
+Response rules parse provider WebSocket frames into Rapida audio packets.
+
+Supported inbound frame types:
+
+| Frame | Use when |
+|---|---|
+| `binary` | The provider streams raw audio frames. |
+| `json` | The provider returns JSON messages with base64 audio or status fields. |
+
+Supported emit keys:
+
+| Emit key | Type | Description |
+|---|---|---|
+| `audio` | Binary bytes or base64-decoded bytes | Audio chunk to play. |
+| `message_id` | `string` | Optional message ID associated with the audio or done event. |
+| `done` | `boolean` | `true` when synthesis for the message is complete. |
+| `error` | Any | Provider error value. When present, Rapida treats the frame as an error. |
+
+### Binary audio responses
+
+```json
+[
+  {
+    "when": { "frame": "binary" },
+    "emit": {
+      "audio": { "$frame": "binary" }
+    }
+  },
+  {
+    "when": { "frame": "json", "path": "type", "equals": "done" },
+    "emit": {
+      "message_id": { "$path": "message_id" },
+      "done": true
+    }
+  },
+  {
+    "when": { "frame": "json", "path": "type", "equals": "error" },
+    "emit": {
+      "message_id": { "$path": "message_id" },
+      "error": { "$path": "error.message" },
+      "done": true
+    }
+  }
+]
+```
+
+### JSON base64 audio responses
+
+```json
+[
+  {
+    "when": { "frame": "json", "path": "type", "equals": "chunk" },
+    "emit": {
+      "audio": {
+        "$decode": "base64",
+        "value": { "$path": "audio" }
+      },
+      "message_id": { "$path": "message_id" }
+    }
+  },
+  {
+    "when": { "frame": "json", "path": "type", "equals": "done" },
+    "emit": {
+      "message_id": { "$path": "message_id" },
+      "done": true
+    }
+  }
+]
+```
+
+---
+
+## TTS DSL design
+
+Custom TTS uses a JSON-template DSL with three sections: query parameters, request rules, and response rules. The DSL is intentionally small. It does not run scripts, call functions, concatenate strings, perform regex matching, or read environment variables.
+
+### TTS frame support
+
+| Frame type | Outbound request | Inbound response | Notes |
+|---|---:|---:|---|
+| `binary` | Yes | Yes | Use inbound binary frames for raw provider audio chunks. |
+| `json` | Yes | Yes | Use for provider request payloads, base64 audio chunks, done events, and errors. |
+| `text` | Yes | No | Use for outbound provider control frames when required. |
+
+Inbound parsing rules:
+
+- WebSocket message type `2` is treated as `binary`.
+- Non-binary messages are parsed as JSON when they contain exactly one valid JSON value.
+- Non-JSON messages are treated as `text`, but TTS response rules do not support text response frames.
+
+### TTS operators
+
+Every operator object must contain only that operator and its required field.
+
+| Operator | Where supported | Description |
+|---|---|---|
+| `$var` | Query parameters | Reads `message_id`, `voice_id`, `model`, `language`, `encoding`, or `sample_rate`. |
+| `$path` | Request rules, response rules | Reads a dot path from request scope or a JSON response frame. |
+| `$cast` | Query parameters, request rules, response rules | Casts to `string`, `number`, or `boolean`. |
+| `$frame` | Response rules | Reads the full current `binary` response frame. |
+| `$decode` | Response rules | Decodes a base64 string into bytes. Only `base64` is supported. |
+
+Unsupported TTS operators:
+
+- `$frame: "text"` and `$frame: "json"` are not supported for TTS emit rules.
+- `$decode` supports only `base64`.
+
+### Cast behavior
+
+| Cast | Behavior |
+|---|---|
+| `string` | Converts strings, bytes, numbers, booleans, and null to string form. |
+| `number` | Converts JSON numbers, numeric values, or numeric strings to an integer or float. |
+| `boolean` | Converts booleans, boolean strings, and numeric values. JSON numbers are accepted as `0` or `1`; typed numeric values use zero as `false` and non-zero as `true`. |
+
+### JSON path behavior
+
+`$path` uses dot-separated paths.
+
+```json
+{ "$path": "packet.text" }
+```
+
+Objects are traversed by key. Arrays are traversed by numeric index.
+
+```json
+{ "$path": "chunks.0.audio" }
+```
+
+Limits:
+
+- Keys containing a literal dot are not addressable.
+- Request rules can only read from `config` and `packet`.
+- Response rules can use `$path` only with JSON response frames.
+- A missing path in `when.path` means the rule does not match.
+- A missing path in `emit` or `send.body` is an error.
+
+### Query parameter rules
+
+`speak.ws.query_params` must be a flat JSON object. Each value must resolve to a primitive value: string, number, boolean, or null. Nested objects and arrays are rejected unless the object is a DSL expression.
+
+```json
+{
+  "voice": { "$var": "voice_id" },
+  "model": { "$var": "model" },
+  "sample_rate": {
+    "$cast": "number",
+    "value": { "$var": "sample_rate" }
+  }
 }
 ```
 
-**Critical:** `InterruptionPacket` must be handled immediately to stop playback — otherwise the user will hear the AI speaking over them.
+The rendered query parameters are appended to `baseUrl`. Existing query parameters in `baseUrl` are preserved unless the same key is rendered by `speak.ws.query_params`.
+
+<Note>
+TTS request rules can read `packet.text`, but `text` is not a supported query parameter variable.
+</Note>
+
+### Request rule shape
+
+`speak.ws.request_rules` is an ordered JSON array. Every matching rule is sent, so one packet can produce multiple WebSocket messages.
+
+| Field | Required | Description |
+|---|---:|---|
+| `when.packet` | Yes | `text`, `done`, or `interrupt`. |
+| `send.frame` | Yes | `binary`, `json`, or `text`. |
+| `send.body` | Yes | Static value or DSL expression tree. |
+
+Body validation depends on `send.frame`:
+
+| `send.frame` | `send.body` must resolve to |
+|---|---|
+| `binary` | Bytes or string. |
+| `json` | Valid JSON value. Byte arrays are not valid JSON bodies. |
+| `text` | Value convertible to string. |
+
+### TTS request scope
+
+The request scope is the data available to `$path` in request rules.
+
+```json
+{
+  "config": {
+    "voice": {
+      "id": "voice_123"
+    },
+    "model": "model-a",
+    "language": "en-US",
+    "audio": {
+      "encoding": "LINEAR16",
+      "sample_rate": 16000
+    }
+  },
+  "packet": {
+    "kind": "text",
+    "message_id": "msg_123",
+    "text": "Hello world"
+  }
+}
+```
+
+For `done` and `interrupt`, `packet.text` is present but may be empty.
+
+### Response rule shape
+
+`speak.ws.response_rules` is an ordered JSON array. The first matching rule is evaluated; later rules are skipped for that frame.
+
+| Field | Required | Description |
+|---|---:|---|
+| `when.frame` | Yes | `binary` or `json`. |
+| `when.path` | No | Dot path inside a JSON frame. Must be paired with `when.equals`. |
+| `when.equals` | No | Primitive value compared against `when.path`. |
+| `emit` | Yes | Object containing supported TTS emit keys. |
+
+Match behavior:
+
+| Frame | Match behavior |
+|---|---|
+| `binary` | Matches by frame type only. `when.path` and `when.equals` are not allowed. |
+| `json` | If `when.path` and `when.equals` are omitted, matches any JSON frame. If provided, both fields are required and compared exactly. |
+
+### TTS emit keys
+
+| Emit key | Type after evaluation | Effect |
+|---|---|---|
+| `audio` | bytes or string | Emits a TTS audio chunk. |
+| `message_id` | string | Associates audio, error, or done with a message. Falls back to the current context ID when omitted. |
+| `done` | boolean | Ends synthesis for the message, closes the connection, and emits a TTS end packet. |
+| `error` | string | Emits a TTS error. |
+
+### Binary audio response
+
+Use this for providers that stream raw audio as binary WebSocket frames.
+
+```json
+[
+  {
+    "when": { "frame": "binary" },
+    "emit": {
+      "audio": { "$frame": "binary" }
+    }
+  }
+]
+```
+
+### JSON base64 audio response
+
+Use `$decode` when the provider returns base64-encoded audio inside JSON.
+
+```json
+[
+  {
+    "when": { "frame": "json", "path": "type", "equals": "chunk" },
+    "emit": {
+      "audio": {
+        "$decode": "base64",
+        "value": { "$path": "audio" }
+      },
+      "message_id": { "$path": "request_id" }
+    }
+  },
+  {
+    "when": { "frame": "json", "path": "type", "equals": "done" },
+    "emit": {
+      "message_id": { "$path": "request_id" },
+      "done": true
+    }
+  },
+  {
+    "when": { "frame": "json", "path": "type", "equals": "error" },
+    "emit": {
+      "message_id": { "$path": "request_id" },
+      "error": { "$path": "error.message" },
+      "done": true
+    }
+  }
+]
+```
+
+### Text, done, and interrupt recipe
+
+Use this pattern when the provider expects text payloads, an explicit final message, and an explicit cancel message.
+
+```json
+[
+  {
+    "when": { "packet": "text" },
+    "send": {
+      "frame": "json",
+      "body": {
+        "type": "speak",
+        "text": { "$path": "packet.text" },
+        "voice": { "$path": "config.voice.id" },
+        "request_id": { "$path": "packet.message_id" },
+        "audio": {
+          "encoding": { "$path": "config.audio.encoding" },
+          "sample_rate": {
+            "$cast": "number",
+            "value": { "$path": "config.audio.sample_rate" }
+          }
+        }
+      }
+    }
+  },
+  {
+    "when": { "packet": "done" },
+    "send": {
+      "frame": "json",
+      "body": {
+        "type": "done",
+        "request_id": { "$path": "packet.message_id" }
+      }
+    }
+  },
+  {
+    "when": { "packet": "interrupt" },
+    "send": {
+      "frame": "json",
+      "body": {
+        "type": "interrupt",
+        "request_id": { "$path": "packet.message_id" }
+      }
+    }
+  }
+]
+```
+
+### Runtime behavior
+
+- The connection URL is built from `baseUrl` and `speak.ws.query_params`.
+- Headers are copied from the credential and are not templated.
+- The transformer opens a connection per active message/context. A new context closes the previous connection.
+- `text` packets open the WebSocket connection if needed.
+- `done` and `interrupt` request rules are optional. If no rule exists for that packet, nothing is sent.
+- On interruption, Rapida sends the optional `interrupt` rule first, then closes the connection.
+- Audio returned by the provider is interpreted as `speak.audio.encoding` and `speak.audio.sample_rate`, then resampled to Rapida's internal audio format when needed.
+- If no response rule matches an inbound frame, the frame is ignored.
+- If a response emits `error`, Rapida emits a TTS error packet.
+- If a response emits `done`, Rapida closes the connection and emits a TTS end packet.
+
+### Current TTS limits
+
+- No regex, contains, starts-with, greater-than, or compound match conditions.
+- No string interpolation or concatenation.
+- No fallback values inside expressions.
+- No dynamic headers or dynamic WebSocket path segments.
+- No text response handling for TTS.
+- No `$frame: "json"` selector in emit rules.
+- `$decode` supports only base64.
 
 ---
 
-## Step 3 — Register in the Factory
+## Backend mapping
 
-```go
-// api/assistant-api/internal/transformer/transformer.go
+`assistant-api` resolves `custom-tts` in `api/assistant-api/internal/transformer/transformer.go`, then dispatches to the WebSocket v1 implementation in `api/assistant-api/internal/transformer/custom/tts_websocket_v1`.
 
-// In GetTextToSpeechTransformer switch:
-case MY_PROVIDER:
-    opt := myprovider.NewMyProviderOption(logger, credential, opts)
-    return myprovider.NewMyProviderTTS(opt, onPacket), nil
-```
+The WebSocket v1 transformer validates:
 
----
-
-## Step 4 — Rebuild
-
-```bash
-make rebuild-assistant
-```
-
----
-
-## Reference: Deepgram Aura Implementation
-
-```
-api/assistant-api/internal/transformer/deepgram/tts.go
-```
-
-WebSocket to `wss://api.deepgram.com/v1/speak`, JSON control messages (`Speak`, `Flush`, `Clear`).
-
----
+- `baseUrl` is present in the credential.
+- `speak.voice.id` is present.
+- `speak.audio.encoding` is not empty.
+- `speak.audio.sample_rate` is positive.
+- `speak.ws.request_rules` contains at least one `text` packet rule.
+- `speak.ws.response_rules` contains at least one rule.
 
 <CardGroup cols={2}>
-  <Card title="TTS Overview" icon="volume" href="/opensource/services/assistant-api/tts/overview">
-    Transformer interface and LLMPacket types
+  <Card title="Custom STT" icon="audio-waveform" href="/opensource/services/assistant-api/stt/custom">
+    Configure WebSocket speech-to-text.
   </Card>
-  <Card title="Configure Your Own STT" icon="audio-waveform" href="/opensource/services/assistant-api/stt/custom">
-    Same pattern for speech-to-text
+  <Card title="TTS overview" icon="volume" href="/opensource/services/assistant-api/tts/overview">
+    Transformer interface and supported providers.
   </Card>
 </CardGroup>
