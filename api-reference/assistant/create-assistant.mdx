@@ -1,0 +1,334 @@
+---
+title: "Create Assistant"
+description: "Create an assistant from the Rapida SDK."
+---
+
+Creates an assistant with one provider configuration. You can also attach tags, tools, and knowledge during creation.
+
+<Info>
+  For setup and authentication options, see the [Installation guide](/api-reference/installation) and [Authentication](/api-reference/authentication).
+</Info>
+
+## Parameters
+
+<ParamField body="connectionConfig" type="ConnectionConfig" required>
+  Configuration for the client connection.
+</ParamField>
+
+<ParamField body="request" type="CreateAssistantRequest" required>
+  <Expandable>
+    <ParamField body="name" type="string" required>
+      Assistant name.
+    </ParamField>
+    <ParamField body="assistantProvider" type="CreateAssistantProviderRequest" required>
+      Provider configuration for the assistant. Provide exactly one of `model`, `agentkit`, or `websocket`.
+      <Expandable>
+        <ParamField body="description" type="string">
+          Description for this provider configuration.
+        </ParamField>
+        <ParamField body="model" type="CreateAssistantProviderModel">
+          Model-backed provider configuration.
+          <Expandable>
+            <ParamField body="modelProviderName" type="string" required>
+              Model provider name, such as `openai`.
+            </ParamField>
+            <ParamField body="template" type="TextChatCompletePrompt">
+              Prompt template used by the model provider.
+            </ParamField>
+            <ParamField body="assistantModelOptions" type="Metadata[]">
+              Provider-specific model options.
+            </ParamField>
+          </Expandable>
+        </ParamField>
+        <ParamField body="agentkit" type="CreateAssistantProviderAgentkit">
+          AgentKit provider configuration.
+        </ParamField>
+        <ParamField body="websocket" type="CreateAssistantProviderWebsocket">
+          WebSocket provider configuration.
+        </ParamField>
+      </Expandable>
+    </ParamField>
+    <ParamField body="description" type="string">
+      Assistant description.
+    </ParamField>
+    <ParamField body="visibility" type="string">
+      Assistant visibility, for example `private`.
+    </ParamField>
+    <ParamField body="language" type="string">
+      Assistant language code, for example `en`.
+    </ParamField>
+    <ParamField body="tags" type="string[]">
+      Tags to attach to the assistant.
+    </ParamField>
+    <ParamField body="assistantTools" type="CreateAssistantToolRequest[]">
+      Tools to attach to the assistant.
+    </ParamField>
+    <ParamField body="assistantKnowledges" type="CreateAssistantKnowledgeRequest[]">
+      Knowledge sources to attach to the assistant.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Usage
+
+<CodeGroup>
+
+```ts React
+import {
+  ConnectionConfig,
+  CreateAssistant,
+  CreateAssistantRequest,
+  CreateAssistantProviderRequest,
+  Metadata,
+  TextChatCompletePrompt,
+  TextPrompt,
+} from "@rapidaai/react";
+
+const auth = ConnectionConfig.WithPersonalToken({
+  Authorization: "AUTHORIZATION_TOKEN_PLACEHOLDER",
+  AuthId: "AUTH_ID_PLACEHOLDER",
+  ProjectId: "PROJECT_ID_PLACEHOLDER",
+});
+const connectionCfg = ConnectionConfig.DefaultConnectionConfig(auth);
+
+const systemPrompt = new TextPrompt();
+systemPrompt.setRole("system");
+systemPrompt.setContent("You are a helpful support assistant.");
+
+const template = new TextChatCompletePrompt();
+template.addPrompt(systemPrompt);
+
+const modelOption = new Metadata();
+modelOption.setKey("model");
+modelOption.setValue("gpt-4o-mini");
+
+const model = new CreateAssistantProviderRequest.CreateAssistantProviderModel();
+model.setModelprovidername("openai");
+model.setTemplate(template);
+model.addAssistantmodeloptions(modelOption);
+
+const provider = new CreateAssistantProviderRequest();
+provider.setDescription("Primary model provider");
+provider.setModel(model);
+
+const request = new CreateAssistantRequest();
+request.setName("Support assistant");
+request.setDescription("Answers customer support questions.");
+request.setVisibility("private");
+request.setLanguage("en");
+request.setTagsList(["support", "production"]);
+request.setAssistantprovider(provider);
+
+const response = await CreateAssistant(connectionCfg, request, auth);
+console.dir(response.toObject());
+```
+
+```javascript Node.js
+import {
+  ConnectionConfig,
+  CreateAssistant,
+  CreateAssistantRequest,
+  CreateAssistantProviderRequest,
+  Metadata,
+  TextChatCompletePrompt,
+  TextPrompt,
+} from "@rapidaai/nodejs";
+
+const connectionCfg = ConnectionConfig.DefaultConnectionConfig(
+  ConnectionConfig.WithSDK({
+    ApiKey: process.env.RAPIDA_API_KEY,
+  })
+);
+
+const systemPrompt = new TextPrompt();
+systemPrompt.setRole("system");
+systemPrompt.setContent("You are a helpful support assistant.");
+
+const template = new TextChatCompletePrompt();
+template.addPrompt(systemPrompt);
+
+const modelOption = new Metadata();
+modelOption.setKey("model");
+modelOption.setValue("gpt-4o-mini");
+
+const model = new CreateAssistantProviderRequest.CreateAssistantProviderModel();
+model.setModelprovidername("openai");
+model.setTemplate(template);
+model.addAssistantmodeloptions(modelOption);
+
+const provider = new CreateAssistantProviderRequest();
+provider.setDescription("Primary model provider");
+provider.setModel(model);
+
+const request = new CreateAssistantRequest();
+request.setName("Support assistant");
+request.setDescription("Answers customer support questions.");
+request.setVisibility("private");
+request.setLanguage("en");
+request.setTagsList(["support", "production"]);
+request.setAssistantprovider(provider);
+
+try {
+  const response = await CreateAssistant(connectionCfg, request);
+  console.dir(response.toObject());
+} catch (error) {
+  console.error("Error with CreateAssistant call:", error);
+}
+```
+
+```python Python
+import os
+from pprint import pprint
+
+from rapida import (
+    ConnectionConfig,
+    CreateAssistantProviderRequest,
+    CreateAssistantRequest,
+    Metadata,
+    TextChatCompletePrompt,
+    TextPrompt,
+    create_assistant,
+)
+
+connection_config = ConnectionConfig.default_connection_config(
+    ConnectionConfig.with_sdk(os.getenv("RAPIDA_API_KEY"))
+)
+
+provider = CreateAssistantProviderRequest(
+    description="Primary model provider",
+    model=CreateAssistantProviderRequest.CreateAssistantProviderModel(
+        modelProviderName="openai",
+        template=TextChatCompletePrompt(
+            prompt=[
+                TextPrompt(
+                    role="system",
+                    content="You are a helpful support assistant.",
+                )
+            ],
+        ),
+        assistantModelOptions=[
+            Metadata(key="model", value="gpt-4o-mini"),
+        ],
+    ),
+)
+
+response = create_assistant(
+    client_cfg=connection_config,
+    request=CreateAssistantRequest(
+        name="Support assistant",
+        description="Answers customer support questions.",
+        visibility="private",
+        language="en",
+        tags=["support", "production"],
+        assistantProvider=provider,
+    ),
+)
+pprint(response)
+```
+
+```go Go
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+
+	"github.com/rapidaai/rapida-go/rapida/clients"
+	"github.com/rapidaai/rapida-go/rapida/connections"
+	protos "github.com/rapidaai/rapida-go/protos"
+)
+
+func main() {
+	connectionConfig := connections.DefaultconnectionConfig(
+		connections.WithSDK(os.Getenv("RAPIDA_API_KEY")),
+	)
+
+	response, err := clients.CreateAssistant(
+		context.Background(),
+		connectionConfig,
+		&protos.CreateAssistantRequest{
+			Name:        "Support assistant",
+			Description: "Answers customer support questions.",
+			Visibility:  "private",
+			Language:    "en",
+			Tags:        []string{"support", "production"},
+			AssistantProvider: &protos.CreateAssistantProviderRequest{
+				Description: "Primary model provider",
+				AssistantProvider: &protos.CreateAssistantProviderRequest_Model{
+					Model: &protos.CreateAssistantProviderRequest_CreateAssistantProviderModel{
+						ModelProviderName: "openai",
+						Template: &protos.TextChatCompletePrompt{
+							Prompt: []*protos.TextPrompt{{
+								Role:    "system",
+								Content: "You are a helpful support assistant.",
+							}},
+						},
+						AssistantModelOptions: []*protos.Metadata{{
+							Key:   "model",
+							Value: "gpt-4o-mini",
+						}},
+					},
+				},
+			},
+		},
+	)
+	if err != nil {
+		fmt.Printf("error while creating assistant: %+v\n", err)
+		return
+	}
+	fmt.Printf("create assistant response: %+v\n", response)
+}
+```
+
+</CodeGroup>
+
+## Response
+
+<ParamField body="code" type="int32">
+  Numeric status code for the operation.
+</ParamField>
+
+<ParamField body="success" type="boolean">
+  Indicates whether the operation was successful.
+</ParamField>
+
+<ParamField body="data" type="Assistant">
+  Created assistant.
+  <Expandable>
+    <ParamField body="id" type="uint64">
+      Unique identifier for the assistant.
+    </ParamField>
+    <ParamField body="name" type="string">
+      Assistant name.
+    </ParamField>
+    <ParamField body="description" type="string">
+      Assistant description.
+    </ParamField>
+    <ParamField body="status" type="string">
+      Current assistant status.
+    </ParamField>
+    <ParamField body="visibility" type="string">
+      Assistant visibility.
+    </ParamField>
+    <ParamField body="assistantProvider" type="string">
+      Active provider type.
+    </ParamField>
+    <ParamField body="assistantProviderModel" type="AssistantProviderModel">
+      Model provider details when the assistant uses a model-backed provider.
+    </ParamField>
+    <ParamField body="assistantProviderAgentkit" type="AssistantProviderAgentkit">
+      AgentKit provider details when the assistant uses AgentKit.
+    </ParamField>
+    <ParamField body="assistantProviderWebsocket" type="AssistantProviderWebsocket">
+      WebSocket provider details when the assistant uses a WebSocket provider.
+    </ParamField>
+    <ParamField body="assistantTools" type="AssistantTool[]">
+      Tools attached to the assistant.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="error" type="Error">
+  Error details when the operation fails.
+</ParamField>

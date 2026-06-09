@@ -19,15 +19,16 @@ Creates multiple outbound phone calls in a single request using your configured 
 
 <ParamField body="request" type="CreateBulkPhoneCallRequest" required>
   <Expandable>
-    <ParamField body="PhoneCalls" type="CreatePhoneCallRequest[]" required>
+    <ParamField body="phoneCalls" type="CreatePhoneCallRequest[]" required>
       <Expandable>
-        <ParamField body="assistant" type="AssistantDefinition" required description="jf">
+        <ParamField body="assistant" type="AssistantDefinition" required>
+          Assistant definition used for each call.
           <Expandable>
             <ParamField body="assistantId" type="string" required>
-              AssistantID which will be used.
+              Assistant ID to use for the call.
             </ParamField>
             <ParamField body="version" type="string">
-              Version of assistant
+              Assistant version. Use `latest` to run the latest published version.
             </ParamField>
           </Expandable>
         </ParamField>
@@ -57,22 +58,21 @@ Creates multiple outbound phone calls in a single request using your configured 
 <CodeGroup>
 
 ```ts React
-import {   
+import {
   AssistantDefinition,
   CreateBulkPhoneCall,
   ConnectionConfig,
   CreateBulkPhoneCallRequest,
   CreatePhoneCallRequest,
-  AssistantDefinition,
 } from '@rapidaai/react';
 
 const connectionCfg = ConnectionConfig.DefaultConnectionConfig(
-  ConnectionConfig.WithSDK({ ApiKey: process.env.RAPIDA_API_KEY })
+  ConnectionConfig.WithSDK({ ApiKey: "YOUR_API_KEY_PLACEHOLDER" })
 );
 const phoneCallRequest = new CreatePhoneCallRequest();
 const assistant = new AssistantDefinition();
 assistant.setAssistantid("ASSISTANT_ID_PLACEHOLDER");
-assistant.setVersion("VERSION_PLACEHOLDER");
+assistant.setVersion("latest");
 phoneCallRequest.setAssistant(assistant);
 phoneCallRequest.setTonumber("TO_NUMBER_PLACEHOLDER");
 
@@ -84,8 +84,8 @@ CreateBulkPhoneCall(connectionCfg, bulkPhoneCallRequest)
       console.dir(x.getData().toObject());
       return;
     }
-    let err = x.getError();
-    if (err?.getHumanmessage()) setError(err?.getHumanmessage());
+    const err = x.getError();
+    if (err?.getHumanmessage()) console.error(err.getHumanmessage());
   })
   .catch((x) => {
     console.dir(x);
@@ -111,7 +111,7 @@ const phoneCallRequest = new CreatePhoneCallRequest();
 // define assistant
 const assistant = new AssistantDefinition();
 assistant.setAssistantid("ASSISTANT_ID_PLACEHOLDER");
-assistant.setVersion("VERSION_PLACEHOLDER");
+assistant.setVersion("latest");
 phoneCallRequest.setAssistant(assistant);
 phoneCallRequest.setTonumber("TO_NUMBER_PLACEHOLDER");
 
@@ -123,8 +123,8 @@ CreateBulkPhoneCall(connectionCfg, bulkPhoneCallRequest)
       console.dir(x.getData().toObject());
       return;
     }
-    let err = x.getError();
-    if (err?.getHumanmessage()) setError(err?.getHumanmessage());
+    const err = x.getError();
+    if (err?.getHumanmessage()) console.error(err.getHumanmessage());
   })
   .catch((x) => {
     console.dir(x);
@@ -144,11 +144,14 @@ from rapida import (
 from pprint import pprint
 
 connectionConfig = ConnectionConfig.default_connection_config(
-    ConnectionConfig.with_sdk(os.getenv("RAPIDA_PROJECT_KEY"))
+    ConnectionConfig.with_sdk(os.getenv("RAPIDA_API_KEY"))
 )
 call = CreatePhoneCallRequest(
-    assistant=AssistantDefinition(assistantId={ASSISTANT_ID}),
-    toNumber="{TO_PHONE}",
+    assistant=AssistantDefinition(
+        assistantId=2230142097179373568,
+        version="latest",
+    ),
+    toNumber="+14155550123",
 )
 response = create_bulk_phone_call(
     client_cfg=connectionConfig,
@@ -156,7 +159,7 @@ response = create_bulk_phone_call(
         phoneCalls=[call],
     ),
 )
-pprint.pprint(response)
+pprint(response)
 ```
 
 ```go Go
@@ -168,32 +171,31 @@ import (
 	"os"
 
 	clients "github.com/rapidaai/rapida-go/rapida/clients"
-	lexatic_backend "github.com/rapidaai/rapida-go/rapida/clients/protos"
 	connections "github.com/rapidaai/rapida-go/rapida/connections"
+	protos "github.com/rapidaai/rapida-go/protos"
 )
 
 func main() {
 
 	// for more authentication check https://doc.rapida.ai/api-reference/authentication
 	connectionConfig := connections.
-		DefaultconnectionConfig(connections.WithSDK(os.Getenv("RAPIDA_PROJECT_CREDENTIAL")))
-	response, err := clients.CreateBulkPhoneCall(context.Background(), connectionConfig, &lexatic_backend.CreateBulkPhoneCallRequest{
-		PhoneCalls: []*lexatic_backend.CreatePhoneCallRequest{
-			// add multiple phone call request here to make call
+		DefaultconnectionConfig(connections.WithSDK(os.Getenv("RAPIDA_API_KEY")))
+	response, err := clients.CreateBulkPhoneCall(context.Background(), connectionConfig, &protos.CreateBulkPhoneCallRequest{
+		PhoneCalls: []*protos.CreatePhoneCallRequest{
 			{
-				Assistant: &lexatic_backend.AssistantDefinition{
-					// change
+				Assistant: &protos.AssistantDefinition{
 					AssistantId: 2227823180112723968,
+					Version:     "latest",
 				},
-				ToNumber: "{PHONE_NUMBER}",
+				ToNumber: "+14155550123",
 			}},
 	})
 
 	if err != nil {
-		fmt.Printf("error while making call using rapida %+v", err)
+		fmt.Printf("error while creating bulk phone calls: %+v\n", err)
 		return
 	}
-	fmt.Printf("rapida calling response %+v", response)
+	fmt.Printf("create bulk phone calls response: %+v\n", response)
 }
 
 ```

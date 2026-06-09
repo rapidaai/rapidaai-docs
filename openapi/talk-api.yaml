@@ -1,14 +1,17 @@
 openapi: 3.0.3
 info:
-  title: Rapida Talk API
+  title: Rapida Assistant API
   version: 0.1.0
-  description: REST endpoints for starting outbound assistant phone calls.
+  description: REST endpoints for creating assistants and starting outbound assistant phone calls.
 servers:
   - url: https://assistant-01.in.rapida.ai
     description: Rapida managed assistant API
   - url: https://assistant-01.us.rapida.ai
     description: Local assistant API
 tags:
+  - name: assistants
+    x-group: Assistants
+    description: Assistant management APIs.
   - name: calls
     x-group: Calls
     description: Outbound call APIs.
@@ -17,6 +20,135 @@ security:
   - ProjectApiKeyQuery: []
   - AuthenticationHeader: []
 paths:
+  /v1/assistant/create-assistant:
+    post:
+      tags:
+        - assistants
+      operationId: createAssistant
+      summary: create-assistant
+      description: Creates an assistant with one provider configuration and optional tools, knowledge, and tags.
+      parameters:
+        - $ref: "#/components/parameters/ClientSourceHeader"
+        - $ref: "#/components/parameters/AuthIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAssistantRequest"
+            examples:
+              model:
+                summary: Create a model-backed assistant
+                value:
+                  name: "Support assistant"
+                  description: "Answers customer support questions."
+                  visibility: "private"
+                  language: "en"
+                  tags:
+                    - support
+                    - production
+                  assistantProvider:
+                    model:
+                      modelProviderName: "openai"
+                      template:
+                        prompt:
+                          - role: "system"
+                            content: "You are a helpful support assistant."
+                        promptVariables:
+                          - name: "customerName"
+                            type: "string"
+                            defaultValue: "there"
+                      assistantModelOptions:
+                        - key: "model"
+                          value: "gpt-4o-mini"
+                  assistantTools:
+                    - name: "handoff"
+                      description: "Escalate the conversation to a human."
+                      executionMethod: "end-of-conversation"
+                  assistantKnowledges:
+                    - knowledgeId: "2230142097179373568"
+                      topK: 5
+                      scoreThreshold: 0.5
+                      retrievalMethod: "semantic"
+      responses:
+        "200":
+          description: Assistant created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetAssistantResponse"
+              examples:
+                created:
+                  summary: Assistant created
+                  value:
+                    code: 200
+                    success: true
+                    data:
+                      id: "2230142097179373568"
+                      name: "Support assistant"
+                      status: "active"
+                      visibility: "private"
+                      assistantProvider: "model"
+                      assistantProviderModel:
+                        modelProviderName: "openai"
+                        status: "active"
+        "400":
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingName:
+                  summary: Missing name
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1001004"
+                      errorMessage: "missing name parameter"
+                      humanMessage: "Please provide the required name parameter."
+                invalidProvider:
+                  summary: Invalid assistant provider
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1001006"
+                      errorMessage: "invalid assistant_provider parameter"
+                      humanMessage: "Please provide exactly one assistant provider."
+        "403":
+          description: Unauthenticated request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unauthenticated:
+                  summary: Missing or invalid API key
+                  value:
+                    code: 403
+                    success: false
+                    error:
+                      errorCode: "1001002"
+                      errorMessage: "unauthenticated request"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "500":
+          description: Failed to create assistant.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                createFailed:
+                  summary: Assistant creation failed
+                  value:
+                    code: 500
+                    success: false
+                    error:
+                      errorCode: "1001011"
+                      errorMessage: "unable to create assistant"
+                      humanMessage: "Unable to create assistant, please try again later."
   /v1/talk/create-phone-call:
     post:
       tags:
@@ -69,18 +201,57 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingToNumber:
+                  summary: Missing destination number
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1002003"
+                      errorMessage: "missing toNumber parameter"
+                      humanMessage: "Please provide the required toNumber parameter."
+                invalidAssistant:
+                  summary: Invalid assistant
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1002004"
+                      errorMessage: "invalid assistant parameter"
+                      humanMessage: "Please provide a valid assistant."
         "403":
           description: Unauthenticated request.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unauthenticated:
+                  summary: Missing or invalid API key
+                  value:
+                    code: 403
+                    success: false
+                    error:
+                      errorCode: "1002002"
+                      errorMessage: "unauthenticated request"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
         "500":
           description: Failed to initiate outbound call.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                callFailed:
+                  summary: Outbound call failed
+                  value:
+                    code: 500
+                    success: false
+                    error:
+                      errorCode: "1002008"
+                      errorMessage: "unable to initiate outbound call"
+                      humanMessage: "Unable to initiate outbound call, please try again later."
   /v1/talk/create-bulk-phone-call:
     post:
       tags:
@@ -137,18 +308,57 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingPhoneCalls:
+                  summary: Missing phone calls
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1003003"
+                      errorMessage: "missing phone_calls parameter"
+                      humanMessage: "Please provide at least one phone call."
+                missingToNumber:
+                  summary: Missing destination number
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1003004"
+                      errorMessage: "missing toNumber parameter"
+                      humanMessage: "Please provide the required toNumber parameter."
         "403":
           description: Unauthenticated request.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unauthenticated:
+                  summary: Missing or invalid API key
+                  value:
+                    code: 403
+                    success: false
+                    error:
+                      errorCode: "1003002"
+                      errorMessage: "unauthenticated request"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
         "500":
           description: Failed to initiate outbound calls.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                callFailed:
+                  summary: Outbound calls failed
+                  value:
+                    code: 500
+                    success: false
+                    error:
+                      errorCode: "1003009"
+                      errorMessage: "unable to initiate outbound call"
+                      humanMessage: "Unable to initiate outbound call, please try again later."
 components:
   securitySchemes:
     ProjectApiKeyHeader:
@@ -189,6 +399,58 @@ components:
       type: string
       pattern: "^[0-9]+$"
       example: "2227823180112723968"
+    PlatformErrorCode:
+      type: string
+      pattern: "^[0-9]+$"
+      description: |
+        Stable platform error code.
+
+        Create Assistant:
+        - `1001001`: invalid request - Invalid request.
+        - `1001002`: unauthenticated request - Unauthenticated request, please try again with valid authentication.
+        - `1001003`: missing authentication scope - Unauthenticated request, please try again with valid authentication.
+        - `1001004`: missing name parameter - Please provide the required name parameter.
+        - `1001005`: missing assistant_provider parameter - Please provide the required assistantProvider parameter.
+        - `1001006`: invalid assistant_provider parameter - Please provide exactly one assistant provider.
+        - `1001007`: missing model_provider_name parameter - Please provide the required modelProviderName parameter.
+        - `1001008`: missing agent_kit_url parameter - Please provide the required agentKitUrl parameter.
+        - `1001009`: missing websocket_url parameter - Please provide the required websocketUrl parameter.
+        - `1001010`: invalid source_identifier parameter - Please provide a valid sourceIdentifier parameter.
+        - `1001011`: unable to create assistant - Unable to create assistant, please try again later.
+        - `1001012`: invalid assistant provider template - Invalid assistant provider template.
+        - `1001013`: unable to create assistant provider model - Unable to create assistant provider model, please try again later.
+        - `1001014`: unable to attach assistant provider model - Unable to attach assistant provider model, please try again later.
+        - `1001015`: unable to create assistant provider agentkit - Unable to create assistant provider agentkit, please try again later.
+        - `1001016`: unable to attach assistant provider agentkit - Unable to attach assistant provider agentkit, please try again later.
+        - `1001017`: unable to create assistant provider websocket - Unable to create assistant provider websocket, please try again later.
+        - `1001018`: unable to attach assistant provider websocket - Unable to attach assistant provider websocket, please try again later.
+        - `1001019`: invalid knowledge_id parameter - Please provide a valid knowledgeId parameter.
+        - `1001020`: invalid reranker_model_provider_id parameter - Please provide a valid rerankerModelProviderId parameter.
+        - `1001021`: unable to create assistant tools - Unable to create assistant tools, please try again later.
+        - `1001022`: unable to create assistant knowledge - Unable to create assistant knowledge, please try again later.
+        - `1001023`: unable to create assistant tags - Unable to create assistant tags, please try again.
+
+        Create Phone Call:
+        - `1002001`: invalid request - Invalid request.
+        - `1002002`: unauthenticated request - Unauthenticated request, please try again with valid authentication.
+        - `1002003`: missing toNumber parameter - Please provide the required toNumber parameter.
+        - `1002004`: invalid assistant parameter - Please provide a valid assistant.
+        - `1002005`: invalid metadata parameter - Please provide valid metadata.
+        - `1002006`: invalid arguments parameter - Please provide valid arguments.
+        - `1002007`: invalid options parameter - Please provide valid options.
+        - `1002008`: unable to initiate outbound call - Unable to initiate outbound call, please try again later.
+
+        Create Bulk Phone Call:
+        - `1003001`: invalid request - Invalid request.
+        - `1003002`: unauthenticated request - Unauthenticated request, please try again with valid authentication.
+        - `1003003`: missing phone_calls parameter - Please provide at least one phone call.
+        - `1003004`: missing toNumber parameter - Please provide the required toNumber parameter.
+        - `1003005`: invalid assistant parameter - Please provide a valid assistant.
+        - `1003006`: invalid metadata parameter - Please provide valid metadata.
+        - `1003007`: invalid arguments parameter - Please provide valid arguments.
+        - `1003008`: invalid options parameter - Please provide valid options.
+        - `1003009`: unable to initiate outbound call - Unable to initiate outbound call, please try again later.
+      example: "1002003"
     AssistantDefinition:
       type: object
       required:
@@ -201,6 +463,375 @@ components:
           type: string
           description: Assistant version. Use latest to run the latest published version.
           example: latest
+    CreateAssistantRequest:
+      type: object
+      required:
+        - assistantProvider
+        - name
+      properties:
+        assistantProvider:
+          $ref: "#/components/schemas/CreateAssistantProviderRequest"
+        assistantKnowledges:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreateAssistantKnowledgeRequest"
+        assistantTools:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreateAssistantToolRequest"
+        description:
+          type: string
+          description: Assistant description.
+          example: "Answers customer support questions."
+        visibility:
+          type: string
+          description: Assistant visibility.
+          example: private
+        language:
+          type: string
+          description: Assistant language code.
+          example: en
+        source:
+          type: string
+          description: Optional source system for imported assistants.
+        sourceIdentifier:
+          $ref: "#/components/schemas/Uint64String"
+          description: Optional source-system identifier.
+        tags:
+          type: array
+          items:
+            type: string
+          example:
+            - support
+            - production
+        name:
+          type: string
+          description: Assistant name.
+          example: "Support assistant"
+    CreateAssistantProviderRequest:
+      type: object
+      description: Provider configuration for the assistant. Provide exactly one of `model`, `agentkit`, or `websocket`.
+      properties:
+        assistantId:
+          $ref: "#/components/schemas/Uint64String"
+        description:
+          type: string
+        model:
+          $ref: "#/components/schemas/CreateAssistantProviderModel"
+        agentkit:
+          $ref: "#/components/schemas/CreateAssistantProviderAgentkit"
+        websocket:
+          $ref: "#/components/schemas/CreateAssistantProviderWebsocket"
+    CreateAssistantProviderModel:
+      type: object
+      required:
+        - modelProviderName
+      properties:
+        template:
+          $ref: "#/components/schemas/TextChatCompletePrompt"
+        modelProviderName:
+          type: string
+          description: Model provider name.
+          example: openai
+        assistantModelOptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Metadata"
+    CreateAssistantProviderAgentkit:
+      type: object
+      required:
+        - agentKitUrl
+      properties:
+        agentKitUrl:
+          type: string
+          format: uri
+          description: AgentKit endpoint URL.
+          example: "https://agent.example.com/run"
+        certificate:
+          type: string
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+    CreateAssistantProviderWebsocket:
+      type: object
+      required:
+        - websocketUrl
+      properties:
+        websocketUrl:
+          type: string
+          description: WebSocket provider URL.
+          example: "wss://agent.example.com/ws"
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+        connectionParameters:
+          type: object
+          additionalProperties:
+            type: string
+    CreateAssistantKnowledgeRequest:
+      type: object
+      properties:
+        knowledgeId:
+          $ref: "#/components/schemas/Uint64String"
+        assistantId:
+          $ref: "#/components/schemas/Uint64String"
+        rerankerModelProviderId:
+          $ref: "#/components/schemas/Uint64String"
+        rerankerModelProviderName:
+          type: string
+        assistantKnowledgeRerankerOptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Metadata"
+        topK:
+          type: integer
+          format: uint32
+          example: 5
+        scoreThreshold:
+          type: number
+          format: float
+          example: 0.5
+        retrievalMethod:
+          type: string
+          example: semantic
+        rerankerEnable:
+          type: boolean
+    CreateAssistantToolRequest:
+      type: object
+      properties:
+        assistantId:
+          $ref: "#/components/schemas/Uint64String"
+        name:
+          type: string
+          example: handoff
+        description:
+          type: string
+        fields:
+          type: object
+          additionalProperties: true
+        executionMethod:
+          type: string
+        executionOptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Metadata"
+    TextChatCompletePrompt:
+      type: object
+      properties:
+        prompt:
+          type: array
+          items:
+            $ref: "#/components/schemas/TextPrompt"
+        promptVariables:
+          type: array
+          items:
+            $ref: "#/components/schemas/Variable"
+    TextPrompt:
+      type: object
+      properties:
+        role:
+          type: string
+          example: system
+        content:
+          type: string
+          example: "You are a helpful support assistant."
+    Variable:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        name:
+          type: string
+        type:
+          type: string
+        defaultValue:
+          type: string
+    GetAssistantResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/Assistant"
+        error:
+          $ref: "#/components/schemas/Error"
+    Assistant:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        status:
+          type: string
+        visibility:
+          type: string
+        source:
+          type: string
+        sourceIdentifier:
+          $ref: "#/components/schemas/Uint64String"
+        projectId:
+          $ref: "#/components/schemas/Uint64String"
+        organizationId:
+          $ref: "#/components/schemas/Uint64String"
+        assistantProvider:
+          type: string
+        assistantProviderId:
+          $ref: "#/components/schemas/Uint64String"
+        name:
+          type: string
+        description:
+          type: string
+        assistantProviderModel:
+          $ref: "#/components/schemas/AssistantProviderModel"
+        assistantProviderAgentkit:
+          $ref: "#/components/schemas/AssistantProviderAgentkit"
+        assistantProviderWebsocket:
+          $ref: "#/components/schemas/AssistantProviderWebsocket"
+        assistantTag:
+          $ref: "#/components/schemas/AssistantTag"
+        createdBy:
+          $ref: "#/components/schemas/Uint64String"
+        updatedBy:
+          $ref: "#/components/schemas/Uint64String"
+        createdDate:
+          type: string
+          format: date-time
+        updatedDate:
+          type: string
+          format: date-time
+        assistantTools:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantTool"
+        assistantKnowledges:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantKnowledge"
+    AssistantProviderModel:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        template:
+          $ref: "#/components/schemas/TextChatCompletePrompt"
+        description:
+          type: string
+        assistantId:
+          $ref: "#/components/schemas/Uint64String"
+        modelProviderName:
+          type: string
+        assistantModelOptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Metadata"
+        status:
+          type: string
+    AssistantProviderAgentkit:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        description:
+          type: string
+        assistantId:
+          $ref: "#/components/schemas/Uint64String"
+        status:
+          type: string
+        url:
+          type: string
+        certificate:
+          type: string
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+    AssistantProviderWebsocket:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        description:
+          type: string
+        assistantId:
+          $ref: "#/components/schemas/Uint64String"
+        url:
+          type: string
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+        parameters:
+          type: object
+          additionalProperties:
+            type: string
+        status:
+          type: string
+    AssistantTag:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        assistantId:
+          $ref: "#/components/schemas/Uint64String"
+        tag:
+          type: array
+          items:
+            type: string
+    AssistantTool:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        assistantId:
+          $ref: "#/components/schemas/Uint64String"
+        name:
+          type: string
+        description:
+          type: string
+        fields:
+          type: object
+          additionalProperties: true
+        executionMethod:
+          type: string
+        executionOptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Metadata"
+        status:
+          type: string
+    AssistantKnowledge:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        knowledgeId:
+          $ref: "#/components/schemas/Uint64String"
+        rerankerEnable:
+          type: boolean
+        topK:
+          type: integer
+          format: uint32
+        scoreThreshold:
+          type: number
+          format: float
+        retrievalMethod:
+          type: string
+        rerankerModelProviderId:
+          $ref: "#/components/schemas/Uint64String"
+        rerankerModelProviderName:
+          type: string
+        assistantKnowledgeRerankerOptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Metadata"
+        status:
+          type: string
     CreatePhoneCallRequest:
       type: object
       required:
@@ -289,17 +920,21 @@ components:
           $ref: "#/components/schemas/Error"
     Error:
       type: object
+      description: |
+        Platform error response details. `errorCode` is a stable platform error code.
+        See `PlatformErrorCode` for documented code/message mappings.
       properties:
         errorCode:
-          $ref: "#/components/schemas/Uint64String"
+          $ref: "#/components/schemas/PlatformErrorCode"
+          description: Stable platform error code.
         errorMessage:
           type: string
-          description: Developer-facing diagnostic message.
-          example: missing to_phone parameter
+          description: Stable client-safe error message.
+          example: missing toNumber parameter
         humanMessage:
           type: string
-          description: User-facing error message.
-          example: Please provide the required to_phone parameter.
+          description: Client-safe human-readable message.
+          example: Please provide the required toNumber parameter.
     User:
       type: object
       properties:

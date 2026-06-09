@@ -25,8 +25,8 @@ Custom TTS is an end-user configuration feature. You do not need to write a new 
     Open your assistant deployment, go to **Voice Output**, and select **Custom TTS** as the text-to-speech provider.
   </Step>
 
-  <Step title="Set voice and audio arguments">
-    Configure voice ID, model, language, audio encoding, and sample rate so Rapida can interpret provider audio correctly.
+  <Step title="Set audio and DSL arguments">
+    Configure audio encoding, sample rate, query parameters, request rules, and response rules so Rapida can send text and interpret provider audio correctly.
   </Step>
 
   <Step title="Write WebSocket DSL rules">
@@ -42,7 +42,7 @@ Custom TTS is an end-user configuration feature. You do not need to write a new 
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `apiCompatibility` | Yes | Must be `websocket_v1`. |
+| `apiCompatibility` | No | Must be `websocket_v1` when supplied. Defaults to `websocket_v1` when omitted. |
 | `baseUrl` | Yes | WebSocket URL for your TTS service, for example `wss://tts.example.com/v1/speak`. |
 | `headers` | No | Header map sent during the WebSocket handshake, for example `{"Authorization":"Bearer sk_..."}`. |
 
@@ -56,11 +56,11 @@ Headers are copied from the credential as static values. The DSL cannot template
 
 | Option key | Required | Default | Description |
 |------------|----------|---------|-------------|
-| `speak.voice.id` | Yes | None | Provider voice identifier. Available as `voice_id` in query params and `config.voice.id` in request rules. |
-| `speak.model` | No | Empty | Provider model identifier. Available as `model` in query params and `config.model` in request rules. |
-| `speak.language` | No | Empty | Provider language code. Available as `language` in query params and `config.language` in request rules. |
+| `speak.voice.id` | No | Empty | Optional provider voice identifier. Available as `voice_id` in query params and `config.voice.id` in request rules when supplied by API or imported metadata. |
+| `speak.model` | No | Empty | Optional provider model identifier. Available as `model` in query params and `config.model` in request rules when supplied by API or imported metadata. |
+| `speak.language` | No | Empty | Optional provider language code. Available as `language` in query params and `config.language` in request rules when supplied by API or imported metadata. |
 | `speak.audio.encoding` | Yes | `LINEAR16` | Audio encoding expected back from the provider. Supported values: `LINEAR16`, `MuLaw8`. |
-| `speak.audio.sample_rate` | Yes | `16000` | Audio sample rate expected back from the provider. Common values include `8000`, `16000`, `24000`, `44100`, and `48000`. |
+| `speak.audio.sample_rate` | Yes | `16000` | Audio sample rate expected back from the provider. Supported UI values are `8000`, `16000`, `22050`, `24000`, `32000`, `44100`, and `48000`. |
 | `speak.ws.query_params` | No | `{}` | Flat JSON object appended to `baseUrl` as query parameters. |
 | `speak.ws.request_rules` | Yes | None | Ordered JSON array that maps Rapida TTS packets to outbound WebSocket frames. Must contain at least one `text` rule. |
 | `speak.ws.response_rules` | Yes | None | Ordered JSON array that maps provider frames to audio, done, or error events. |
@@ -111,6 +111,10 @@ Rules:
 - Existing query params in `baseUrl` are preserved unless the rendered DSL uses the same key.
 - `text` is not a supported query parameter variable. Use `packet.text` in request rules instead.
 
+<Note>
+The Custom TTS UI exposes audio and DSL fields. If your provider needs a voice, model, or language, set those as static values in request rules or provide the optional metadata keys through API-driven configuration.
+</Note>
+
 ## Request rules
 
 Request rules are evaluated for normalized TTS packets produced by Rapida.
@@ -141,10 +145,10 @@ Use this when the provider synthesizes each text packet immediately.
       "frame": "json",
       "body": {
         "text": { "$path": "packet.text" },
-        "voice_id": { "$path": "config.voice.id" },
+        "voice_id": "narrator-1",
         "message_id": { "$path": "packet.message_id" },
-        "model": { "$path": "config.model" },
-        "language": { "$path": "config.language" },
+        "model": "sonic-2",
+        "language": "en-US",
         "audio": {
           "encoding": { "$path": "config.audio.encoding" },
           "sample_rate": {
@@ -171,7 +175,7 @@ Use this when the provider expects text payloads, an explicit final message, and
       "body": {
         "type": "speak",
         "text": { "$path": "packet.text" },
-        "voice": { "$path": "config.voice.id" },
+        "voice": "narrator-1",
         "request_id": { "$path": "packet.message_id" },
         "audio": {
           "encoding": { "$path": "config.audio.encoding" },
@@ -345,7 +349,7 @@ Limits:
 - No regex, contains, starts-with, greater-than, or compound match conditions.
 - No string interpolation or concatenation.
 - No fallback values inside expressions.
-- No dynamic headers or dynamic WebSocket path segments.
+- No dynamic headers or dynamic URL path segments.
 - No text response handling for TTS.
 - No `$frame: "json"` selector in emit rules.
 - `$decode` supports only base64.

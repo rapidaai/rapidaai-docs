@@ -424,25 +424,9 @@
             ]
           },
           {
-            "group": "Calls",
-            "pages": [
-              "api-reference/call/create-call",
-              "api-reference/call/create-bulk-call"
-            ]
-          },
-          {
-            "group": "Endpoint",
-            "pages": [
-              "api-reference/endpoint/invoke",
-              "api-reference/endpoint/get-endpoint",
-              "api-reference/endpoint/get-all-endpoint",
-              "api-reference/endpoint/get-endpoint-log",
-              "api-reference/endpoint/get-all-endpoint-log"
-            ]
-          },
-          {
             "group": "Assistant",
             "pages": [
+              "api-reference/assistant/create-assistant",
               "api-reference/assistant/get-assistant",
               "api-reference/assistant/get-all-assistant",
               "api-reference/assistant/get-assistant-conversation",
@@ -458,22 +442,45 @@
               "api-reference/assistant/get-assistant-analysis",
               "api-reference/assistant/get-all-assistant-analysis"
             ]
+          },
+          {
+            "group": "Calls",
+            "pages": [
+              "api-reference/call/create-call",
+              "api-reference/call/create-bulk-call"
+            ]
+          },
+          {
+            "group": "Endpoint",
+            "pages": [
+              "api-reference/endpoint/invoke",
+              "api-reference/endpoint/get-endpoint",
+              "api-reference/endpoint/get-all-endpoint",
+              "api-reference/endpoint/get-endpoint-log",
+              "api-reference/endpoint/get-all-endpoint-log"
+            ]
           }
         ]
       },
       {
         "tab": "API Reference",
+        "openapi": {
+          "source": "openapi/talk-api.yaml",
+          "directory": "api-reference/rest"
+        },
         "pages": [
           "api-reference/rest/authentication",
           {
             "group": "Assistant",
-            "openapi": {
-              "source": "openapi/talk-api.yaml",
-              "directory": "api-reference/rest"
-            },
             "pages": [
-              "POST /v1/talk/create-phone-call",
-              "POST /v1/talk/create-bulk-phone-call"
+              "api-reference/rest/assistants/create-assistant"
+            ]
+          },
+          {
+            "group": "Calls",
+            "pages": [
+              "api-reference/rest/calls/create-phone-call",
+              "api-reference/rest/calls/create-bulk-phone-call"
             ]
           }
         ]

@@ -1,35 +1,41 @@
 ---
 title: "Custom Speech-to-Text"
-description: "Configure a custom WebSocket STT provider with query parameters, request rules, response rules, and the Rapida WebSocket DSL."
+description: "Configure a custom WebSocket or HTTP STT provider with query parameters, request rules, response rules, and the Rapida DSL."
 sidebarTitle: "Custom STT"
 ---
 
-Custom Speech-to-Text lets you connect Rapida to a WebSocket transcription service that is not available as a built-in provider. You configure the provider URL, handshake headers, audio settings, and a small JSON DSL that maps Rapida audio packets to your provider's WebSocket protocol.
+Custom Speech-to-Text lets you connect Rapida to a transcription service that is not available as a built-in provider. You configure the provider URL, headers, audio settings, and a small JSON DSL that maps Rapida audio packets and provider responses.
 
-Use Custom STT when your provider can accept streaming audio over WebSocket and return transcript events as JSON or text frames.
+Use Custom STT when your provider can accept streaming audio over WebSocket or one HTTP transcription request per speech segment, then return transcripts as JSON or text.
 
 **Provider identifier:** `custom-stt`
 
+**API compatibility:** `websocket_v1` or `http_v1`
+
 <Info>
-Custom STT is an end-user configuration feature. You do not need to write a new Rapida transformer when your provider can be described with the WebSocket DSL below.
+Custom STT is an end-user configuration feature. You do not need to write a new Rapida transformer when your provider can be described with the DSL below.
 </Info>
 
 ## Setup flow
 
 <Steps>
   <Step title="Create the Custom STT credential">
-    Open **Credentials** or **Integrations > Models**, choose **Custom STT**, and create a credential with your WebSocket connection details.
+    Open **Credentials** or **Integrations > Models**, choose **Custom STT**, and create a credential with your provider connection details.
   </Step>
 
   <Step title="Select Custom STT in Voice Input">
     Open your assistant deployment, go to **Voice Input**, and select **Custom STT** as the speech-to-text provider.
   </Step>
 
-  <Step title="Set audio arguments">
-    Choose the model, language, audio encoding, and sample rate your provider expects.
+  <Step title="Choose API compatibility">
+    Select **WebSocket v1** for streaming providers or **HTTP v1** for providers that transcribe one completed speech segment per request.
   </Step>
 
-  <Step title="Write WebSocket DSL rules">
+  <Step title="Set audio arguments">
+    Choose the audio encoding and sample rate your provider expects.
+  </Step>
+
+  <Step title="Write DSL rules">
     Define query parameters, request rules, and response rules so Rapida knows how to talk to your provider.
   </Step>
 
@@ -42,27 +48,27 @@ Custom STT is an end-user configuration feature. You do not need to write a new 
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `apiCompatibility` | Yes | Must be `websocket_v1`. |
-| `baseUrl` | Yes | WebSocket URL for your STT service, for example `wss://stt.example.com/v1/listen`. |
-| `headers` | No | Header map sent during the WebSocket handshake, for example `{"Authorization":"Bearer sk_..."}`. |
+| `apiCompatibility` | No | `websocket_v1` or `http_v1`. Defaults to `websocket_v1` when omitted. |
+| `baseUrl` | Yes | WebSocket URL or HTTP endpoint URL for your STT service, for example `wss://stt.example.com/v1/listen` or `https://stt.example.com/v1/transcribe`. |
+| `headers` | No | Header map sent during the WebSocket handshake or HTTP request, for example `{"Authorization":"Bearer sk_..."}`. |
 
 The runtime also accepts snake case keys: `api_compatibility` and `base_url`.
 
 <Warning>
-Headers are copied from the credential as static values. The DSL cannot template headers or change the WebSocket path dynamically.
+Headers are copied from the credential as static values. The DSL cannot template headers or change the URL path dynamically.
 </Warning>
 
 ## STT arguments
 
 | Option key | Required | Default | Description |
 |------------|----------|---------|-------------|
-| `listen.model` | No | Empty | Provider model identifier. Available as `model` in query params and `config.model` in request rules. |
-| `listen.language` | No | Empty | Provider language code. Available as `language` in query params and `config.language` in request rules. |
+| `listen.model` | No | Empty | Optional provider model identifier. Available as `model` in query params and `config.model` in request rules when supplied by API or imported metadata. |
+| `listen.language` | No | Empty | Optional provider language code. Available as `language` in query params and `config.language` in request rules when supplied by API or imported metadata. |
 | `listen.audio.encoding` | Yes | `LINEAR16` | Audio encoding sent to the provider. Supported values: `LINEAR16`, `MuLaw8`. |
-| `listen.audio.sample_rate` | Yes | `16000` | Audio sample rate sent to the provider. Common values include `8000`, `16000`, `24000`, `44100`, and `48000`. |
-| `listen.ws.query_params` | No | `{}` | Flat JSON object appended to `baseUrl` as query parameters. |
-| `listen.ws.request_rules` | Yes | None | Ordered JSON array that maps Rapida packets to outbound WebSocket frames. Must contain at least one `audio` rule. |
-| `listen.ws.response_rules` | Yes | None | Ordered JSON array that maps provider frames to transcripts or errors. |
+| `listen.audio.sample_rate` | Yes | `16000` | Audio sample rate sent to the provider. Supported UI values are `8000`, `16000`, `22050`, `24000`, `32000`, `44100`, and `48000`. |
+| `listen.query_params` | No | `{}` | Flat JSON object appended to `baseUrl` as query parameters. |
+| `listen.request_rules` | Yes | See example below | Ordered JSON array that maps Rapida packets to outbound provider messages. Must contain at least one `audio` rule. |
+| `listen.response_rules` | Yes | None | Ordered JSON array that maps provider responses to transcripts or errors. |
 
 ## DSL sections
 
@@ -70,15 +76,15 @@ Custom STT has three DSL sections:
 
 | Section | Purpose |
 |---------|---------|
-| Query parameters | Add static or dynamic query params to the WebSocket URL. |
-| Request rules | Convert Rapida packets into provider WebSocket messages. |
-| Response rules | Convert provider WebSocket frames into Rapida transcript events. |
+| Query parameters | Add static or dynamic query params to the URL. |
+| Request rules | Convert Rapida packets into provider messages. |
+| Response rules | Convert provider WebSocket frames or HTTP responses into Rapida transcript events. |
 
 The DSL is intentionally small. It does not run JavaScript, call functions, read environment variables, use regex, concatenate strings, or perform compound conditions.
 
 ## Query parameters
 
-Use `listen.ws.query_params` when your provider expects configuration in the WebSocket URL.
+Use `listen.query_params` when your provider expects configuration in the URL.
 
 Supported variables:
 
@@ -114,7 +120,7 @@ Request rules are evaluated for normalized packets produced by Rapida.
 | Packet | When it is sent | Available paths |
 |--------|-----------------|-----------------|
 | `turn_change` | A new turn or context starts | `packet.kind`, `packet.context_id`, `config.model`, `config.language`, `config.audio.encoding`, `config.audio.sample_rate` |
-| `audio` | Audio is ready to stream | `packet.kind`, `packet.context_id`, `packet.audio.bytes`, `packet.audio.base64`, `config.*` |
+| `audio` | Audio is ready to send | `packet.kind`, `packet.context_id`, `packet.audio.bytes`, `packet.audio.base64`, `packet.audio.pcm_base64`, `packet.audio.wav_base64`, `config.*` |
 | `interrupt` | User interruption is detected | `packet.kind`, `packet.context_id`, `config.*` |
 
 Supported outbound frames:
@@ -164,6 +170,33 @@ Use this when the provider expects base64 audio inside JSON.
 ]
 ```
 
+### HTTP transcription request
+
+Use `http_v1` when your provider accepts one JSON POST for a completed speech segment. Rapida buffers speech audio until the STT end packet, evaluates the first matching `audio` rule, and sends the rendered JSON body to `baseUrl`.
+
+```json
+[
+  {
+    "when": { "packet": "audio" },
+    "send": {
+      "frame": "json",
+      "body": {
+        "audio": { "$path": "packet.audio.wav_base64" },
+        "encoding": { "$path": "config.audio.encoding" },
+        "sample_rate": {
+          "$cast": "number",
+          "value": { "$path": "config.audio.sample_rate" }
+        }
+      }
+    }
+  }
+]
+```
+
+<Note>
+For `http_v1`, the `audio` request rule must render a `json` frame. Binary and text request frames are valid for WebSocket STT, but HTTP STT posts a JSON body.
+</Note>
+
 ### Start, audio, and interrupt
 
 Use this pattern when the provider expects a session-start message, binary audio frames, and a flush message on interruption.
@@ -203,7 +236,7 @@ Use this pattern when the provider expects a session-start message, binary audio
 
 ## Response rules
 
-Response rules parse provider WebSocket frames into Rapida transcript packets. The first matching rule is evaluated and later rules are skipped for that frame.
+Response rules parse provider WebSocket frames or HTTP response bodies into Rapida transcript packets. The first matching rule is evaluated and later rules are skipped for that response.
 
 Supported inbound frames:
 
@@ -323,10 +356,11 @@ Limits:
 
 ## Runtime behavior
 
-- The connection URL is built from `baseUrl` and `listen.ws.query_params`.
+- The URL is built from `baseUrl` and `listen.query_params`.
 - Audio is resampled to `listen.audio.encoding` and `listen.audio.sample_rate` before request rules run.
-- `turn_change` and `audio` packets open the WebSocket connection if needed.
-- `interrupt` rules are sent only when a connection is already active.
+- For `websocket_v1`, `turn_change` and `audio` packets open the WebSocket connection if needed.
+- For `http_v1`, Rapida buffers audio for a speech segment and sends one HTTP POST when speech ends.
+- `interrupt` rules are sent only by the WebSocket transport when a connection is already active.
 - If no response rule matches an inbound frame, the frame is ignored.
 - If a response emits `error`, Rapida emits an STT error packet.
 - If a response emits non-empty `script`, Rapida emits a transcript packet and conversation event.
@@ -336,7 +370,7 @@ Limits:
 - No regex, contains, starts-with, greater-than, or compound match conditions.
 - No string interpolation or concatenation.
 - No fallback values inside expressions.
-- No dynamic headers or dynamic WebSocket path segments.
+- No dynamic headers or dynamic URL path segments.
 - No binary response handling for STT.
 - No `$decode`.
 
@@ -345,6 +379,7 @@ Limits:
 | Symptom | Likely cause | What to check |
 |---------|--------------|---------------|
 | WebSocket does not connect | Bad `baseUrl`, headers, or compatibility value | Confirm `apiCompatibility`, `baseUrl`, and auth headers. |
+| HTTP request fails | Bad endpoint, headers, request body, or non-2xx status | Confirm `baseUrl`, auth headers, and that the `audio` rule emits `send.frame = json`. |
 | Provider receives no audio | Missing `audio` request rule | Add a `when.packet = audio` rule. |
 | Provider receives JSON but expected binary | Wrong `send.frame` | Use `binary` with `packet.audio.bytes`. |
 | Transcript never appears | Response rules do not match provider frames | Check `when.frame`, `when.path`, and `when.equals`. |
