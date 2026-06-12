@@ -107,15 +107,42 @@ Add this to any page on your website:
 <script defer src="https://cdn-01.rapida.ai/public/scripts/app.min.js"></script>
 ```
 
-The widget renders a floating button in the corner of the page. Clicking it opens the chat window with your assistant's greeting and quickstart questions.
+The default configuration renders a floating launcher in the bottom-right corner of the page. Clicking it opens the chat window with your assistant's greeting and quickstart questions.
 
 <Note>
   Replace `YOUR_ASSISTANT_ID` with your assistant's ID (found on the assistant overview page) and `YOUR_PROJECT_CREDENTIAL_KEY` with your project credential key from the [credential vault](/credential/rapida-credentials).
 </Note>
 
+### Installation Options
+
+Use the latest hosted widget script:
+
+```html
+<script defer src="https://cdn-01.rapida.ai/public/scripts/app.min.js"></script>
+```
+
+Pin to a specific widget build when you need controlled rollout:
+
+```html
+<script defer src="https://cdn-01.rapida.ai/public/scripts/v1.2.0/app.min.js"></script>
+```
+
+You can also install the package from npm and serve the built `dist/app.min.js` file from your own application or CDN:
+
+```bash
+npm install @rapidaai/web-widget
+```
+
 ### Configuration Options
 
-The `window.chatbotConfig` object accepts the following properties:
+Set `window.chatbotConfig` before loading the widget script. The widget has two configuration layers:
+
+- **Rapida layer** — connection, authentication, assistant version, user identity, language, and debug logging
+- **UI layer** — native IBM AI Chat configuration exposed directly on `window.chatbotConfig`
+
+Rapida always owns `messaging.customSendMessage` because text messages must go through the Rapida SDK. Rapida also appends its audio controls through `renderWriteableElements.afterInputElement`; if you provide your own `afterInputElement`, it is preserved and Rapida audio controls are appended after it.
+
+Use the sectioned config shape below. Do not use a `carbon` config key.
 
 ```html
 <script>
@@ -128,7 +155,7 @@ The `window.chatbotConfig` object accepts the following properties:
     assistant_version: "VERSION_ID",
 
     // Optional: custom API base URL (for self-hosted deployments)
-    api_base: "https://assistant-01.rapida.ai",
+    api_base: "https://assistant-01.in.rapida.ai",
 
     // Optional: language for the widget UI (default: "en", auto-detects from <html lang="">)
     language: "en",
@@ -146,27 +173,340 @@ The `window.chatbotConfig` object accepts the following properties:
       },
     },
 
-    // Optional: theme customisation
+    // Optional: assistant identity
+    name: "Support Bot",
+    logo_url: "https://example.com/avatar.png",
+
+    // Optional: layout
+    layout: {
+      mode: "floating",          // "floating" | "docked-right" | "docked-left" | "inline"
+      position: "bottom-right",  // "bottom-right" | "bottom-left" | "top-right" | "top-left"
+      corners: "square",
+      showFrame: true,
+      customProperties: {
+        width: "420px",
+        height: "640px",
+      },
+    },
+
+    // Optional: theme
     theme: {
-      color: "#0f62fe",
+      mode: "light",             // "light" | "dark" | "system"
+      injectTheme: "g10",        // "white" | "g10" | "g90" | "g100"
+    },
+
+    // Optional: chat UI sections
+    aiEnabled: false,
+    header: {
+      title: "Support Bot",
+      showAiLabel: false,
+      minimizeButtonIconType: "side-panel-right",
+    },
+    launcher: {
+      isOn: true,
+    },
+    history: {
+      isOn: false,
+    },
+    messaging: {
+      messageTimeoutSecs: 150,
+      messageLoadingIndicatorTimeoutSecs: 1,
     },
   };
 </script>
 <script defer src="https://cdn-01.rapida.ai/public/scripts/app.min.js"></script>
 ```
 
-| Property | Type | Required | Default | Description |
-|----------|------|----------|---------|-------------|
-| `assistant_id` | `string` | Yes | — | Your assistant's ID |
-| `token` | `string` | Yes | — | Project credential key from the [credential vault](/credential/rapida-credentials) |
-| `assistant_version` | `string` | No | latest | Pin to a specific assistant version |
-| `api_base` | `string` | No | `https://assistant-01.rapida.ai` | API base URL (override for self-hosted) |
-| `language` | `string` | No | `"en"` | Widget UI language. Auto-detects from `<html lang="">` attribute changes |
-| `debug` | `boolean` | No | `false` | Enable verbose logging in browser console |
-| `user.name` | `string` | No | `"Guest"` | Display name for the user in the chat |
-| `user.user_id` | `string` | No | auto-generated | Unique user identifier. If not provided, a UUID is generated and persisted in `localStorage` |
-| `user.meta` | `Record<string, string>` | No | `{ source: "web plugin" }` | Custom metadata attached to the session (e.g., plan, UTM params, page URL) |
-| `theme.color` | `string` | No | `"#2663eb"` | Primary accent color for the widget UI |
+### Required Rapida Options
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `assistant_id` | `string` | required | Rapida assistant ID. |
+| `token` | `string` | required | Project credential key from the [credential vault](/credential/rapida-credentials). |
+
+### Rapida Options
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `api_base` | `string` | `https://assistant-01.in.rapida.ai` | Rapida API base URL. Use this for self-hosted or environment-specific backends. |
+| `assistant_version` | `string` | latest version | Assistant version to load when the backend supports versioned deployments. |
+| `user.name` | `string` | `Guest` | Display name for the current user. |
+| `user.user_id` | `string` | generated and stored locally | Stable user ID. Provide one if your host app already has an authenticated user ID. |
+| `user.meta` | `Record<string, string>` | `{ source: "web plugin" }` | Extra metadata sent to Rapida with the user session. |
+| `language` | `string` | host page language or `en` | Locale passed to the UI. The widget also watches the `<html lang>` attribute. |
+| `debug` | `boolean` | `false` | Enables additional client logging and passes debug mode to the UI layer. |
+| `name` | `string` | deployment name | Friendly assistant name. Used as the default `assistantName` and `header.title`. |
+| `logo_url` | `string` | default assistant avatar | Assistant avatar URL. Used as the default `assistantAvatarUrl`. |
+
+### Theme Options
+
+Use `theme` for all theme-level options.
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `theme.mode` | `"light" \| "dark" \| "system"` | `"light"` | Widget color mode. `dark` defaults the UI token injection to `g100`; `light` defaults it to `g10`; `system` lets the host or system decide unless `theme.injectTheme` is set. |
+| `theme.injectTheme` | `"white" \| "g10" \| "g90" \| "g100"` | derived from `theme.mode` | UI theme token injected into the chat shadow DOM. Set this when the host page does not already provide compatible theme tokens. |
+| `theme.color` | `string` | none | Legacy primary brand color. Prefer `layout.customProperties` for current UI customization. |
+
+### Layout Options
+
+`layout` can be a string for old embeds or an object for the current sectioned config.
+
+```js
+window.chatbotConfig = {
+  layout: {
+    mode: "floating",
+    position: "bottom-right",
+    corners: "square",
+    showFrame: true,
+    customProperties: {
+      width: "420px",
+      height: "640px",
+    },
+  },
+};
+```
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `layout` | `string \| object` | `"floating"` | Widget layout. String values are still supported: `"floating"`, `"docked-right"`, `"docked-left"`, `"inline"`. |
+| `layout.mode` | `"floating" \| "docked-right" \| "docked-left" \| "inline"` | `"floating"` | Rapida placement mode. |
+| `layout.position` | `"bottom-right" \| "bottom-left" \| "top-right" \| "top-left"` | `"bottom-right"` | Floating launcher and panel position. |
+| `layout.showLauncher` | `boolean` | `true` for floating | Legacy launcher shortcut inside `layout`. Prefer `launcher.isOn`. |
+| `layout.showFrame` | `boolean` | `true` | Keeps the native border and shadow frame. |
+| `layout.hasContentMaxWidth` | `boolean` | UI default | Constrains message content to the UI max width. |
+| `layout.corners` | `"round" \| "square" \| object` | `"square"` | Corner style. Use a string for all corners or an object for per-corner control. |
+| `layout.customProperties` | `Record<string, string>` | generated for floating | CSS variable overrides for the chat UI. Values are raw CSS strings. |
+
+Per-corner `layout.corners` object:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `startStart` | `"round" \| "square"` | Top-left in LTR, top-right in RTL. |
+| `startEnd` | `"round" \| "square"` | Top-right in LTR, top-left in RTL. |
+| `endStart` | `"round" \| "square"` | Bottom-left in LTR, bottom-right in RTL. |
+| `endEnd` | `"round" \| "square"` | Bottom-right in LTR, bottom-left in RTL. |
+
+Supported `layout.customProperties` keys:
+
+| Key | Description |
+|-----|-------------|
+| `height` | Floating chat height. |
+| `max-height` | Floating chat maximum height. |
+| `width` | Floating chat width. |
+| `min-height` | Floating chat minimum height. |
+| `max-width` | Floating chat maximum width. |
+| `z-index` | Floating chat z-index. |
+| `bottom-position` | Floating panel distance from viewport bottom. |
+| `right-position` | Floating panel distance from viewport right. |
+| `top-position` | Floating panel distance from viewport top. |
+| `left-position` | Floating panel distance from viewport left. |
+| `launcher-default-size` | Launcher button size. |
+| `launcher-position-bottom` | Launcher distance from viewport bottom. |
+| `launcher-position-right` | Launcher distance from viewport right. |
+| `launcher-extended-width` | Expanded launcher width. |
+| `messages-max-width` | Maximum width for message content. |
+| `messages-min-width` | Minimum width for message content. |
+| `workspace-min-width` | Minimum width for workspace panels. |
+| `card-max-width` | Maximum width for card responses. |
+| `launcher-color-background` | Launcher background color. |
+| `launcher-color-avatar` | Launcher icon/avatar color. |
+| `launcher-color-background-hover` | Launcher hover background. |
+| `launcher-color-background-active` | Launcher active background. |
+| `launcher-color-focus-border` | Launcher focus border color. |
+| `launcher-mobile-color-text` | Mobile launcher text color. |
+| `launcher-expanded-message-color-text` | Expanded launcher text color. |
+| `launcher-expanded-message-color-background` | Expanded launcher background. |
+| `launcher-expanded-message-color-background-hover` | Expanded launcher hover background. |
+| `launcher-expanded-message-color-background-active` | Expanded launcher active background. |
+| `launcher-expanded-message-color-focus-border` | Expanded launcher focus border color. |
+| `unread-indicator-color-background` | Unread indicator background color. |
+| `unread-indicator-color-text` | Unread indicator text color. |
+
+### Header Options
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `header.isOn` | `boolean` | `true` | Enables the native chat header. Set `false` for a fully embedded or fullscreen experience with your own app header. |
+| `header.title` | `string` | `name` or deployment name | Header title. Set `""` to remove the visible title. |
+| `header.name` | `string` | UI default | Secondary name shown after the title. Set `""` to remove it. |
+| `header.minimizeButtonIconType` | `"close" \| "minimize" \| "side-panel-left" \| "side-panel-right" \| "side-panel-down"` | side-panel icon based on dock side | Icon for the close/minimize button. |
+| `header.hideMinimizeButton` | `boolean` | `false` | Hides the close/minimize button. |
+| `header.showRestartButton` | `boolean` | `false` | Shows the restart conversation button. |
+| `header.menuOptions` | `Array<{ text: string }>` | none | Custom menu options in the header menu. |
+| `header.showAiLabel` | `boolean` | `false` | Shows the AI label in the header. Disabled by default. |
+| `header.hideDefaultAiLabelContent` | `boolean` | `true` | Hides the default AI label popover content. |
+| `header.hasContentMaxWidth` | `boolean` | `false` | Constrains the header to the message content width. |
+| `header.actions` | `ToolbarAction[]` | none | Custom header toolbar actions. |
+
+### Launcher Options
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `launcher.isOn` | `boolean` | `true` for floating, `false` for docked/inline | Shows the floating launcher button. |
+| `launcher.showUnreadIndicator` | `boolean` | UI default | Shows the unread dot on the launcher. |
+| `launcher.mobile.avatarUrlOverride` | `string` | none | Custom mobile launcher avatar or icon URL. |
+| `launcher.mobile.isOn` | `boolean` | `false` | Deprecated expanded call-to-action launcher state. |
+| `launcher.mobile.title` | `string` | translated default | Deprecated expanded launcher title. |
+| `launcher.mobile.timeToExpand` | `number` | `15` | Deprecated delay before launcher expansion, in seconds. |
+| `launcher.desktop.avatarUrlOverride` | `string` | none | Custom desktop launcher avatar or icon URL. |
+| `launcher.desktop.isOn` | `boolean` | `false` | Deprecated expanded call-to-action launcher state. |
+| `launcher.desktop.title` | `string` | translated default | Deprecated expanded launcher title. |
+| `launcher.desktop.timeToExpand` | `number` | `15` | Deprecated delay before launcher expansion, in seconds. |
+
+### Messaging Options
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `messaging.skipWelcome` | `boolean` | UI default | Starts new conversations without requesting a welcome message. |
+| `messaging.messageTimeoutSecs` | `number` | `150` | Message timeout in seconds. Use `0` to disable automatic timeout. |
+| `messaging.messageLoadingIndicatorTimeoutSecs` | `number` | `1` | Delay before the UI shows a loading indicator. Use `0` to prevent the UI from showing one automatically. |
+| `messaging.customSendMessage` | function | Rapida bridge | Reserved. Rapida overwrites this so text is sent through the Rapida SDK. |
+| `messaging.customLoadHistory` | function | none | Optional function that returns native history items for the UI. |
+| `messaging.showStopButtonImmediately` | `boolean` | `false` | Shows the stop button as soon as a message request starts. |
+
+### Other UI Options
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `history.isOn` | `boolean` | `false` | Enables the native history panel. |
+| `history.showMobileMenu` | `boolean` | `true` | Shows mobile header menu options for new chat and view chats. |
+| `history.startClosed` | `boolean` | `false` | Starts history closed and preserves open/closed state across responsive mode changes. |
+| `input.maxInputCharacters` | `number` | `10000` | Maximum characters allowed in the text input. |
+| `input.isVisible` | `boolean` | `true` | Shows or hides the main input surface. |
+| `input.isDisabled` | `boolean` | `false` | Disables text input. Rapida also disables text input while audio mode is active. |
+| `homescreen.isOn` | `boolean` | `false` | Enables the native home screen before chat. |
+| `homescreen.greeting` | `string` | none | Greeting text on the home screen. |
+| `homescreen.starters.isOn` | `boolean` | UI default | Shows starter buttons. |
+| `homescreen.starters.buttons` | `Array<{ label: string; isSelected?: boolean }>` | none | Starter utterances displayed as buttons. |
+| `homescreen.customContentOnly` | `boolean` | `false` | Hides the built-in greeting and starters so custom content can own the home screen. |
+| `homescreen.disableReturn` | `boolean` | `false` | Prevents returning to the home screen after a user has sent a message. |
+| `disclaimer.isOn` | `boolean` | `false` | Shows a disclaimer screen before chat. |
+| `disclaimer.disclaimerHTML` | `string` | required when enabled | HTML content for the disclaimer. If this changes after acceptance, the user must accept again. |
+| `aiEnabled` | `boolean` | `false` | Enables AI visual styling. The widget disables this by default. |
+| `assistantName` | `string` | `name` or deployment name | Assistant name used by the UI for accessibility, errors, and defaults. |
+| `assistantAvatarUrl` | `string` | `logo_url` | Assistant avatar URL used by native messages. |
+| `locale` | `string` | `language` | UI locale. Prefer `language` unless you need to override only the UI. |
+| `namespace` | `string` | `rapida-chat` | Namespace for DOM IDs, storage keys, and multi-instance isolation. Must be 30 characters or fewer. |
+| `openChatByDefault` | `boolean` | `true` for docked/inline, `false` for floating | Opens the chat when it first renders. |
+| `shouldSanitizeHTML` | `boolean` | `true` | Sanitizes assistant HTML before rendering. |
+| `shouldTakeFocusIfOpensAutomatically` | `boolean` | `false` | Moves focus into the chat when it opens on page load. |
+| `disableCustomElementMobileEnhancements` | `boolean` | `false` | Disables mobile enhancements that can conflict with custom element embedding. |
+| `isReadonly` | `boolean` | `false` | Puts the chat in read-only mode for viewing old conversations. |
+| `persistFeedback` | `boolean` | `false` | Keeps feedback controls visible beyond the latest message. |
+| `strings` | partial language pack | UI defaults | Overrides built-in UI strings. |
+| `injectCarbonTheme` | `"white" \| "g10" \| "g90" \| "g100"` | derived from `theme` | Raw UI prop. Prefer `theme.injectTheme`. |
+| `onError` | function | none | Called for catastrophic UI errors. |
+
+### Upload Options
+
+File upload is experimental in the underlying UI.
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `upload.is_on` | `boolean` | `false` | Enables the attachment button. Requires `upload.onFileUpload`. |
+| `upload.accept` | `string` | all file types | Accepted MIME types or extensions, same format as the HTML `accept` attribute. |
+| `upload.maxFileSizeBytes` | `number` | none | Client-side maximum file size. |
+| `upload.maxFiles` | `number` | none | Maximum number of pending files. |
+| `upload.onFileUpload` | function | none | Called once per selected file. Return structured data for the pending message. |
+
+### Keyboard Shortcut Options
+
+Keyboard shortcut configuration is experimental in the underlying UI.
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `keyboardShortcuts.messageFocusToggle.is_on` | `boolean` | `true` | Enables the message/input focus toggle shortcut. |
+| `keyboardShortcuts.messageFocusToggle.key` | `string` | `"F6"` | Primary shortcut key. |
+| `keyboardShortcuts.messageFocusToggle.modifiers.alt` | `boolean` | `false` | Requires Alt. |
+| `keyboardShortcuts.messageFocusToggle.modifiers.shift` | `boolean` | `false` | Requires Shift. |
+| `keyboardShortcuts.messageFocusToggle.modifiers.ctrl` | `boolean` | `false` | Requires Control. |
+| `keyboardShortcuts.messageFocusToggle.modifiers.meta` | `boolean` | `false` | Requires Command/Meta. |
+
+### Service Desk Options
+
+These are advanced native UI options for human-agent handoff integrations.
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `serviceDeskFactory` | function | none | Factory that creates a service desk integration instance. |
+| `serviceDesk.availabilityTimeoutSeconds` | `number` | UI default | Timeout used while checking whether human agents are available. |
+| `serviceDesk.skipConnectHumanAgentCard` | `boolean` | `false` | Auto-connects to an available agent after a connect-to-agent response while still showing the card. |
+| `serviceDesk.agentJoinTimeoutSeconds` | `number` | none | Timeout while waiting for an agent to join after one is requested. |
+| `serviceDesk.allowReconnect` | `boolean` | `true` | Attempts to reconnect the user to a prior human-agent conversation when supported. |
+
+### Render And Lifecycle Hooks
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `onBeforeRender(instance)` | function | Called before the UI renders. Rapida uses this internally, then calls your handler. |
+| `onAfterRender(instance)` | function | Called after the UI renders. |
+| `onViewPreChange(event, instance)` | function | Called before the chat opens or closes. Can return a promise to delay the view change. |
+| `onViewChange(event, instance)` | function | Called after the chat opens or closes. Rapida uses this to track docked/inline shell state, then calls your handler. |
+| `renderUserDefinedResponse` | function | Renders custom `user_defined` response items. |
+| `renderCustomMessageFooter` | function | Renders custom message footers. |
+| `renderWriteableElements` | object | Renders writable slots. Rapida merges `afterInputElement` with its audio controls. |
+
+### Layout Modes
+
+#### Floating
+
+A fixed-position panel with a launcher button. Click the launcher to open or close the chat.
+
+```js
+window.chatbotConfig = {
+  layout: {
+    mode: "floating",
+    position: "bottom-right",
+  },
+  launcher: {
+    isOn: true,
+  },
+};
+```
+
+#### Docked
+
+A side panel fixed to the viewport. When open, it pushes page content to make room.
+
+```js
+window.chatbotConfig = {
+  layout: {
+    mode: "docked-right", // or "docked-left"
+  },
+};
+```
+
+#### Inline
+
+The widget flows with the page content. Place the `<div id="rapida-chat-app">` where you want it to render.
+
+```html
+<div id="rapida-chat-app"></div>
+<script>
+  window.chatbotConfig = {
+    assistant_id: "YOUR_ASSISTANT_ID",
+    token: "YOUR_PROJECT_CREDENTIAL_KEY",
+    layout: {
+      mode: "inline",
+    },
+  };
+</script>
+<script defer src="https://cdn-01.rapida.ai/public/scripts/app.min.js"></script>
+```
+
+### Legacy Shortcuts
+
+These remain supported for old embeds. Prefer the sectioned config above for new usage.
+
+| Property | Replacement |
+|----------|-------------|
+| `layout: "floating"` | `layout: { mode: "floating" }` |
+| `layout: "docked-right"` | `layout: { mode: "docked-right" }` |
+| `layout: "docked-left"` | `layout: { mode: "docked-left" }` |
+| `layout: "inline"` | `layout: { mode: "inline" }` |
+| `position` | `layout.position` |
+| `showLauncher` | `launcher.isOn` |
 
 ### Full HTML Example
 
@@ -183,18 +523,36 @@ The `window.chatbotConfig` object accepts the following properties:
   <!-- Rapida Web Widget Configuration -->
   <script>
     window.chatbotConfig = {
-      assistant_id: "2139456643765633024",
-      token: "5e04b962dfd988ca0f4ac9e097f17841ebf34d7e38c50297e245c12bddce2117",
+      assistant_id: "YOUR_ASSISTANT_ID",
+      token: "YOUR_PROJECT_CREDENTIAL_KEY",
       user: {
-        name: "Guest",
+        name: "Jane Doe",
         user_id: "website-visitor-001",
         meta: {
           source: "marketing-site",
           page: window.location.pathname,
         },
       },
+      name: "Support Bot",
+      logo_url: "https://example.com/avatar.png",
+      layout: {
+        mode: "floating",
+        position: "bottom-right",
+        customProperties: {
+          width: "420px",
+          height: "640px",
+        },
+      },
       theme: {
-        color: "#0f62fe",
+        mode: "light",
+        injectTheme: "g10",
+      },
+      header: {
+        title: "Support Bot",
+        showAiLabel: false,
+      },
+      launcher: {
+        isOn: true,
       },
     };
   </script>
@@ -207,47 +565,35 @@ The `window.chatbotConfig` object accepts the following properties:
   Place both script tags just before the closing `</body>` tag. The `defer` attribute on `app.min.js` ensures it loads after the config is set without blocking page rendering.
 </Tip>
 
-### CSS Customisation
-
-The widget supports CSS custom properties to control its size and position. Add these in a `<style>` tag before the script:
-
-```html
-<style>
-  #RPDContainer.RPDContainer .RPD_Wrapper {
-    --cds-chat-BASE-border-radius-xsmall: 0px;
-    --cds-chat-BASE-border-radius-small: 0px;
-    --cds-chat-BASE-border-radius-med: 0px;
-    --cds-chat-BASE-border-radius-large: 10px;
-    --cds-chat-BASE-border-radius-xlarge: 10px;
-    --cds-chat-BASE-width: 400px;
-    --cds-chat-BASE-height: 600px;
-    --cds-chat-BASE-bottom-position: 20px;
-    --cds-chat-BASE-right-position: 20px;
-  }
-</style>
-```
-
-| CSS Variable | Default | Description |
-|-------------|---------|-------------|
-| `--cds-chat-BASE-width` | `400px` | Width of the chat window |
-| `--cds-chat-BASE-height` | `600px` | Height of the chat window |
-| `--cds-chat-BASE-bottom-position` | `0px` | Distance from the bottom of the viewport |
-| `--cds-chat-BASE-right-position` | `0px` | Distance from the right of the viewport |
-| `--cds-chat-BASE-border-radius-large` | `10px` | Border radius of the chat window |
-
 ### Full-Screen Widget
 
-To make the widget fill the entire viewport (e.g., for a dedicated support page):
+To make the widget fill the entire viewport, use `inline` mode and mount the widget into a full-page `#rapida-chat-app` element:
 
 ```html
 <style>
-  #RPDContainer.RPDContainer .RPD_Wrapper {
-    --cds-chat-BASE-width: 100% !important;
-    --cds-chat-BASE-height: 100dvh !important;
-    --cds-chat-BASE-bottom-position: 0px;
-    --cds-chat-BASE-right-position: 0px;
+  html,
+  body,
+  #rapida-chat-app {
+    width: 100%;
+    height: 100%;
+    margin: 0;
   }
 </style>
+<div id="rapida-chat-app"></div>
+<script>
+  window.chatbotConfig = {
+    assistant_id: "YOUR_ASSISTANT_ID",
+    token: "YOUR_PROJECT_CREDENTIAL_KEY",
+    layout: {
+      mode: "inline",
+      showFrame: false,
+    },
+    header: {
+      isOn: false,
+    },
+  };
+</script>
+<script defer src="https://cdn-01.rapida.ai/public/scripts/app.min.js"></script>
 ```
 
 ## Platform Integration Guides
@@ -415,8 +761,8 @@ You can also self-host the widget script itself. Build the `react-widget` SDK an
 
 ```bash
 cd sdks/react-widget
-yarn install
-yarn build
+npm install
+npm run build
 # Upload dist/app.min.js to your CDN
 ```
 
@@ -431,13 +777,14 @@ Then reference your self-hosted script:
 When the widget script loads, it:
 
 1. Reads configuration from `window.chatbotConfig`
-2. Creates a `<div id="rapida-chat-app">` element and appends it to the page `<body>`
-3. Initialises a `VoiceAgent` instance using `@rapidaai/react` SDK with `ConnectionConfig.WithSDK`
+2. Reuses an existing `<div id="rapida-chat-app">` or creates one and appends it to the page `<body>`
+3. Initialises a `VoiceAgent` instance using the `@rapidaai/react` SDK with the web plugin client connection
 4. Fetches the assistant's web plugin deployment config (greeting, suggestions, voice settings)
-5. Renders a floating button — clicking it opens the chat window
+5. Renders the configured layout: floating launcher, docked side panel, or inline chat
 6. Supports both text input and voice input (with microphone visualizer, device selection, and mute controls)
-7. Auto-detects language changes on the `<html lang="">` attribute
-8. Persists the user ID in `localStorage` (`rpd__uuid`) across sessions when no `user.user_id` is provided
+7. Passes supported UI configuration through to the native IBM AI Chat layer
+8. Auto-detects language changes on the `<html lang="">` attribute
+9. Persists the user ID in `localStorage` (`rpd__uuid`) across sessions when no `user.user_id` is provided
 
 ## Widget Features
 
@@ -450,6 +797,8 @@ The pre-built widget includes:
 - **Quickstart suggestions** — Clickable buttons from your deployment's configured suggestions
 - **Session reset** — Restart the conversation via the header button
 - **Auto-scroll** — Chat automatically scrolls to the latest message
+- **Layout modes** — Use floating, docked-right, docked-left, or inline rendering
+- **Theme controls** — Use light, dark, system, or explicit UI token injection
 
 ## Input and Output Modes
 
