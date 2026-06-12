@@ -70,10 +70,7 @@
                   "voice-deployment-options/phone",
                   "voice-deployment-options/web-widget",
                   "voice-deployment-options/web-app",
-                  "voice-deployment-options/whatsapp",
-                  "assistants/twilio-integration",
-                  "assistants/twilio-credentials",
-                  "assistants/twilio-handler"
+                  "voice-deployment-options/whatsapp"
                 ]
               },
               {
