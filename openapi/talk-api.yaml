@@ -12,6 +12,9 @@ tags:
   - name: assistants
     x-group: Assistants
     description: Assistant management APIs.
+  - name: assistant-deployments
+    x-group: Assistant deployments
+    description: Assistant deployment management APIs.
   - name: calls
     x-group: Calls
     description: Outbound call APIs.
@@ -149,6 +152,176 @@ paths:
                       errorCode: "1001011"
                       errorMessage: "unable to create assistant"
                       humanMessage: "Unable to create assistant, please try again later."
+  /v1/assistant-deployment/create-debugger-deployment:
+    post:
+      tags:
+        - assistant-deployments
+      operationId: createAssistantDebuggerDeployment
+      summary: create-debugger-deployment
+      description: Creates a debugger deployment for an assistant. This endpoint requires user authentication with organization and project scope.
+      parameters:
+        - $ref: "#/components/parameters/ClientSourceHeader"
+        - $ref: "#/components/parameters/AuthIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAssistantDebuggerDeploymentRequest"
+            examples:
+              basic:
+                summary: Create a debugger deployment
+                value:
+                  assistantId: "2227823180112723968"
+                  greeting: "Hi, how can I help you today?"
+                  mistake: "Sorry, I did not understand that."
+                  idealTimeout: 30
+                  idealTimeoutBackoff: 2
+                  idealTimeoutMessage: "Are you still there?"
+                  maxSessionDuration: 300
+                  inputAudio:
+                    audioProvider: "deepgram"
+                    audioType: "stt"
+                    audioOptions:
+                      - key: "model"
+                        value: "nova-3"
+                  outputAudio:
+                    audioProvider: "elevenlabs"
+                    audioType: "tts"
+                    audioOptions:
+                      - key: "voiceId"
+                        value: "VOICE_ID_PLACEHOLDER"
+      responses:
+        "200":
+          description: Assistant debugger deployment created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetAssistantDebuggerDeploymentResponse"
+              examples:
+                created:
+                  summary: Debugger deployment created
+                  value:
+                    code: 200
+                    success: true
+                    data:
+                      id: "2230142097179373568"
+                      assistantId: "2227823180112723968"
+                      greeting: "Hi, how can I help you today?"
+                      mistake: "Sorry, I did not understand that."
+                      idealTimeout: 30
+                      idealTimeoutBackoff: 2
+                      idealTimeoutMessage: "Are you still there?"
+                      maxSessionDuration: 300
+                      status: "active"
+                      inputAudio:
+                        audioProvider: "deepgram"
+                        audioType: "stt"
+                        status: "active"
+                      outputAudio:
+                        audioProvider: "elevenlabs"
+                        audioType: "tts"
+                        status: "active"
+        "400":
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidAssistantId:
+                  summary: Invalid assistant ID
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1004004"
+                      errorMessage: "invalid assistant_id parameter"
+                      humanMessage: "Please provide a valid assistantId parameter."
+                invalidAudioProvider:
+                  summary: Invalid audio provider
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1004006"
+                      errorMessage: "invalid audio provider parameter"
+                      humanMessage: "Please provide a valid audioProvider parameter."
+                invalidIdealTimeout:
+                  summary: Invalid ideal timeout
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1004007"
+                      errorMessage: "invalid ideal_timeout parameter"
+                      humanMessage: "Please provide idealTimeout between 15 and 120 seconds."
+                invalidTimeoutBackoff:
+                  summary: Invalid timeout backoff
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1004008"
+                      errorMessage: "invalid ideal_timeout_backoff parameter"
+                      humanMessage: "Please provide idealTimeoutBackoff between 0 and 5 times."
+                invalidSessionDuration:
+                  summary: Invalid max session duration
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1004009"
+                      errorMessage: "invalid max_session_duration parameter"
+                      humanMessage: "Please provide maxSessionDuration between 180 and 600 seconds."
+        "401":
+          description: Unauthenticated request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unauthenticated:
+                  summary: Missing or invalid user token
+                  value:
+                    code: 401
+                    success: false
+                    error:
+                      errorCode: "1004002"
+                      errorMessage: "unauthenticated request"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "403":
+          description: Missing authentication scope.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingScope:
+                  summary: Missing organization or project scope
+                  value:
+                    code: 403
+                    success: false
+                    error:
+                      errorCode: "1004003"
+                      errorMessage: "missing authentication scope"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "500":
+          description: Failed to create assistant debugger deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                createFailed:
+                  summary: Debugger deployment creation failed
+                  value:
+                    code: 500
+                    success: false
+                    error:
+                      errorCode: "1004005"
+                      errorMessage: "unable to create assistant debugger deployment"
+                      humanMessage: "Unable to create assistant debugger deployment, please try again later."
   /v1/talk/create-phone-call:
     post:
       tags:
@@ -450,6 +623,17 @@ components:
         - `1003007`: invalid arguments parameter - Please provide valid arguments.
         - `1003008`: invalid options parameter - Please provide valid options.
         - `1003009`: unable to initiate outbound call - Unable to initiate outbound call, please try again later.
+
+        Create Assistant Debugger Deployment:
+        - `1004001`: invalid request - Invalid request.
+        - `1004002`: unauthenticated request - Unauthenticated request, please try again with valid authentication.
+        - `1004003`: missing authentication scope - Unauthenticated request, please try again with valid authentication.
+        - `1004004`: invalid assistant_id parameter - Please provide a valid assistantId parameter.
+        - `1004005`: unable to create assistant debugger deployment - Unable to create assistant debugger deployment, please try again later.
+        - `1004006`: invalid audio provider parameter - Please provide a valid audioProvider parameter.
+        - `1004007`: invalid ideal_timeout parameter - Please provide idealTimeout between 15 and 120 seconds.
+        - `1004008`: invalid ideal_timeout_backoff parameter - Please provide idealTimeoutBackoff between 0 and 5 times.
+        - `1004009`: invalid max_session_duration parameter - Please provide maxSessionDuration between 180 and 600 seconds.
       example: "1002003"
     AssistantDefinition:
       type: object
@@ -508,6 +692,73 @@ components:
           type: string
           description: Assistant name.
           example: "Support assistant"
+    CreateAssistantDebuggerDeploymentRequest:
+      type: object
+      required:
+        - assistantId
+      properties:
+        assistantId:
+          $ref: "#/components/schemas/Uint64String"
+          description: Assistant ID for the debugger deployment.
+        greeting:
+          type: string
+          description: First message the assistant sends when the debugger session starts.
+          example: "Hi, how can I help you today?"
+        mistake:
+          type: string
+          description: Message to use when the assistant cannot understand or handle the input.
+          example: "Sorry, I did not understand that."
+        idealTimeout:
+          type: integer
+          format: uint64
+          minimum: 15
+          maximum: 120
+          description: Idle timeout in seconds before the assistant sends the timeout message.
+          example: 30
+        idealTimeoutBackoff:
+          type: integer
+          format: uint64
+          minimum: 0
+          maximum: 5
+          description: Number of idle-timeout retries before the session can end.
+          example: 2
+        idealTimeoutMessage:
+          type: string
+          description: Message sent when the debugger session reaches the idle timeout.
+          example: "Are you still there?"
+        maxSessionDuration:
+          type: integer
+          format: uint64
+          minimum: 180
+          maximum: 600
+          description: Maximum debugger session duration in seconds.
+          example: 300
+        inputAudio:
+          $ref: "#/components/schemas/DeploymentAudioProviderRequest"
+        outputAudio:
+          $ref: "#/components/schemas/DeploymentAudioProviderRequest"
+    DeploymentAudioProviderRequest:
+      type: object
+      required:
+        - audioProvider
+      properties:
+        audioProvider:
+          type: string
+          description: Audio provider name.
+          example: deepgram
+        audioOptions:
+          type: array
+          description: Provider-specific audio options.
+          items:
+            $ref: "#/components/schemas/Metadata"
+        status:
+          type: string
+          description: Optional provider status.
+          example: active
+        audioType:
+          type: string
+          description: Audio direction or role, such as `stt` or `tts`.
+          example: stt
     CreateAssistantProviderRequest:
       type: object
       description: Provider configuration for the assistant. Provide exactly one of `model`, `agentkit`, or `websocket`.
@@ -662,6 +913,69 @@ components:
           $ref: "#/components/schemas/Assistant"
         error:
           $ref: "#/components/schemas/Error"
+    GetAssistantDebuggerDeploymentResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/AssistantDebuggerDeployment"
+        error:
+          $ref: "#/components/schemas/Error"
+    AssistantDebuggerDeployment:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        assistantId:
+          $ref: "#/components/schemas/Uint64String"
+        greeting:
+          type: string
+        mistake:
+          type: string
+        inputAudio:
+          $ref: "#/components/schemas/DeploymentAudioProvider"
+        outputAudio:
+          $ref: "#/components/schemas/DeploymentAudioProvider"
+        status:
+          type: string
+        maxSessionDuration:
+          type: integer
+          format: uint64
+          minimum: 180
+          maximum: 600
+        idealTimeout:
+          type: integer
+          format: uint64
+          minimum: 15
+          maximum: 120
+        idealTimeoutBackoff:
+          type: integer
+          format: uint64
+          minimum: 0
+          maximum: 5
+        idealTimeoutMessage:
+          type: string
+    DeploymentAudioProvider:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        audioType:
+          type: string
+        audioProvider:
+          type: string
+        audioOptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Metadata"
+        status:
+          type: string
     Assistant:
       type: object
       properties:

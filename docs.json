@@ -424,6 +424,7 @@
             "group": "Assistant",
             "pages": [
               "api-reference/assistant/create-assistant",
+              "api-reference/assistant/create-debugger-deployment",
               "api-reference/assistant/get-assistant",
               "api-reference/assistant/get-all-assistant",
               "api-reference/assistant/get-assistant-conversation",
@@ -471,6 +472,12 @@
             "group": "Assistant",
             "pages": [
               "api-reference/rest/assistants/create-assistant"
+            ]
+          },
+          {
+            "group": "Assistant deployments",
+            "pages": [
+              "api-reference/rest/assistant-deployments/create-debugger-deployment"
             ]
           },
           {
