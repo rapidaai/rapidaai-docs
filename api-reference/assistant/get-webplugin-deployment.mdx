@@ -1,0 +1,229 @@
+---
+title: "Get Webplugin Deployment"
+description: "Get an assistant web plugin deployment from the Rapida SDK."
+---
+
+Gets the latest web plugin deployment for an assistant. Use user-scoped authentication because the operation requires organization and project context.
+
+<Info>
+  For setup and authentication options, see the [Installation guide](/api-reference/installation) and [Authentication](/api-reference/authentication).
+</Info>
+
+## Parameters
+
+<ParamField body="connectionConfig" type="ConnectionConfig" required>
+  Configuration for the client connection.
+</ParamField>
+
+<ParamField body="request" type="GetAssistantDeploymentRequest" required>
+  Deployment lookup request.
+  <Expandable>
+    <ParamField body="assistantId" type="uint64" required>
+      Assistant ID for the deployment.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Usage
+
+<CodeGroup>
+
+```ts React
+import {
+  ConnectionConfig,
+  GetAssistantDeploymentRequest,
+  GetAssistantWebpluginDeployment,
+} from "@rapidaai/react";
+
+const auth = ConnectionConfig.WithDebugger({
+  authorization: "AUTHORIZATION_TOKEN_PLACEHOLDER",
+  userId: "AUTH_ID_PLACEHOLDER",
+  projectId: "PROJECT_ID_PLACEHOLDER",
+});
+const connectionCfg = ConnectionConfig.DefaultConnectionConfig(auth);
+
+const request = new GetAssistantDeploymentRequest();
+request.setAssistantid("ASSISTANT_ID_PLACEHOLDER");
+
+const response = await GetAssistantWebpluginDeployment(connectionCfg, request);
+console.dir(response.toObject());
+```
+
+```javascript Node.js
+import {
+  ConnectionConfig,
+  GetAssistantDeploymentRequest,
+  GetAssistantWebpluginDeployment,
+} from "@rapidaai/nodejs";
+
+const auth = ConnectionConfig.WithDebugger({
+  authorization: process.env.RAPIDA_AUTHORIZATION,
+  userId: process.env.RAPIDA_AUTH_ID,
+  projectId: process.env.RAPIDA_PROJECT_ID,
+});
+const connectionCfg = ConnectionConfig.DefaultConnectionConfig(auth);
+
+const request = new GetAssistantDeploymentRequest();
+request.setAssistantid(process.env.RAPIDA_ASSISTANT_ID);
+
+const response = await GetAssistantWebpluginDeployment(connectionCfg, request);
+console.dir(response.toObject());
+```
+
+```python Python
+import os
+from pprint import pprint
+
+from rapida import ConnectionConfig
+from rapida.clients.protos.assistant_deployment_pb2 import (
+    GetAssistantDeploymentRequest,
+)
+
+auth = ConnectionConfig.with_debugger(
+    authorization=os.getenv("RAPIDA_AUTHORIZATION"),
+    user_id=os.getenv("RAPIDA_AUTH_ID"),
+    project_id=os.getenv("RAPIDA_PROJECT_ID"),
+)
+connection_config = ConnectionConfig.default_connection_config(auth)
+
+response = connection_config.assistant_deployment_client.GetAssistantWebpluginDeployment(
+    GetAssistantDeploymentRequest(
+        assistantId=int(os.getenv("RAPIDA_ASSISTANT_ID")),
+    ),
+    metadata=connection_config.auth,
+)
+pprint(response)
+```
+
+```go Go
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+
+	clients "github.com/rapidaai/rapida-go/rapida/clients"
+	connections "github.com/rapidaai/rapida-go/rapida/connections"
+	protos "github.com/rapidaai/rapida-go/protos"
+)
+
+func main() {
+	connectionConfig := connections.DefaultconnectionConfig(
+		connections.WithPersonalToken(
+			os.Getenv("RAPIDA_AUTHORIZATION"),
+			os.Getenv("RAPIDA_AUTH_ID"),
+			os.Getenv("RAPIDA_PROJECT_ID"),
+		),
+	)
+
+	response, err := clients.GetAssistantWebpluginDeployment(
+		context.Background(),
+		connectionConfig,
+		&protos.GetAssistantDeploymentRequest{
+			AssistantId: 2227823180112723968,
+		},
+	)
+	if err != nil {
+		fmt.Printf("error while getting web plugin deployment: %+v\n", err)
+		return
+	}
+	fmt.Printf("get web plugin deployment response: %+v\n", response)
+}
+```
+
+</CodeGroup>
+
+## Response
+
+<ParamField body="code" type="int32">
+  Numeric status code for the operation.
+</ParamField>
+
+<ParamField body="success" type="boolean">
+  Indicates whether the operation was successful.
+</ParamField>
+
+<ParamField body="data" type="AssistantWebpluginDeployment">
+  Webplugin deployment. If no deployment exists, the deployment field may be omitted.
+  <Expandable>
+<ParamField body="id" type="uint64">
+  Unique identifier for the web plugin deployment.
+</ParamField>
+<ParamField body="assistantId" type="uint64">
+  Assistant ID for the deployment.
+</ParamField>
+<ParamField body="greeting" type="string">
+  First message the assistant sends when the session starts.
+</ParamField>
+<ParamField body="mistake" type="string">
+  Message used when the assistant cannot understand or handle input.
+</ParamField>
+<ParamField body="inputAudio" type="DeploymentAudioProvider">
+  Speech-to-text provider configuration.
+</ParamField>
+<ParamField body="outputAudio" type="DeploymentAudioProvider">
+  Text-to-speech provider configuration.
+</ParamField>
+<ParamField body="suggestion" type="string[]">
+  Suggested starter prompts.
+</ParamField>
+<ParamField body="helpCenterEnabled" type="boolean">
+  Whether this web plugin capability is enabled.
+</ParamField>
+<ParamField body="productCatalogEnabled" type="boolean">
+  Whether this web plugin capability is enabled.
+</ParamField>
+<ParamField body="articleCatalogEnabled" type="boolean">
+  Whether this web plugin capability is enabled.
+</ParamField>
+<ParamField body="uploadFileEnabled" type="boolean">
+  Whether this web plugin capability is enabled.
+</ParamField>
+<ParamField body="status" type="string">
+  Current deployment status.
+</ParamField>
+<ParamField body="idealTimeout" type="uint64">
+  Idle timeout in seconds.
+</ParamField>
+<ParamField body="idealTimeoutBackoff" type="uint64">
+  Number of idle-timeout retries.
+</ParamField>
+<ParamField body="idealTimeoutMessage" type="string">
+  Message sent on idle timeout.
+</ParamField>
+<ParamField body="maxSessionDuration" type="uint64">
+  Maximum session duration in seconds.
+</ParamField>
+<ParamField body="createdDate" type="timestamp">
+  Timestamp when the deployment was created.
+</ParamField>
+<ParamField body="updatedDate" type="timestamp">
+  Timestamp when the deployment was last updated.
+</ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="error" type="Error">
+  Error details when the operation fails.
+  <Expandable>
+    <ResponseField name="errorCode" type="string">
+      Stable, machine-readable numeric code.
+    </ResponseField>
+    <ResponseField name="errorMessage" type="string">
+      Developer-oriented message with diagnostic details.
+    </ResponseField>
+    <ResponseField name="humanMessage" type="string">
+      Human-friendly description safe for display to end users.
+    </ResponseField>
+  </Expandable>
+</ParamField>
+
+## Errors
+
+| Code | Meaning |
+| --- | --- |
+| `1012001` | Unauthenticated request. |
+| `1012002` | Missing authentication scope. |
+| `1012003` | Invalid `assistantId`. |
+| `1012004` | Unable to get assistant web plugin deployment. |

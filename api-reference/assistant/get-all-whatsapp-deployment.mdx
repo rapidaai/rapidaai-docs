@@ -1,23 +1,13 @@
 ---
-title: "Get All Deployments"
-description: "Get paginated assistant deployments from the Rapida SDK."
+title: "Get All WhatsApp Deployments"
+description: "Get assistant WhatsApp deployments from the Rapida SDK."
 ---
 
-Gets deployments for an assistant with optional pagination and filtering. Use the deployment-specific SDK function for the deployment channel you want to list.
+Gets paginated WhatsApp deployments for an assistant. Use user-scoped authentication because the operation requires organization and project context.
 
 <Info>
   For setup and authentication options, see the [Installation guide](/api-reference/installation) and [Authentication](/api-reference/authentication).
 </Info>
-
-## Deployment functions
-
-| Deployment | React | Python client method | Go |
-| --- | --- | --- | --- |
-| API | `GetAllAssistantApiDeployment` | `GetAllAssistantApiDeployment` | `clients.GetAllAssistantApiDeployment` |
-| Debugger | `GetAllAssistantDebuggerDeployment` | `GetAllAssistantDebuggerDeployment` | `clients.GetAllAssistantDebuggerDeployment` |
-| Phone | `GetAllAssistantPhoneDeployment` | `GetAllAssistantPhoneDeployment` | `clients.GetAllAssistantPhoneDeployment` |
-| Web plugin | `GetAllAssistantWebpluginDeployment` | `GetAllAssistantWebpluginDeployment` | `clients.GetAllAssistantWebpluginDeployment` |
-| WhatsApp | `GetAllAssistantWhatsappDeployment` | `GetAllAssistantWhatsappDeployment` | `clients.GetAllAssistantWhatsappDeployment` |
 
 ## Parameters
 
@@ -32,7 +22,7 @@ Gets deployments for an assistant with optional pagination and filtering. Use th
       Assistant ID for the deployments.
     </ParamField>
     <ParamField body="paginate" type="Paginate" required>
-      Pagination configuration.
+      Pagination configuration for the request.
       <Expandable>
         <ParamField body="page" type="uint32" required>
           Page number to retrieve.
@@ -43,7 +33,7 @@ Gets deployments for an assistant with optional pagination and filtering. Use th
       </Expandable>
     </ParamField>
     <ParamField body="criterias" type="Criteria[]" optional>
-      Optional filtering criteria.
+      Optional filtering criteria to apply to the deployment search.
       <Expandable>
         <ParamField body="key" type="string" required>
           Field name to filter by.
@@ -52,7 +42,7 @@ Gets deployments for an assistant with optional pagination and filtering. Use th
           Value to match against the field.
         </ParamField>
         <ParamField body="logic" type="string" required>
-          Criteria logic, such as `should` or `must`.
+          Criteria logic. Accepted values: `should` or `must`.
         </ParamField>
       </Expandable>
     </ParamField>
@@ -66,8 +56,8 @@ Gets deployments for an assistant with optional pagination and filtering. Use th
 ```ts React
 import {
   ConnectionConfig,
-  GetAllAssistantApiDeployment,
   GetAllAssistantDeploymentRequest,
+  GetAllAssistantWhatsappDeployment,
   Paginate,
 } from "@rapidaai/react";
 
@@ -86,7 +76,7 @@ const request = new GetAllAssistantDeploymentRequest();
 request.setAssistantid("ASSISTANT_ID_PLACEHOLDER");
 request.setPaginate(pagination);
 
-const response = await GetAllAssistantApiDeployment(connectionCfg, request);
+const response = await GetAllAssistantWhatsappDeployment(connectionCfg, request);
 console.dir(response.toObject());
 ```
 
@@ -106,7 +96,7 @@ auth = ConnectionConfig.with_debugger(
 )
 connection_config = ConnectionConfig.default_connection_config(auth)
 
-response = connection_config.assistant_deployment_client.GetAllAssistantApiDeployment(
+response = connection_config.assistant_deployment_client.GetAllAssistantWhatsappDeployment(
     GetAllAssistantDeploymentRequest(
         assistantId=int(os.getenv("RAPIDA_ASSISTANT_ID")),
         paginate=Paginate(page=1, pageSize=20),
@@ -138,7 +128,7 @@ func main() {
 		),
 	)
 
-	response, err := clients.GetAllAssistantApiDeployment(
+	response, err := clients.GetAllAssistantWhatsappDeployment(
 		context.Background(),
 		connectionConfig,
 		&protos.GetAllAssistantDeploymentRequest{
@@ -150,11 +140,10 @@ func main() {
 		},
 	)
 	if err != nil {
-		fmt.Printf("Error while getting deployments: %+v\n", err)
+		fmt.Printf("error while getting WhatsApp deployments: %+v\n", err)
 		return
 	}
-
-	fmt.Printf("Deployment response: %+v\n", response)
+	fmt.Printf("get WhatsApp deployments response: %+v\n", response)
 }
 ```
 
@@ -170,8 +159,55 @@ func main() {
   Indicates whether the operation was successful.
 </ParamField>
 
-<ParamField body="data" type="AssistantApiDeployment[] | AssistantDebuggerDeployment[] | AssistantPhoneDeployment[] | AssistantWebpluginDeployment[] | AssistantWhatsappDeployment[]">
-  Deployment objects for the requested channel.
+<ParamField body="data" type="AssistantWhatsappDeployment[]">
+  WhatsApp deployments returned by the request.
+  <Expandable>
+<ParamField body="id" type="uint64">
+  Unique identifier for the WhatsApp deployment.
+</ParamField>
+<ParamField body="assistantId" type="uint64">
+  Assistant ID for the deployment.
+</ParamField>
+<ParamField body="greeting" type="string">
+  First message the assistant sends when the session starts.
+</ParamField>
+<ParamField body="mistake" type="string">
+  Message used when the assistant cannot understand or handle input.
+</ParamField>
+<ParamField body="inputAudio" type="DeploymentAudioProvider">
+  Speech-to-text provider configuration.
+</ParamField>
+<ParamField body="outputAudio" type="DeploymentAudioProvider">
+  Text-to-speech provider configuration.
+</ParamField>
+<ParamField body="whatsappProviderName" type="string">
+  Provider name.
+</ParamField>
+<ParamField body="whatsappOptions" type="Metadata[]">
+  Provider-specific options.
+</ParamField>
+<ParamField body="status" type="string">
+  Current deployment status.
+</ParamField>
+<ParamField body="idealTimeout" type="uint64">
+  Idle timeout in seconds.
+</ParamField>
+<ParamField body="idealTimeoutBackoff" type="uint64">
+  Number of idle-timeout retries.
+</ParamField>
+<ParamField body="idealTimeoutMessage" type="string">
+  Message sent on idle timeout.
+</ParamField>
+<ParamField body="maxSessionDuration" type="uint64">
+  Maximum session duration in seconds.
+</ParamField>
+<ParamField body="createdDate" type="timestamp">
+  Timestamp when the deployment was created.
+</ParamField>
+<ParamField body="updatedDate" type="timestamp">
+  Timestamp when the deployment was last updated.
+</ParamField>
+  </Expandable>
 </ParamField>
 
 <ParamField body="paginated" type="Paginated">
@@ -187,5 +223,26 @@ func main() {
 </ParamField>
 
 <ParamField body="error" type="Error">
-  Error details when the request fails.
+  Error details when the operation fails.
+  <Expandable>
+    <ResponseField name="errorCode" type="string">
+      Stable, machine-readable numeric code.
+    </ResponseField>
+    <ResponseField name="errorMessage" type="string">
+      Developer-oriented message with diagnostic details.
+    </ResponseField>
+    <ResponseField name="humanMessage" type="string">
+      Human-friendly description safe for display to end users.
+    </ResponseField>
+  </Expandable>
 </ParamField>
+
+## Errors
+
+| Code | Meaning |
+| --- | --- |
+| `1018001` | Unauthenticated request. |
+| `1018002` | Missing authentication scope. |
+| `1018003` | Invalid `assistantId`. |
+| `1018004` | Invalid request. |
+| `1018005` | Unable to get assistant WhatsApp deployments. |
