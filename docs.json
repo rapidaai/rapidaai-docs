@@ -425,6 +425,12 @@
             "pages": [
               "api-reference/assistant/create-assistant",
               "api-reference/assistant/create-debugger-deployment",
+              "api-reference/assistant/create-api-deployment",
+              "api-reference/assistant/create-webplugin-deployment",
+              "api-reference/assistant/create-phone-deployment",
+              "api-reference/assistant/create-whatsapp-deployment",
+              "api-reference/assistant/get-deployment",
+              "api-reference/assistant/get-all-deployment",
               "api-reference/assistant/get-assistant",
               "api-reference/assistant/get-all-assistant",
               "api-reference/assistant/get-assistant-conversation",
@@ -477,7 +483,21 @@
           {
             "group": "Assistant deployments",
             "pages": [
-              "api-reference/rest/assistant-deployments/create-debugger-deployment"
+              "api-reference/rest/assistant-deployments/create-debugger-deployment",
+              "api-reference/rest/assistant-deployments/create-api-deployment",
+              "api-reference/rest/assistant-deployments/create-webplugin-deployment",
+              "api-reference/rest/assistant-deployments/create-phone-deployment",
+              "api-reference/rest/assistant-deployments/create-whatsapp-deployment",
+              "api-reference/rest/assistant-deployments/get-api-deployment",
+              "api-reference/rest/assistant-deployments/get-debugger-deployment",
+              "api-reference/rest/assistant-deployments/get-phone-deployment",
+              "api-reference/rest/assistant-deployments/get-webplugin-deployment",
+              "api-reference/rest/assistant-deployments/get-whatsapp-deployment",
+              "api-reference/rest/assistant-deployments/get-all-api-deployment",
+              "api-reference/rest/assistant-deployments/get-all-debugger-deployment",
+              "api-reference/rest/assistant-deployments/get-all-phone-deployment",
+              "api-reference/rest/assistant-deployments/get-all-webplugin-deployment",
+              "api-reference/rest/assistant-deployments/get-all-whatsapp-deployment"
             ]
           },
           {

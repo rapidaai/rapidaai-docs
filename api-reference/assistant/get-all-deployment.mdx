@@ -1,0 +1,191 @@
+---
+title: "Get All Deployments"
+description: "Get paginated assistant deployments from the Rapida SDK."
+---
+
+Gets deployments for an assistant with optional pagination and filtering. Use the deployment-specific SDK function for the deployment channel you want to list.
+
+<Info>
+  For setup and authentication options, see the [Installation guide](/api-reference/installation) and [Authentication](/api-reference/authentication).
+</Info>
+
+## Deployment functions
+
+| Deployment | React | Python client method | Go |
+| --- | --- | --- | --- |
+| API | `GetAllAssistantApiDeployment` | `GetAllAssistantApiDeployment` | `clients.GetAllAssistantApiDeployment` |
+| Debugger | `GetAllAssistantDebuggerDeployment` | `GetAllAssistantDebuggerDeployment` | `clients.GetAllAssistantDebuggerDeployment` |
+| Phone | `GetAllAssistantPhoneDeployment` | `GetAllAssistantPhoneDeployment` | `clients.GetAllAssistantPhoneDeployment` |
+| Web plugin | `GetAllAssistantWebpluginDeployment` | `GetAllAssistantWebpluginDeployment` | `clients.GetAllAssistantWebpluginDeployment` |
+| WhatsApp | `GetAllAssistantWhatsappDeployment` | `GetAllAssistantWhatsappDeployment` | `clients.GetAllAssistantWhatsappDeployment` |
+
+## Parameters
+
+<ParamField body="connectionConfig" type="ConnectionConfig" required>
+  Configuration for the client connection.
+</ParamField>
+
+<ParamField body="request" type="GetAllAssistantDeploymentRequest" required>
+  Deployment list request.
+  <Expandable>
+    <ParamField body="assistantId" type="uint64" required>
+      Assistant ID for the deployments.
+    </ParamField>
+    <ParamField body="paginate" type="Paginate" required>
+      Pagination configuration.
+      <Expandable>
+        <ParamField body="page" type="uint32" required>
+          Page number to retrieve.
+        </ParamField>
+        <ParamField body="pageSize" type="uint32" required>
+          Number of deployments to return per page.
+        </ParamField>
+      </Expandable>
+    </ParamField>
+    <ParamField body="criterias" type="Criteria[]" optional>
+      Optional filtering criteria.
+      <Expandable>
+        <ParamField body="key" type="string" required>
+          Field name to filter by.
+        </ParamField>
+        <ParamField body="value" type="string" required>
+          Value to match against the field.
+        </ParamField>
+        <ParamField body="logic" type="string" required>
+          Criteria logic, such as `should` or `must`.
+        </ParamField>
+      </Expandable>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Usage
+
+<CodeGroup>
+
+```ts React
+import {
+  ConnectionConfig,
+  GetAllAssistantApiDeployment,
+  GetAllAssistantDeploymentRequest,
+  Paginate,
+} from "@rapidaai/react";
+
+const auth = ConnectionConfig.WithDebugger({
+  authorization: "AUTHORIZATION_TOKEN_PLACEHOLDER",
+  userId: "AUTH_ID_PLACEHOLDER",
+  projectId: "PROJECT_ID_PLACEHOLDER",
+});
+const connectionCfg = ConnectionConfig.DefaultConnectionConfig(auth);
+
+const pagination = new Paginate();
+pagination.setPage(1);
+pagination.setPagesize(20);
+
+const request = new GetAllAssistantDeploymentRequest();
+request.setAssistantid("ASSISTANT_ID_PLACEHOLDER");
+request.setPaginate(pagination);
+
+const response = await GetAllAssistantApiDeployment(connectionCfg, request);
+console.dir(response.toObject());
+```
+
+```python Python
+import os
+from pprint import pprint
+
+from rapida import ConnectionConfig, Paginate
+from rapida.clients.protos.assistant_deployment_pb2 import (
+    GetAllAssistantDeploymentRequest,
+)
+
+auth = ConnectionConfig.with_debugger(
+    authorization=os.getenv("RAPIDA_AUTHORIZATION"),
+    user_id=os.getenv("RAPIDA_AUTH_ID"),
+    project_id=os.getenv("RAPIDA_PROJECT_ID"),
+)
+connection_config = ConnectionConfig.default_connection_config(auth)
+
+response = connection_config.assistant_deployment_client.GetAllAssistantApiDeployment(
+    GetAllAssistantDeploymentRequest(
+        assistantId=int(os.getenv("RAPIDA_ASSISTANT_ID")),
+        paginate=Paginate(page=1, pageSize=20),
+    ),
+    metadata=connection_config.auth,
+)
+pprint(response)
+```
+
+```go Go
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+
+	clients "github.com/rapidaai/rapida-go/rapida/clients"
+	connections "github.com/rapidaai/rapida-go/rapida/connections"
+	protos "github.com/rapidaai/rapida-go/protos"
+)
+
+func main() {
+	connectionConfig := connections.DefaultconnectionConfig(
+		connections.WithPersonalToken(
+			os.Getenv("RAPIDA_AUTHORIZATION"),
+			os.Getenv("RAPIDA_AUTH_ID"),
+			os.Getenv("RAPIDA_PROJECT_ID"),
+		),
+	)
+
+	response, err := clients.GetAllAssistantApiDeployment(
+		context.Background(),
+		connectionConfig,
+		&protos.GetAllAssistantDeploymentRequest{
+			AssistantId: 2227823180112723968,
+			Paginate: &protos.Paginate{
+				Page:     1,
+				PageSize: 20,
+			},
+		},
+	)
+	if err != nil {
+		fmt.Printf("Error while getting deployments: %+v\n", err)
+		return
+	}
+
+	fmt.Printf("Deployment response: %+v\n", response)
+}
+```
+
+</CodeGroup>
+
+## Response
+
+<ParamField body="code" type="int32">
+  Numeric status code for the operation.
+</ParamField>
+
+<ParamField body="success" type="boolean">
+  Indicates whether the operation was successful.
+</ParamField>
+
+<ParamField body="data" type="AssistantApiDeployment[] | AssistantDebuggerDeployment[] | AssistantPhoneDeployment[] | AssistantWebpluginDeployment[] | AssistantWhatsappDeployment[]">
+  Deployment objects for the requested channel.
+</ParamField>
+
+<ParamField body="paginated" type="Paginated">
+  Pagination metadata.
+  <Expandable>
+    <ParamField body="currentPage" type="uint32">
+      Current page returned by the API.
+    </ParamField>
+    <ParamField body="totalItem" type="uint32">
+      Total number of matching deployments.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="error" type="Error">
+  Error details when the request fails.
+</ParamField>

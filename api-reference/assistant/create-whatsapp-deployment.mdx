@@ -1,0 +1,305 @@
+---
+title: "Create WhatsApp Deployment"
+description: "Create an assistant WhatsApp deployment from the Rapida SDK."
+---
+
+Creates a WhatsApp deployment for an assistant. Use user-scoped authentication because the operation requires organization and project context.
+
+<Info>
+  For setup and authentication options, see the [Installation guide](/api-reference/installation) and [Authentication](/api-reference/authentication).
+</Info>
+
+## Parameters
+
+<ParamField body="connectionConfig" type="ConnectionConfig" required>
+  Configuration for the client connection.
+</ParamField>
+
+<ParamField body="request" type="CreateAssistantDeploymentRequest" required>
+  Provide the `whatsapp` deployment variant.
+  <Expandable>
+    <ParamField body="whatsapp" type="AssistantWhatsappDeployment" required>
+      WhatsApp deployment configuration.
+      <Expandable>
+        <ParamField body="assistantId" type="uint64" required>
+          Assistant ID for the deployment.
+        </ParamField>
+        <ParamField body="whatsappProviderName" type="string" required>
+          WhatsApp provider name.
+        </ParamField>
+        <ParamField body="whatsappOptions" type="Metadata[]">
+          Provider-specific WhatsApp options.
+        </ParamField>
+        <ParamField body="greeting" type="string">
+          First message the assistant sends when the session starts.
+        </ParamField>
+        <ParamField body="mistake" type="string">
+          Message to use when the assistant cannot understand or handle the input.
+        </ParamField>
+        <ParamField body="idealTimeout" type="uint64">
+          Idle timeout in seconds. Must be between `15` and `120`.
+        </ParamField>
+        <ParamField body="idealTimeoutBackoff" type="uint64">
+          Number of idle-timeout retries. Must be between `0` and `5`.
+        </ParamField>
+        <ParamField body="idealTimeoutMessage" type="string">
+          Message sent when the session reaches the idle timeout.
+        </ParamField>
+        <ParamField body="maxSessionDuration" type="uint64">
+          Maximum session duration in seconds. Must be between `180` and `600`.
+        </ParamField>
+      </Expandable>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Usage
+
+<CodeGroup>
+
+```ts React
+import {
+  AssistantWhatsappDeployment,
+  ConnectionConfig,
+  CreateAssistantDeploymentRequest,
+  CreateAssistantWhatsappDeployment,
+  Metadata,
+} from "@rapidaai/react";
+
+const auth = ConnectionConfig.WithDebugger({
+  authorization: "AUTHORIZATION_TOKEN_PLACEHOLDER",
+  userId: "AUTH_ID_PLACEHOLDER",
+  projectId: "PROJECT_ID_PLACEHOLDER",
+});
+const connectionCfg = ConnectionConfig.DefaultConnectionConfig(auth);
+
+const deployment = new AssistantWhatsappDeployment();
+deployment.setAssistantid("ASSISTANT_ID_PLACEHOLDER");
+deployment.setGreeting("Hi, how can I help you today?");
+deployment.setMistake("Sorry, I did not understand that.");
+deployment.setIdealtimeout("30");
+deployment.setIdealtimeoutbackoff("2");
+deployment.setIdealtimeoutmessage("Are you still there?");
+deployment.setMaxsessionduration("300");
+const template = new Metadata();
+template.setKey("template");
+template.setValue("welcome");
+deployment.setWhatsappprovidername("gupshup");
+deployment.setWhatsappoptionsList([template]);
+
+const request = new CreateAssistantDeploymentRequest();
+request.setWhatsapp(deployment);
+
+const response = await CreateAssistantWhatsappDeployment(connectionCfg, request);
+console.dir(response.toObject());
+```
+
+```javascript Node.js
+import {
+  AssistantWhatsappDeployment,
+  ConnectionConfig,
+  CreateAssistantDeploymentRequest,
+  CreateAssistantWhatsappDeployment,
+  Metadata,
+} from "@rapidaai/nodejs";
+
+const auth = ConnectionConfig.WithDebugger({
+  authorization: process.env.RAPIDA_AUTHORIZATION,
+  userId: process.env.RAPIDA_AUTH_ID,
+  projectId: process.env.RAPIDA_PROJECT_ID,
+});
+const connectionCfg = ConnectionConfig.DefaultConnectionConfig(auth);
+
+const deployment = new AssistantWhatsappDeployment();
+deployment.setAssistantid(process.env.RAPIDA_ASSISTANT_ID);
+deployment.setGreeting("Hi, how can I help you today?");
+deployment.setMistake("Sorry, I did not understand that.");
+deployment.setIdealtimeout("30");
+deployment.setIdealtimeoutbackoff("2");
+deployment.setIdealtimeoutmessage("Are you still there?");
+deployment.setMaxsessionduration("300");
+const template = new Metadata();
+template.setKey("template");
+template.setValue("welcome");
+deployment.setWhatsappprovidername("gupshup");
+deployment.setWhatsappoptionsList([template]);
+
+const request = new CreateAssistantDeploymentRequest();
+request.setWhatsapp(deployment);
+
+const response = await CreateAssistantWhatsappDeployment(connectionCfg, request);
+console.dir(response.toObject());
+```
+
+```python Python
+import os
+from pprint import pprint
+
+from rapida import (
+    AssistantWhatsappDeployment,
+    ConnectionConfig,
+    Metadata,
+)
+from rapida.clients.protos.assistant_deployment_pb2 import (
+    CreateAssistantDeploymentRequest,
+)
+
+auth = ConnectionConfig.with_debugger(
+    authorization=os.getenv("RAPIDA_AUTHORIZATION"),
+    user_id=os.getenv("RAPIDA_AUTH_ID"),
+    project_id=os.getenv("RAPIDA_PROJECT_ID"),
+)
+connection_config = ConnectionConfig.default_connection_config(auth)
+
+deployment = AssistantWhatsappDeployment(
+    assistantId=int(os.getenv("RAPIDA_ASSISTANT_ID")),
+    greeting="Hi, how can I help you today?",
+    mistake="Sorry, I did not understand that.",
+    idealTimeout=30,
+    idealTimeoutBackoff=2,
+    idealTimeoutMessage="Are you still there?",
+    maxSessionDuration=300,
+    whatsappProviderName="gupshup",
+    whatsappOptions=[Metadata(key="template", value="welcome")],
+)
+
+response = connection_config.assistant_deployment_client.CreateAssistantWhatsappDeployment(
+    CreateAssistantDeploymentRequest(whatsapp=deployment),
+    metadata=connection_config.auth,
+)
+pprint(response)
+```
+
+```go Go
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+
+	"google.golang.org/protobuf/proto"
+
+	clients "github.com/rapidaai/rapida-go/rapida/clients"
+	connections "github.com/rapidaai/rapida-go/rapida/connections"
+	protos "github.com/rapidaai/rapida-go/protos"
+)
+
+func main() {
+	connectionConfig := connections.DefaultconnectionConfig(
+		connections.WithPersonalToken(
+			os.Getenv("RAPIDA_AUTHORIZATION"),
+			os.Getenv("RAPIDA_AUTH_ID"),
+			os.Getenv("RAPIDA_PROJECT_ID"),
+		),
+	)
+
+	response, err := clients.CreateAssistantWhatsappDeployment(
+		context.Background(),
+		connectionConfig,
+		&protos.CreateAssistantDeploymentRequest{
+			Deployment: &protos.CreateAssistantDeploymentRequest_Whatsapp{
+				Whatsapp: &protos.AssistantWhatsappDeployment{
+					AssistantId:         2227823180112723968,
+					Greeting:            proto.String("Hi, how can I help you today?"),
+					Mistake:             proto.String("Sorry, I did not understand that."),
+					IdealTimeout:        30,
+					IdealTimeoutBackoff: 2,
+					IdealTimeoutMessage: "Are you still there?",
+					MaxSessionDuration:  300,
+					WhatsappProviderName: "gupshup",
+					WhatsappOptions: []*protos.Metadata{{
+						Key:   "template",
+						Value: "welcome",
+					}},
+				},
+			},
+		},
+	)
+	if err != nil {
+		fmt.Printf("error while creating deployment: %+v\n", err)
+		return
+	}
+	fmt.Printf("create deployment response: %+v\n", response)
+}
+```
+
+</CodeGroup>
+
+## Response
+
+<ParamField body="code" type="int32">
+  Numeric status code for the operation.
+</ParamField>
+
+<ParamField body="success" type="boolean">
+  Indicates whether the operation was successful.
+</ParamField>
+
+<ParamField body="data" type="AssistantWhatsappDeployment">
+  Created WhatsApp deployment.
+  <Expandable>
+    <ParamField body="id" type="uint64">
+      Unique identifier for the deployment.
+    </ParamField>
+    <ParamField body="assistantId" type="uint64">
+      Assistant ID for the deployment.
+    </ParamField>
+    <ParamField body="whatsappProviderName" type="string">
+      WhatsApp provider name.
+    </ParamField>
+    <ParamField body="whatsappOptions" type="Metadata[]">
+      Provider-specific WhatsApp options.
+    </ParamField>
+    <ParamField body="greeting" type="string">
+      First message for the session.
+    </ParamField>
+    <ParamField body="mistake" type="string">
+      Message used when the assistant cannot understand or handle input.
+    </ParamField>
+    <ParamField body="status" type="string">
+      Current deployment status.
+    </ParamField>
+    <ParamField body="idealTimeout" type="uint64">
+      Idle timeout in seconds.
+    </ParamField>
+    <ParamField body="idealTimeoutBackoff" type="uint64">
+      Number of idle-timeout retries.
+    </ParamField>
+    <ParamField body="idealTimeoutMessage" type="string">
+      Message sent on idle timeout.
+    </ParamField>
+    <ParamField body="maxSessionDuration" type="uint64">
+      Maximum session duration in seconds.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="error" type="Error">
+  Error details when the operation fails.
+  <Expandable>
+    <ResponseField name="errorCode" type="string">
+      Stable, machine-readable numeric code.
+    </ResponseField>
+    <ResponseField name="errorMessage" type="string">
+      Developer-oriented message with diagnostic details.
+    </ResponseField>
+    <ResponseField name="humanMessage" type="string">
+      Human-friendly description safe for display to end users.
+    </ResponseField>
+  </Expandable>
+</ParamField>
+
+## Errors
+
+| Code | Meaning |
+| --- | --- |
+| `1008001` | Invalid request. |
+| `1008002` | Unauthenticated request. |
+| `1008003` | Missing authentication scope. |
+| `1008004` | Invalid `assistantId`. |
+| `1008005` | Unable to create assistant WhatsApp deployment. |
+| `1008006` | `idealTimeout` must be between `15` and `120` seconds. |
+| `1008007` | `idealTimeoutBackoff` must be between `0` and `5` times. |
+| `1008008` | `maxSessionDuration` must be between `180` and `600` seconds. |
+| `1008009` | Missing `whatsappProviderName`. |

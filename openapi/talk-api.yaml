@@ -322,6 +322,1766 @@ paths:
                       errorCode: "1004005"
                       errorMessage: "unable to create assistant debugger deployment"
                       humanMessage: "Unable to create assistant debugger deployment, please try again later."
+  /v1/assistant-deployment/create-phone-deployment:
+    post:
+      tags:
+        - assistant-deployments
+      operationId: createAssistantPhoneDeployment
+      summary: create-phone-deployment
+      description: Creates a phone deployment for an assistant. This endpoint requires user authentication with organization and project scope.
+      parameters:
+        - $ref: "#/components/parameters/ClientSourceHeader"
+        - $ref: "#/components/parameters/AuthIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAssistantPhoneDeploymentRequest"
+            examples:
+              basic:
+                summary: Create a phone deployment
+                value:
+                  assistantId: "2227823180112723968"
+                  greeting: "Hi, how can I help you today?"
+                  mistake: "Sorry, I did not understand that."
+                  idealTimeout: 30
+                  idealTimeoutBackoff: 2
+                  idealTimeoutMessage: "Are you still there?"
+                  maxSessionDuration: 300
+                  phoneProviderName: "twilio"
+                  phoneOptions:
+                    - key: "phoneNumber"
+                      value: "+14155550100"
+                  inputAudio:
+                    audioProvider: "deepgram"
+                    audioType: "stt"
+                    audioOptions:
+                      - key: "model"
+                        value: "nova-3"
+                  outputAudio:
+                    audioProvider: "elevenlabs"
+                    audioType: "tts"
+                    audioOptions:
+                      - key: "voiceId"
+                        value: "VOICE_ID_PLACEHOLDER"
+      responses:
+        "200":
+          description: Assistant phone deployment created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetAssistantPhoneDeploymentResponse"
+              examples:
+                created:
+                  summary: Phone deployment created
+                  value:
+                    code: 200
+                    success: true
+                    data:
+                      id: "2230142097179373568"
+                      assistantId: "2227823180112723968"
+                      greeting: "Hi, how can I help you today?"
+                      mistake: "Sorry, I did not understand that."
+                      idealTimeout: 30
+                      idealTimeoutBackoff: 2
+                      idealTimeoutMessage: "Are you still there?"
+                      maxSessionDuration: 300
+                      phoneProviderName: "twilio"
+                      phoneOptions:
+                        - key: "phoneNumber"
+                          value: "+14155550100"
+                      status: "active"
+                      inputAudio:
+                        audioProvider: "deepgram"
+                        audioType: "stt"
+                        status: "active"
+                      outputAudio:
+                        audioProvider: "elevenlabs"
+                        audioType: "tts"
+                        status: "active"
+        "400":
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidAssistantId:
+                  summary: Invalid assistant ID
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1005004"
+                      errorMessage: "invalid assistant_id parameter"
+                      humanMessage: "Please provide a valid assistantId parameter."
+                missingPhoneProvider:
+                  summary: Missing phone provider
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1005010"
+                      errorMessage: "missing phone_provider_name parameter"
+                      humanMessage: "Please provide the required phoneProviderName parameter."
+                invalidAudioProvider:
+                  summary: Invalid audio provider
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1005006"
+                      errorMessage: "invalid audio provider parameter"
+                      humanMessage: "Please provide a valid audioProvider parameter."
+        "401":
+          description: Unauthenticated request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unauthenticated:
+                  summary: Missing or invalid user token
+                  value:
+                    code: 401
+                    success: false
+                    error:
+                      errorCode: "1005002"
+                      errorMessage: "unauthenticated request"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "403":
+          description: Missing authentication scope.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingScope:
+                  summary: Missing organization or project scope
+                  value:
+                    code: 403
+                    success: false
+                    error:
+                      errorCode: "1005003"
+                      errorMessage: "missing authentication scope"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "500":
+          description: Failed to create assistant phone deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                createFailed:
+                  summary: Phone deployment creation failed
+                  value:
+                    code: 500
+                    success: false
+                    error:
+                      errorCode: "1005005"
+                      errorMessage: "unable to create assistant phone deployment"
+                      humanMessage: "Unable to create assistant phone deployment, please try again later."
+  /v1/assistant-deployment/create-api-deployment:
+    post:
+      tags:
+        - assistant-deployments
+      operationId: createAssistantApiDeployment
+      summary: create-api-deployment
+      description: Creates an API deployment for an assistant. This endpoint requires user authentication with organization and project scope.
+      parameters:
+        - $ref: "#/components/parameters/ClientSourceHeader"
+        - $ref: "#/components/parameters/AuthIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAssistantApiDeploymentRequest"
+            examples:
+              basic:
+                summary: Create an API deployment
+                value:
+                  assistantId: "2227823180112723968"
+                  greeting: "Hi, how can I help you today?"
+                  mistake: "Sorry, I did not understand that."
+                  idealTimeout: 30
+                  idealTimeoutBackoff: 2
+                  idealTimeoutMessage: "Are you still there?"
+                  maxSessionDuration: 300
+                  inputAudio:
+                    audioProvider: "deepgram"
+                    audioType: "stt"
+                    audioOptions:
+                      - key: "model"
+                        value: "nova-3"
+                  outputAudio:
+                    audioProvider: "elevenlabs"
+                    audioType: "tts"
+                    audioOptions:
+                      - key: "voiceId"
+                        value: "VOICE_ID_PLACEHOLDER"
+      responses:
+        "200":
+          description: Assistant API deployment created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetAssistantApiDeploymentResponse"
+              examples:
+                created:
+                  summary: API deployment created
+                  value:
+                    code: 200
+                    success: true
+                    data:
+                      id: "2230142097179373568"
+                      assistantId: "2227823180112723968"
+                      greeting: "Hi, how can I help you today?"
+                      mistake: "Sorry, I did not understand that."
+                      idealTimeout: 30
+                      idealTimeoutBackoff: 2
+                      idealTimeoutMessage: "Are you still there?"
+                      maxSessionDuration: 300
+                      status: "active"
+                      inputAudio:
+                        audioProvider: "deepgram"
+                        audioType: "stt"
+                        status: "active"
+                      outputAudio:
+                        audioProvider: "elevenlabs"
+                        audioType: "tts"
+                        status: "active"
+        "400":
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidAssistantId:
+                  summary: Invalid assistant ID
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1006004"
+                      errorMessage: "invalid assistant_id parameter"
+                      humanMessage: "Please provide a valid assistantId parameter."
+                invalidAudioProvider:
+                  summary: Invalid audio provider
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1006006"
+                      errorMessage: "invalid audio provider parameter"
+                      humanMessage: "Please provide a valid audioProvider parameter."
+        "401":
+          description: Unauthenticated request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unauthenticated:
+                  summary: Missing or invalid user token
+                  value:
+                    code: 401
+                    success: false
+                    error:
+                      errorCode: "1006002"
+                      errorMessage: "unauthenticated request"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "403":
+          description: Missing authentication scope.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingScope:
+                  summary: Missing organization or project scope
+                  value:
+                    code: 403
+                    success: false
+                    error:
+                      errorCode: "1006003"
+                      errorMessage: "missing authentication scope"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "500":
+          description: Failed to create assistant API deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                createFailed:
+                  summary: API deployment creation failed
+                  value:
+                    code: 500
+                    success: false
+                    error:
+                      errorCode: "1006005"
+                      errorMessage: "unable to create assistant api deployment"
+                      humanMessage: "Unable to create assistant api deployment, please try again later."
+  /v1/assistant-deployment/create-webplugin-deployment:
+    post:
+      tags:
+        - assistant-deployments
+      operationId: createAssistantWebpluginDeployment
+      summary: create-webplugin-deployment
+      description: Creates a web plugin deployment for an assistant. This endpoint requires user authentication with organization and project scope.
+      parameters:
+        - $ref: "#/components/parameters/ClientSourceHeader"
+        - $ref: "#/components/parameters/AuthIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAssistantWebpluginDeploymentRequest"
+            examples:
+              basic:
+                summary: Create a web plugin deployment
+                value:
+                  assistantId: "2227823180112723968"
+                  greeting: "Hi, how can I help you today?"
+                  mistake: "Sorry, I did not understand that."
+                  idealTimeout: 30
+                  idealTimeoutBackoff: 2
+                  idealTimeoutMessage: "Are you still there?"
+                  maxSessionDuration: 300
+                  suggestion:
+                    - "Book a demo"
+                    - "Talk to support"
+                  inputAudio:
+                    audioProvider: "deepgram"
+                    audioType: "stt"
+                    audioOptions:
+                      - key: "model"
+                        value: "nova-3"
+                  outputAudio:
+                    audioProvider: "elevenlabs"
+                    audioType: "tts"
+                    audioOptions:
+                      - key: "voiceId"
+                        value: "VOICE_ID_PLACEHOLDER"
+      responses:
+        "200":
+          description: Assistant web plugin deployment created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetAssistantWebpluginDeploymentResponse"
+              examples:
+                created:
+                  summary: Web plugin deployment created
+                  value:
+                    code: 200
+                    success: true
+                    data:
+                      id: "2230142097179373568"
+                      assistantId: "2227823180112723968"
+                      greeting: "Hi, how can I help you today?"
+                      mistake: "Sorry, I did not understand that."
+                      idealTimeout: 30
+                      idealTimeoutBackoff: 2
+                      idealTimeoutMessage: "Are you still there?"
+                      maxSessionDuration: 300
+                      suggestion:
+                        - "Book a demo"
+                        - "Talk to support"
+                      status: "active"
+                      inputAudio:
+                        audioProvider: "deepgram"
+                        audioType: "stt"
+                        status: "active"
+                      outputAudio:
+                        audioProvider: "elevenlabs"
+                        audioType: "tts"
+                        status: "active"
+        "400":
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidAssistantId:
+                  summary: Invalid assistant ID
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1007004"
+                      errorMessage: "invalid assistant_id parameter"
+                      humanMessage: "Please provide a valid assistantId parameter."
+                invalidAudioProvider:
+                  summary: Invalid audio provider
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1007006"
+                      errorMessage: "invalid audio provider parameter"
+                      humanMessage: "Please provide a valid audioProvider parameter."
+        "401":
+          description: Unauthenticated request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unauthenticated:
+                  summary: Missing or invalid user token
+                  value:
+                    code: 401
+                    success: false
+                    error:
+                      errorCode: "1007002"
+                      errorMessage: "unauthenticated request"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "403":
+          description: Missing authentication scope.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingScope:
+                  summary: Missing organization or project scope
+                  value:
+                    code: 403
+                    success: false
+                    error:
+                      errorCode: "1007003"
+                      errorMessage: "missing authentication scope"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "500":
+          description: Failed to create assistant web plugin deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                createFailed:
+                  summary: Webplugin deployment creation failed
+                  value:
+                    code: 500
+                    success: false
+                    error:
+                      errorCode: "1007005"
+                      errorMessage: "unable to create assistant web plugin deployment"
+                      humanMessage: "Unable to create assistant web plugin deployment, please try again later."
+  /v1/assistant-deployment/create-whatsapp-deployment:
+    post:
+      tags:
+        - assistant-deployments
+      operationId: createAssistantWhatsappDeployment
+      summary: create-whatsapp-deployment
+      description: Creates a WhatsApp deployment for an assistant. This endpoint requires user authentication with organization and project scope.
+      parameters:
+        - $ref: "#/components/parameters/ClientSourceHeader"
+        - $ref: "#/components/parameters/AuthIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAssistantWhatsappDeploymentRequest"
+            examples:
+              basic:
+                summary: Create a WhatsApp deployment
+                value:
+                  assistantId: "2227823180112723968"
+                  greeting: "Hi, how can I help you today?"
+                  mistake: "Sorry, I did not understand that."
+                  idealTimeout: 30
+                  idealTimeoutBackoff: 2
+                  idealTimeoutMessage: "Are you still there?"
+                  maxSessionDuration: 300
+                  whatsappProviderName: "gupshup"
+                  whatsappOptions:
+                    - key: "template"
+                      value: "welcome"
+      responses:
+        "200":
+          description: Assistant WhatsApp deployment created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetAssistantWhatsappDeploymentResponse"
+              examples:
+                created:
+                  summary: WhatsApp deployment created
+                  value:
+                    code: 200
+                    success: true
+                    data:
+                      id: "2230142097179373568"
+                      assistantId: "2227823180112723968"
+                      greeting: "Hi, how can I help you today?"
+                      mistake: "Sorry, I did not understand that."
+                      idealTimeout: 30
+                      idealTimeoutBackoff: 2
+                      idealTimeoutMessage: "Are you still there?"
+                      maxSessionDuration: 300
+                      whatsappProviderName: "gupshup"
+                      whatsappOptions:
+                        - key: "template"
+                          value: "welcome"
+                      status: "active"
+        "400":
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidAssistantId:
+                  summary: Invalid assistant ID
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1008004"
+                      errorMessage: "invalid assistant_id parameter"
+                      humanMessage: "Please provide a valid assistantId parameter."
+                missingWhatsappProvider:
+                  summary: Missing WhatsApp provider
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1008009"
+                      errorMessage: "missing whatsapp_provider_name parameter"
+                      humanMessage: "Please provide the required whatsappProviderName parameter."
+        "401":
+          description: Unauthenticated request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unauthenticated:
+                  summary: Missing or invalid user token
+                  value:
+                    code: 401
+                    success: false
+                    error:
+                      errorCode: "1008002"
+                      errorMessage: "unauthenticated request"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "403":
+          description: Missing authentication scope.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingScope:
+                  summary: Missing organization or project scope
+                  value:
+                    code: 403
+                    success: false
+                    error:
+                      errorCode: "1008003"
+                      errorMessage: "missing authentication scope"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "500":
+          description: Failed to create assistant WhatsApp deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                createFailed:
+                  summary: WhatsApp deployment creation failed
+                  value:
+                    code: 500
+                    success: false
+                    error:
+                      errorCode: "1008005"
+                      errorMessage: "unable to create assistant whatsapp deployment"
+                      humanMessage: "Unable to create assistant whatsapp deployment, please try again later."
+
+  /v1/assistant-deployment/get-api-deployment/{assistantId}:
+    get:
+      tags:
+        - assistant-deployments
+      operationId: getAssistantApiDeployment
+      summary: get-api-deployment
+      description: Gets the latest API deployment for an assistant. This endpoint requires user authentication with organization and project scope.
+      parameters:
+        - $ref: "#/components/parameters/ClientSourceHeader"
+        - $ref: "#/components/parameters/AuthIdHeader"
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Uint64String"
+          description: Assistant ID for the deployment.
+      responses:
+        "200":
+          description: Assistant API deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetAssistantApiDeploymentResponse"
+              examples:
+                found:
+                  summary: Deployment found
+                  value:
+                    code: 200
+                    success: true
+                    data:
+                      id: "2230142097179373568"
+                      assistantId: "2227823180112723968"
+                      status: "active"
+                notFound:
+                  summary: No deployment exists
+                  value:
+                    code: 200
+                    success: true
+                    data: null
+        "400":
+          description: Invalid assistantId.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidAssistantId:
+                  summary: Invalid assistant ID
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1011003"
+                      errorMessage: "invalid assistant_id parameter"
+                      humanMessage: "Please provide a valid assistantId parameter."
+        "401":
+          description: Unauthenticated request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unauthenticated:
+                  summary: Missing or invalid user token
+                  value:
+                    code: 401
+                    success: false
+                    error:
+                      errorCode: "1011001"
+                      errorMessage: "unauthenticated request"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "403":
+          description: Missing authentication scope.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingScope:
+                  summary: Missing organization or project scope
+                  value:
+                    code: 403
+                    success: false
+                    error:
+                      errorCode: "1011002"
+                      errorMessage: "missing authentication scope"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "500":
+          description: Failed to get assistant API deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                getFailed:
+                  summary: Deployment lookup failed
+                  value:
+                    code: 500
+                    success: false
+                    error:
+                      errorCode: "1011004"
+                      errorMessage: "unable to get assistant api deployment"
+                      humanMessage: "Unable to get assistant api deployment, please try again later."
+  /v1/assistant-deployment/get-debugger-deployment/{assistantId}:
+    get:
+      tags:
+        - assistant-deployments
+      operationId: getAssistantDebuggerDeployment
+      summary: get-debugger-deployment
+      description: Gets the latest debugger deployment for an assistant. This endpoint requires user authentication with organization and project scope.
+      parameters:
+        - $ref: "#/components/parameters/ClientSourceHeader"
+        - $ref: "#/components/parameters/AuthIdHeader"
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Uint64String"
+          description: Assistant ID for the deployment.
+      responses:
+        "200":
+          description: Assistant debugger deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetAssistantDebuggerDeploymentResponse"
+              examples:
+                found:
+                  summary: Deployment found
+                  value:
+                    code: 200
+                    success: true
+                    data:
+                      id: "2230142097179373568"
+                      assistantId: "2227823180112723968"
+                      status: "active"
+                notFound:
+                  summary: No deployment exists
+                  value:
+                    code: 200
+                    success: true
+                    data: null
+        "400":
+          description: Invalid assistantId.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidAssistantId:
+                  summary: Invalid assistant ID
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1009003"
+                      errorMessage: "invalid assistant_id parameter"
+                      humanMessage: "Please provide a valid assistantId parameter."
+        "401":
+          description: Unauthenticated request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unauthenticated:
+                  summary: Missing or invalid user token
+                  value:
+                    code: 401
+                    success: false
+                    error:
+                      errorCode: "1009001"
+                      errorMessage: "unauthenticated request"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "403":
+          description: Missing authentication scope.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingScope:
+                  summary: Missing organization or project scope
+                  value:
+                    code: 403
+                    success: false
+                    error:
+                      errorCode: "1009002"
+                      errorMessage: "missing authentication scope"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "500":
+          description: Failed to get assistant debugger deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                getFailed:
+                  summary: Deployment lookup failed
+                  value:
+                    code: 500
+                    success: false
+                    error:
+                      errorCode: "1009004"
+                      errorMessage: "unable to get assistant debugger deployment"
+                      humanMessage: "Unable to get assistant debugger deployment, please try again later."
+  /v1/assistant-deployment/get-phone-deployment/{assistantId}:
+    get:
+      tags:
+        - assistant-deployments
+      operationId: getAssistantPhoneDeployment
+      summary: get-phone-deployment
+      description: Gets the latest phone deployment for an assistant. This endpoint requires user authentication with organization and project scope.
+      parameters:
+        - $ref: "#/components/parameters/ClientSourceHeader"
+        - $ref: "#/components/parameters/AuthIdHeader"
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Uint64String"
+          description: Assistant ID for the deployment.
+      responses:
+        "200":
+          description: Assistant phone deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetAssistantPhoneDeploymentResponse"
+              examples:
+                found:
+                  summary: Deployment found
+                  value:
+                    code: 200
+                    success: true
+                    data:
+                      id: "2230142097179373568"
+                      assistantId: "2227823180112723968"
+                      status: "active"
+                notFound:
+                  summary: No deployment exists
+                  value:
+                    code: 200
+                    success: true
+                    data: null
+        "400":
+          description: Invalid assistantId.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidAssistantId:
+                  summary: Invalid assistant ID
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1010003"
+                      errorMessage: "invalid assistant_id parameter"
+                      humanMessage: "Please provide a valid assistantId parameter."
+        "401":
+          description: Unauthenticated request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unauthenticated:
+                  summary: Missing or invalid user token
+                  value:
+                    code: 401
+                    success: false
+                    error:
+                      errorCode: "1010001"
+                      errorMessage: "unauthenticated request"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "403":
+          description: Missing authentication scope.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingScope:
+                  summary: Missing organization or project scope
+                  value:
+                    code: 403
+                    success: false
+                    error:
+                      errorCode: "1010002"
+                      errorMessage: "missing authentication scope"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "500":
+          description: Failed to get assistant phone deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                getFailed:
+                  summary: Deployment lookup failed
+                  value:
+                    code: 500
+                    success: false
+                    error:
+                      errorCode: "1010004"
+                      errorMessage: "unable to get assistant phone deployment"
+                      humanMessage: "Unable to get assistant phone deployment, please try again later."
+  /v1/assistant-deployment/get-webplugin-deployment/{assistantId}:
+    get:
+      tags:
+        - assistant-deployments
+      operationId: getAssistantWebpluginDeployment
+      summary: get-webplugin-deployment
+      description: Gets the latest web plugin deployment for an assistant. This endpoint requires user authentication with organization and project scope.
+      parameters:
+        - $ref: "#/components/parameters/ClientSourceHeader"
+        - $ref: "#/components/parameters/AuthIdHeader"
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Uint64String"
+          description: Assistant ID for the deployment.
+      responses:
+        "200":
+          description: Assistant web plugin deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetAssistantWebpluginDeploymentResponse"
+              examples:
+                found:
+                  summary: Deployment found
+                  value:
+                    code: 200
+                    success: true
+                    data:
+                      id: "2230142097179373568"
+                      assistantId: "2227823180112723968"
+                      status: "active"
+                notFound:
+                  summary: No deployment exists
+                  value:
+                    code: 200
+                    success: true
+                    data: null
+        "400":
+          description: Invalid assistantId.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidAssistantId:
+                  summary: Invalid assistant ID
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1012003"
+                      errorMessage: "invalid assistant_id parameter"
+                      humanMessage: "Please provide a valid assistantId parameter."
+        "401":
+          description: Unauthenticated request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unauthenticated:
+                  summary: Missing or invalid user token
+                  value:
+                    code: 401
+                    success: false
+                    error:
+                      errorCode: "1012001"
+                      errorMessage: "unauthenticated request"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "403":
+          description: Missing authentication scope.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingScope:
+                  summary: Missing organization or project scope
+                  value:
+                    code: 403
+                    success: false
+                    error:
+                      errorCode: "1012002"
+                      errorMessage: "missing authentication scope"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "500":
+          description: Failed to get assistant web plugin deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                getFailed:
+                  summary: Deployment lookup failed
+                  value:
+                    code: 500
+                    success: false
+                    error:
+                      errorCode: "1012004"
+                      errorMessage: "unable to get assistant webplugin deployment"
+                      humanMessage: "Unable to get assistant webplugin deployment, please try again later."
+  /v1/assistant-deployment/get-whatsapp-deployment/{assistantId}:
+    get:
+      tags:
+        - assistant-deployments
+      operationId: getAssistantWhatsappDeployment
+      summary: get-whatsapp-deployment
+      description: Gets the latest WhatsApp deployment for an assistant. This endpoint requires user authentication with organization and project scope.
+      parameters:
+        - $ref: "#/components/parameters/ClientSourceHeader"
+        - $ref: "#/components/parameters/AuthIdHeader"
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Uint64String"
+          description: Assistant ID for the deployment.
+      responses:
+        "200":
+          description: Assistant WhatsApp deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetAssistantWhatsappDeploymentResponse"
+              examples:
+                found:
+                  summary: Deployment found
+                  value:
+                    code: 200
+                    success: true
+                    data:
+                      id: "2230142097179373568"
+                      assistantId: "2227823180112723968"
+                      status: "active"
+                notFound:
+                  summary: No deployment exists
+                  value:
+                    code: 200
+                    success: true
+                    data: null
+        "400":
+          description: Invalid assistantId.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidAssistantId:
+                  summary: Invalid assistant ID
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1013003"
+                      errorMessage: "invalid assistant_id parameter"
+                      humanMessage: "Please provide a valid assistantId parameter."
+        "401":
+          description: Unauthenticated request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unauthenticated:
+                  summary: Missing or invalid user token
+                  value:
+                    code: 401
+                    success: false
+                    error:
+                      errorCode: "1013001"
+                      errorMessage: "unauthenticated request"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "403":
+          description: Missing authentication scope.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingScope:
+                  summary: Missing organization or project scope
+                  value:
+                    code: 403
+                    success: false
+                    error:
+                      errorCode: "1013002"
+                      errorMessage: "missing authentication scope"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "500":
+          description: Failed to get assistant WhatsApp deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                getFailed:
+                  summary: Deployment lookup failed
+                  value:
+                    code: 500
+                    success: false
+                    error:
+                      errorCode: "1013004"
+                      errorMessage: "unable to get assistant whatsapp deployment"
+                      humanMessage: "Unable to get assistant whatsapp deployment, please try again later."
+  /v1/assistant-deployment/get-all-api-deployment/{assistantId}:
+    get:
+      tags:
+        - assistant-deployments
+      operationId: getAllAssistantApiDeployment
+      summary: get-all-api-deployment
+      description: Gets API deployments for an assistant. This endpoint requires user authentication with organization and project scope.
+      parameters:
+        - $ref: "#/components/parameters/ClientSourceHeader"
+        - $ref: "#/components/parameters/AuthIdHeader"
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Uint64String"
+          description: Assistant ID for the deployments.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: uint32
+            default: 1
+          description: Page number to retrieve.
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: uint32
+            default: 20
+          description: Number of deployments to return per page.
+        - name: criterias
+          in: query
+          required: false
+          description: JSON encoded array of Criteria objects.
+          schema:
+            type: string
+          example: '[{"key":"status","value":"active","logic":"must"}]'
+      responses:
+        "200":
+          description: Assistant API deployments.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetAllAssistantApiDeploymentResponse"
+              examples:
+                found:
+                  summary: Deployments found
+                  value:
+                    code: 200
+                    success: true
+                    data:
+                      - id: "2230142097179373568"
+                        assistantId: "2227823180112723968"
+                        status: "active"
+                    paginated:
+                      currentPage: 1
+                      totalItem: 1
+        "400":
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidAssistantId:
+                  summary: Invalid assistant ID
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1016003"
+                      errorMessage: "invalid assistant_id parameter"
+                      humanMessage: "Please provide a valid assistantId parameter."
+                invalidRequest:
+                  summary: Invalid pagination or criteria
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1016004"
+                      errorMessage: "invalid request"
+                      humanMessage: "Invalid request."
+        "401":
+          description: Unauthenticated request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unauthenticated:
+                  summary: Missing or invalid user token
+                  value:
+                    code: 401
+                    success: false
+                    error:
+                      errorCode: "1016001"
+                      errorMessage: "unauthenticated request"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "403":
+          description: Missing authentication scope.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingScope:
+                  summary: Missing organization or project scope
+                  value:
+                    code: 403
+                    success: false
+                    error:
+                      errorCode: "1016002"
+                      errorMessage: "missing authentication scope"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "500":
+          description: Failed to get assistant API deployments.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                getFailed:
+                  summary: Deployment lookup failed
+                  value:
+                    code: 500
+                    success: false
+                    error:
+                      errorCode: "1016005"
+                      errorMessage: "unable to get assistant api deployments"
+                      humanMessage: "Unable to get assistant api deployments, please try again later."
+  /v1/assistant-deployment/get-all-debugger-deployment/{assistantId}:
+    get:
+      tags:
+        - assistant-deployments
+      operationId: getAllAssistantDebuggerDeployment
+      summary: get-all-debugger-deployment
+      description: Gets debugger deployments for an assistant. This endpoint requires user authentication with organization and project scope.
+      parameters:
+        - $ref: "#/components/parameters/ClientSourceHeader"
+        - $ref: "#/components/parameters/AuthIdHeader"
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Uint64String"
+          description: Assistant ID for the deployments.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: uint32
+            default: 1
+          description: Page number to retrieve.
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: uint32
+            default: 20
+          description: Number of deployments to return per page.
+        - name: criterias
+          in: query
+          required: false
+          description: JSON encoded array of Criteria objects.
+          schema:
+            type: string
+          example: '[{"key":"status","value":"active","logic":"must"}]'
+      responses:
+        "200":
+          description: Assistant debugger deployments.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetAllAssistantDebuggerDeploymentResponse"
+              examples:
+                found:
+                  summary: Deployments found
+                  value:
+                    code: 200
+                    success: true
+                    data:
+                      - id: "2230142097179373568"
+                        assistantId: "2227823180112723968"
+                        status: "active"
+                    paginated:
+                      currentPage: 1
+                      totalItem: 1
+        "400":
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidAssistantId:
+                  summary: Invalid assistant ID
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1014003"
+                      errorMessage: "invalid assistant_id parameter"
+                      humanMessage: "Please provide a valid assistantId parameter."
+                invalidRequest:
+                  summary: Invalid pagination or criteria
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1014004"
+                      errorMessage: "invalid request"
+                      humanMessage: "Invalid request."
+        "401":
+          description: Unauthenticated request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unauthenticated:
+                  summary: Missing or invalid user token
+                  value:
+                    code: 401
+                    success: false
+                    error:
+                      errorCode: "1014001"
+                      errorMessage: "unauthenticated request"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "403":
+          description: Missing authentication scope.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingScope:
+                  summary: Missing organization or project scope
+                  value:
+                    code: 403
+                    success: false
+                    error:
+                      errorCode: "1014002"
+                      errorMessage: "missing authentication scope"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "500":
+          description: Failed to get assistant debugger deployments.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                getFailed:
+                  summary: Deployment lookup failed
+                  value:
+                    code: 500
+                    success: false
+                    error:
+                      errorCode: "1014005"
+                      errorMessage: "unable to get assistant debugger deployments"
+                      humanMessage: "Unable to get assistant debugger deployments, please try again later."
+  /v1/assistant-deployment/get-all-phone-deployment/{assistantId}:
+    get:
+      tags:
+        - assistant-deployments
+      operationId: getAllAssistantPhoneDeployment
+      summary: get-all-phone-deployment
+      description: Gets phone deployments for an assistant. This endpoint requires user authentication with organization and project scope.
+      parameters:
+        - $ref: "#/components/parameters/ClientSourceHeader"
+        - $ref: "#/components/parameters/AuthIdHeader"
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Uint64String"
+          description: Assistant ID for the deployments.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: uint32
+            default: 1
+          description: Page number to retrieve.
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: uint32
+            default: 20
+          description: Number of deployments to return per page.
+        - name: criterias
+          in: query
+          required: false
+          description: JSON encoded array of Criteria objects.
+          schema:
+            type: string
+          example: '[{"key":"status","value":"active","logic":"must"}]'
+      responses:
+        "200":
+          description: Assistant phone deployments.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetAllAssistantPhoneDeploymentResponse"
+              examples:
+                found:
+                  summary: Deployments found
+                  value:
+                    code: 200
+                    success: true
+                    data:
+                      - id: "2230142097179373568"
+                        assistantId: "2227823180112723968"
+                        status: "active"
+                    paginated:
+                      currentPage: 1
+                      totalItem: 1
+        "400":
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidAssistantId:
+                  summary: Invalid assistant ID
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1015003"
+                      errorMessage: "invalid assistant_id parameter"
+                      humanMessage: "Please provide a valid assistantId parameter."
+                invalidRequest:
+                  summary: Invalid pagination or criteria
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1015004"
+                      errorMessage: "invalid request"
+                      humanMessage: "Invalid request."
+        "401":
+          description: Unauthenticated request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unauthenticated:
+                  summary: Missing or invalid user token
+                  value:
+                    code: 401
+                    success: false
+                    error:
+                      errorCode: "1015001"
+                      errorMessage: "unauthenticated request"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "403":
+          description: Missing authentication scope.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingScope:
+                  summary: Missing organization or project scope
+                  value:
+                    code: 403
+                    success: false
+                    error:
+                      errorCode: "1015002"
+                      errorMessage: "missing authentication scope"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "500":
+          description: Failed to get assistant phone deployments.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                getFailed:
+                  summary: Deployment lookup failed
+                  value:
+                    code: 500
+                    success: false
+                    error:
+                      errorCode: "1015005"
+                      errorMessage: "unable to get assistant phone deployments"
+                      humanMessage: "Unable to get assistant phone deployments, please try again later."
+  /v1/assistant-deployment/get-all-webplugin-deployment/{assistantId}:
+    get:
+      tags:
+        - assistant-deployments
+      operationId: getAllAssistantWebpluginDeployment
+      summary: get-all-webplugin-deployment
+      description: Gets web plugin deployments for an assistant. This endpoint requires user authentication with organization and project scope.
+      parameters:
+        - $ref: "#/components/parameters/ClientSourceHeader"
+        - $ref: "#/components/parameters/AuthIdHeader"
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Uint64String"
+          description: Assistant ID for the deployments.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: uint32
+            default: 1
+          description: Page number to retrieve.
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: uint32
+            default: 20
+          description: Number of deployments to return per page.
+        - name: criterias
+          in: query
+          required: false
+          description: JSON encoded array of Criteria objects.
+          schema:
+            type: string
+          example: '[{"key":"status","value":"active","logic":"must"}]'
+      responses:
+        "200":
+          description: Assistant web plugin deployments.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetAllAssistantWebpluginDeploymentResponse"
+              examples:
+                found:
+                  summary: Deployments found
+                  value:
+                    code: 200
+                    success: true
+                    data:
+                      - id: "2230142097179373568"
+                        assistantId: "2227823180112723968"
+                        status: "active"
+                    paginated:
+                      currentPage: 1
+                      totalItem: 1
+        "400":
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidAssistantId:
+                  summary: Invalid assistant ID
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1017003"
+                      errorMessage: "invalid assistant_id parameter"
+                      humanMessage: "Please provide a valid assistantId parameter."
+                invalidRequest:
+                  summary: Invalid pagination or criteria
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1017004"
+                      errorMessage: "invalid request"
+                      humanMessage: "Invalid request."
+        "401":
+          description: Unauthenticated request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unauthenticated:
+                  summary: Missing or invalid user token
+                  value:
+                    code: 401
+                    success: false
+                    error:
+                      errorCode: "1017001"
+                      errorMessage: "unauthenticated request"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "403":
+          description: Missing authentication scope.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingScope:
+                  summary: Missing organization or project scope
+                  value:
+                    code: 403
+                    success: false
+                    error:
+                      errorCode: "1017002"
+                      errorMessage: "missing authentication scope"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "500":
+          description: Failed to get assistant web plugin deployments.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                getFailed:
+                  summary: Deployment lookup failed
+                  value:
+                    code: 500
+                    success: false
+                    error:
+                      errorCode: "1017005"
+                      errorMessage: "unable to get assistant webplugin deployments"
+                      humanMessage: "Unable to get assistant webplugin deployments, please try again later."
+  /v1/assistant-deployment/get-all-whatsapp-deployment/{assistantId}:
+    get:
+      tags:
+        - assistant-deployments
+      operationId: getAllAssistantWhatsappDeployment
+      summary: get-all-whatsapp-deployment
+      description: Gets WhatsApp deployments for an assistant. This endpoint requires user authentication with organization and project scope.
+      parameters:
+        - $ref: "#/components/parameters/ClientSourceHeader"
+        - $ref: "#/components/parameters/AuthIdHeader"
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Uint64String"
+          description: Assistant ID for the deployments.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: uint32
+            default: 1
+          description: Page number to retrieve.
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: uint32
+            default: 20
+          description: Number of deployments to return per page.
+        - name: criterias
+          in: query
+          required: false
+          description: JSON encoded array of Criteria objects.
+          schema:
+            type: string
+          example: '[{"key":"status","value":"active","logic":"must"}]'
+      responses:
+        "200":
+          description: Assistant WhatsApp deployments.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetAllAssistantWhatsappDeploymentResponse"
+              examples:
+                found:
+                  summary: Deployments found
+                  value:
+                    code: 200
+                    success: true
+                    data:
+                      - id: "2230142097179373568"
+                        assistantId: "2227823180112723968"
+                        status: "active"
+                    paginated:
+                      currentPage: 1
+                      totalItem: 1
+        "400":
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidAssistantId:
+                  summary: Invalid assistant ID
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1018003"
+                      errorMessage: "invalid assistant_id parameter"
+                      humanMessage: "Please provide a valid assistantId parameter."
+                invalidRequest:
+                  summary: Invalid pagination or criteria
+                  value:
+                    code: 400
+                    success: false
+                    error:
+                      errorCode: "1018004"
+                      errorMessage: "invalid request"
+                      humanMessage: "Invalid request."
+        "401":
+          description: Unauthenticated request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unauthenticated:
+                  summary: Missing or invalid user token
+                  value:
+                    code: 401
+                    success: false
+                    error:
+                      errorCode: "1018001"
+                      errorMessage: "unauthenticated request"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "403":
+          description: Missing authentication scope.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingScope:
+                  summary: Missing organization or project scope
+                  value:
+                    code: 403
+                    success: false
+                    error:
+                      errorCode: "1018002"
+                      errorMessage: "missing authentication scope"
+                      humanMessage: "Unauthenticated request, please try again with valid authentication."
+        "500":
+          description: Failed to get assistant WhatsApp deployments.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                getFailed:
+                  summary: Deployment lookup failed
+                  value:
+                    code: 500
+                    success: false
+                    error:
+                      errorCode: "1018005"
+                      errorMessage: "unable to get assistant whatsapp deployments"
+                      humanMessage: "Unable to get assistant whatsapp deployments, please try again later."
+
   /v1/talk/create-phone-call:
     post:
       tags:
@@ -634,6 +2394,116 @@ components:
         - `1004007`: invalid ideal_timeout parameter - Please provide idealTimeout between 15 and 120 seconds.
         - `1004008`: invalid ideal_timeout_backoff parameter - Please provide idealTimeoutBackoff between 0 and 5 times.
         - `1004009`: invalid max_session_duration parameter - Please provide maxSessionDuration between 180 and 600 seconds.
+
+        Create Assistant Phone Deployment:
+        - `1005001`: invalid request - Invalid request.
+        - `1005002`: unauthenticated request - Unauthenticated request, please try again with valid authentication.
+        - `1005003`: missing authentication scope - Unauthenticated request, please try again with valid authentication.
+        - `1005004`: invalid assistant_id parameter - Please provide a valid assistantId parameter.
+        - `1005005`: unable to create assistant phone deployment - Unable to create assistant phone deployment, please try again later.
+        - `1005006`: invalid audio provider parameter - Please provide a valid audioProvider parameter.
+        - `1005007`: invalid ideal_timeout parameter - Please provide idealTimeout between 15 and 120 seconds.
+        - `1005008`: invalid ideal_timeout_backoff parameter - Please provide idealTimeoutBackoff between 0 and 5 times.
+        - `1005009`: invalid max_session_duration parameter - Please provide maxSessionDuration between 180 and 600 seconds.
+        - `1005010`: missing phone_provider_name parameter - Please provide the required phoneProviderName parameter.
+
+        Create Assistant API Deployment:
+        - `1006001`: invalid request - Invalid request.
+        - `1006002`: unauthenticated request - Unauthenticated request, please try again with valid authentication.
+        - `1006003`: missing authentication scope - Unauthenticated request, please try again with valid authentication.
+        - `1006004`: invalid assistant_id parameter - Please provide a valid assistantId parameter.
+        - `1006005`: unable to create assistant api deployment - Unable to create assistant api deployment, please try again later.
+        - `1006006`: invalid audio provider parameter - Please provide a valid audioProvider parameter.
+        - `1006007`: invalid ideal_timeout parameter - Please provide idealTimeout between 15 and 120 seconds.
+        - `1006008`: invalid ideal_timeout_backoff parameter - Please provide idealTimeoutBackoff between 0 and 5 times.
+        - `1006009`: invalid max_session_duration parameter - Please provide maxSessionDuration between 180 and 600 seconds.
+
+        Create Assistant Webplugin Deployment:
+        - `1007001`: invalid request - Invalid request.
+        - `1007002`: unauthenticated request - Unauthenticated request, please try again with valid authentication.
+        - `1007003`: missing authentication scope - Unauthenticated request, please try again with valid authentication.
+        - `1007004`: invalid assistant_id parameter - Please provide a valid assistantId parameter.
+        - `1007005`: unable to create assistant web plugin deployment - Unable to create assistant web plugin deployment, please try again later.
+        - `1007006`: invalid audio provider parameter - Please provide a valid audioProvider parameter.
+        - `1007007`: invalid ideal_timeout parameter - Please provide idealTimeout between 15 and 120 seconds.
+        - `1007008`: invalid ideal_timeout_backoff parameter - Please provide idealTimeoutBackoff between 0 and 5 times.
+        - `1007009`: invalid max_session_duration parameter - Please provide maxSessionDuration between 180 and 600 seconds.
+
+        Create Assistant WhatsApp Deployment:
+        - `1008001`: invalid request - Invalid request.
+        - `1008002`: unauthenticated request - Unauthenticated request, please try again with valid authentication.
+        - `1008003`: missing authentication scope - Unauthenticated request, please try again with valid authentication.
+        - `1008004`: invalid assistant_id parameter - Please provide a valid assistantId parameter.
+        - `1008005`: unable to create assistant whatsapp deployment - Unable to create assistant whatsapp deployment, please try again later.
+        - `1008006`: invalid ideal_timeout parameter - Please provide idealTimeout between 15 and 120 seconds.
+        - `1008007`: invalid ideal_timeout_backoff parameter - Please provide idealTimeoutBackoff between 0 and 5 times.
+        - `1008008`: invalid max_session_duration parameter - Please provide maxSessionDuration between 180 and 600 seconds.
+        - `1008009`: missing whatsapp_provider_name parameter - Please provide the required whatsappProviderName parameter.
+
+        Get Assistant Debugger Deployment:
+        - `1009001`: unauthenticated request - Unauthenticated request, please try again with valid authentication.
+        - `1009002`: missing authentication scope - Unauthenticated request, please try again with valid authentication.
+        - `1009003`: invalid assistant_id parameter - Please provide a valid assistantId parameter.
+        - `1009004`: unable to get assistant debugger deployment - Unable to get assistant debugger deployment, please try again later.
+
+        Get Assistant Phone Deployment:
+        - `1010001`: unauthenticated request - Unauthenticated request, please try again with valid authentication.
+        - `1010002`: missing authentication scope - Unauthenticated request, please try again with valid authentication.
+        - `1010003`: invalid assistant_id parameter - Please provide a valid assistantId parameter.
+        - `1010004`: unable to get assistant phone deployment - Unable to get assistant phone deployment, please try again later.
+
+        Get Assistant API Deployment:
+        - `1011001`: unauthenticated request - Unauthenticated request, please try again with valid authentication.
+        - `1011002`: missing authentication scope - Unauthenticated request, please try again with valid authentication.
+        - `1011003`: invalid assistant_id parameter - Please provide a valid assistantId parameter.
+        - `1011004`: unable to get assistant api deployment - Unable to get assistant api deployment, please try again later.
+
+        Get Assistant Webplugin Deployment:
+        - `1012001`: unauthenticated request - Unauthenticated request, please try again with valid authentication.
+        - `1012002`: missing authentication scope - Unauthenticated request, please try again with valid authentication.
+        - `1012003`: invalid assistant_id parameter - Please provide a valid assistantId parameter.
+        - `1012004`: unable to get assistant webplugin deployment - Unable to get assistant webplugin deployment, please try again later.
+
+        Get Assistant WhatsApp Deployment:
+        - `1013001`: unauthenticated request - Unauthenticated request, please try again with valid authentication.
+        - `1013002`: missing authentication scope - Unauthenticated request, please try again with valid authentication.
+        - `1013003`: invalid assistant_id parameter - Please provide a valid assistantId parameter.
+        - `1013004`: unable to get assistant whatsapp deployment - Unable to get assistant whatsapp deployment, please try again later.
+
+        Get All Assistant Debugger Deployments:
+        - `1014001`: unauthenticated request - Unauthenticated request, please try again with valid authentication.
+        - `1014002`: missing authentication scope - Unauthenticated request, please try again with valid authentication.
+        - `1014003`: invalid assistant_id parameter - Please provide a valid assistantId parameter.
+        - `1014004`: invalid request - Invalid request.
+        - `1014005`: unable to get assistant debugger deployments - Unable to get assistant debugger deployments, please try again later.
+
+        Get All Assistant Phone Deployments:
+        - `1015001`: unauthenticated request - Unauthenticated request, please try again with valid authentication.
+        - `1015002`: missing authentication scope - Unauthenticated request, please try again with valid authentication.
+        - `1015003`: invalid assistant_id parameter - Please provide a valid assistantId parameter.
+        - `1015004`: invalid request - Invalid request.
+        - `1015005`: unable to get assistant phone deployments - Unable to get assistant phone deployments, please try again later.
+
+        Get All Assistant API Deployments:
+        - `1016001`: unauthenticated request - Unauthenticated request, please try again with valid authentication.
+        - `1016002`: missing authentication scope - Unauthenticated request, please try again with valid authentication.
+        - `1016003`: invalid assistant_id parameter - Please provide a valid assistantId parameter.
+        - `1016004`: invalid request - Invalid request.
+        - `1016005`: unable to get assistant api deployments - Unable to get assistant api deployments, please try again later.
+
+        Get All Assistant Webplugin Deployments:
+        - `1017001`: unauthenticated request - Unauthenticated request, please try again with valid authentication.
+        - `1017002`: missing authentication scope - Unauthenticated request, please try again with valid authentication.
+        - `1017003`: invalid assistant_id parameter - Please provide a valid assistantId parameter.
+        - `1017004`: invalid request - Invalid request.
+        - `1017005`: unable to get assistant webplugin deployments - Unable to get assistant webplugin deployments, please try again later.
+
+        Get All Assistant WhatsApp Deployments:
+        - `1018001`: unauthenticated request - Unauthenticated request, please try again with valid authentication.
+        - `1018002`: missing authentication scope - Unauthenticated request, please try again with valid authentication.
+        - `1018003`: invalid assistant_id parameter - Please provide a valid assistantId parameter.
+        - `1018004`: invalid request - Invalid request.
+        - `1018005`: unable to get assistant whatsapp deployments - Unable to get assistant whatsapp deployments, please try again later.
       example: "1002003"
     AssistantDefinition:
       type: object
@@ -737,6 +2607,211 @@ components:
           $ref: "#/components/schemas/DeploymentAudioProviderRequest"
         outputAudio:
           $ref: "#/components/schemas/DeploymentAudioProviderRequest"
+    CreateAssistantPhoneDeploymentRequest:
+      type: object
+      required:
+        - assistantId
+        - phoneProviderName
+      properties:
+        assistantId:
+          $ref: "#/components/schemas/Uint64String"
+          description: Assistant ID for the phone deployment.
+        greeting:
+          type: string
+          description: First message the assistant sends when the phone session starts.
+          example: "Hi, how can I help you today?"
+        mistake:
+          type: string
+          description: Message to use when the assistant cannot understand or handle the input.
+          example: "Sorry, I did not understand that."
+        idealTimeout:
+          type: integer
+          format: uint64
+          minimum: 15
+          maximum: 120
+          description: Idle timeout in seconds before the assistant sends the timeout message.
+          example: 30
+        idealTimeoutBackoff:
+          type: integer
+          format: uint64
+          minimum: 0
+          maximum: 5
+          description: Number of idle-timeout retries before the session can end.
+          example: 2
+        idealTimeoutMessage:
+          type: string
+          description: Message sent when the phone session reaches the idle timeout.
+          example: "Are you still there?"
+        maxSessionDuration:
+          type: integer
+          format: uint64
+          minimum: 180
+          maximum: 600
+          description: Maximum phone session duration in seconds.
+          example: 300
+        phoneProviderName:
+          type: string
+          description: Telephony provider name.
+          example: twilio
+        phoneOptions:
+          type: array
+          description: Provider-specific phone options.
+          items:
+            $ref: "#/components/schemas/Metadata"
+        inputAudio:
+          $ref: "#/components/schemas/DeploymentAudioProviderRequest"
+        outputAudio:
+          $ref: "#/components/schemas/DeploymentAudioProviderRequest"
+    CreateAssistantApiDeploymentRequest:
+      type: object
+      required:
+        - assistantId
+      properties:
+        assistantId:
+          $ref: "#/components/schemas/Uint64String"
+          description: Assistant ID for the API deployment.
+        greeting:
+          type: string
+          description: First message the assistant sends when the API session starts.
+          example: "Hi, how can I help you today?"
+        mistake:
+          type: string
+          description: Message to use when the assistant cannot understand or handle the input.
+          example: "Sorry, I did not understand that."
+        idealTimeout:
+          type: integer
+          format: uint64
+          minimum: 15
+          maximum: 120
+          description: Idle timeout in seconds before the assistant sends the timeout message.
+          example: 30
+        idealTimeoutBackoff:
+          type: integer
+          format: uint64
+          minimum: 0
+          maximum: 5
+          description: Number of idle-timeout retries before the session can end.
+          example: 2
+        idealTimeoutMessage:
+          type: string
+          description: Message sent when the API session reaches the idle timeout.
+          example: "Are you still there?"
+        maxSessionDuration:
+          type: integer
+          format: uint64
+          minimum: 180
+          maximum: 600
+          description: Maximum API session duration in seconds.
+          example: 300
+        inputAudio:
+          $ref: "#/components/schemas/DeploymentAudioProviderRequest"
+        outputAudio:
+          $ref: "#/components/schemas/DeploymentAudioProviderRequest"
+    CreateAssistantWebpluginDeploymentRequest:
+      type: object
+      required:
+        - assistantId
+      properties:
+        assistantId:
+          $ref: "#/components/schemas/Uint64String"
+          description: Assistant ID for the web plugin deployment.
+        greeting:
+          type: string
+          description: First message the assistant sends when the web plugin session starts.
+          example: "Hi, how can I help you today?"
+        mistake:
+          type: string
+          description: Message to use when the assistant cannot understand or handle the input.
+          example: "Sorry, I did not understand that."
+        idealTimeout:
+          type: integer
+          format: uint64
+          minimum: 15
+          maximum: 120
+          description: Idle timeout in seconds before the assistant sends the timeout message.
+          example: 30
+        idealTimeoutBackoff:
+          type: integer
+          format: uint64
+          minimum: 0
+          maximum: 5
+          description: Number of idle-timeout retries before the session can end.
+          example: 2
+        idealTimeoutMessage:
+          type: string
+          description: Message sent when the web plugin session reaches the idle timeout.
+          example: "Are you still there?"
+        maxSessionDuration:
+          type: integer
+          format: uint64
+          minimum: 180
+          maximum: 600
+          description: Maximum web plugin session duration in seconds.
+          example: 300
+        suggestion:
+          type: array
+          description: Suggested starter prompts shown in the web widget.
+          items:
+            type: string
+          example:
+            - "Book a demo"
+            - "Talk to support"
+        inputAudio:
+          $ref: "#/components/schemas/DeploymentAudioProviderRequest"
+        outputAudio:
+          $ref: "#/components/schemas/DeploymentAudioProviderRequest"
+    CreateAssistantWhatsappDeploymentRequest:
+      type: object
+      required:
+        - assistantId
+        - whatsappProviderName
+      properties:
+        assistantId:
+          $ref: "#/components/schemas/Uint64String"
+          description: Assistant ID for the WhatsApp deployment.
+        greeting:
+          type: string
+          description: First message the assistant sends when the WhatsApp session starts.
+          example: "Hi, how can I help you today?"
+        mistake:
+          type: string
+          description: Message to use when the assistant cannot understand or handle the input.
+          example: "Sorry, I did not understand that."
+        idealTimeout:
+          type: integer
+          format: uint64
+          minimum: 15
+          maximum: 120
+          description: Idle timeout in seconds before the assistant sends the timeout message.
+          example: 30
+        idealTimeoutBackoff:
+          type: integer
+          format: uint64
+          minimum: 0
+          maximum: 5
+          description: Number of idle-timeout retries before the session can end.
+          example: 2
+        idealTimeoutMessage:
+          type: string
+          description: Message sent when the WhatsApp session reaches the idle timeout.
+          example: "Are you still there?"
+        maxSessionDuration:
+          type: integer
+          format: uint64
+          minimum: 180
+          maximum: 600
+          description: Maximum WhatsApp session duration in seconds.
+          example: 300
+        whatsappProviderName:
+          type: string
+          description: WhatsApp provider name.
+          example: gupshup
+        whatsappOptions:
+          type: array
+          description: Provider-specific WhatsApp options.
+          items:
+            $ref: "#/components/schemas/Metadata"
+
     DeploymentAudioProviderRequest:
       type: object
       required:
@@ -927,6 +3002,153 @@ components:
           $ref: "#/components/schemas/AssistantDebuggerDeployment"
         error:
           $ref: "#/components/schemas/Error"
+    GetAssistantPhoneDeploymentResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/AssistantPhoneDeployment"
+        error:
+          $ref: "#/components/schemas/Error"
+    GetAssistantApiDeploymentResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/AssistantApiDeployment"
+        error:
+          $ref: "#/components/schemas/Error"
+    GetAssistantWebpluginDeploymentResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/AssistantWebpluginDeployment"
+        error:
+          $ref: "#/components/schemas/Error"
+    GetAssistantWhatsappDeploymentResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/AssistantWhatsappDeployment"
+        error:
+          $ref: "#/components/schemas/Error"
+    GetAllAssistantApiDeploymentResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantApiDeployment"
+        error:
+          $ref: "#/components/schemas/Error"
+        paginated:
+          $ref: "#/components/schemas/Paginated"
+    GetAllAssistantDebuggerDeploymentResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantDebuggerDeployment"
+        error:
+          $ref: "#/components/schemas/Error"
+        paginated:
+          $ref: "#/components/schemas/Paginated"
+    GetAllAssistantPhoneDeploymentResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantPhoneDeployment"
+        error:
+          $ref: "#/components/schemas/Error"
+        paginated:
+          $ref: "#/components/schemas/Paginated"
+    GetAllAssistantWebpluginDeploymentResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantWebpluginDeployment"
+        error:
+          $ref: "#/components/schemas/Error"
+        paginated:
+          $ref: "#/components/schemas/Paginated"
+    GetAllAssistantWhatsappDeploymentResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantWhatsappDeployment"
+        error:
+          $ref: "#/components/schemas/Error"
+        paginated:
+          $ref: "#/components/schemas/Paginated"
+
     AssistantDebuggerDeployment:
       type: object
       properties:
@@ -961,6 +3183,155 @@ components:
           maximum: 5
         idealTimeoutMessage:
           type: string
+    AssistantPhoneDeployment:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        assistantId:
+          $ref: "#/components/schemas/Uint64String"
+        greeting:
+          type: string
+        mistake:
+          type: string
+        inputAudio:
+          $ref: "#/components/schemas/DeploymentAudioProvider"
+        outputAudio:
+          $ref: "#/components/schemas/DeploymentAudioProvider"
+        phoneProviderName:
+          type: string
+        phoneOptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Metadata"
+        status:
+          type: string
+        maxSessionDuration:
+          type: integer
+          format: uint64
+          minimum: 180
+          maximum: 600
+        idealTimeout:
+          type: integer
+          format: uint64
+          minimum: 15
+          maximum: 120
+        idealTimeoutBackoff:
+          type: integer
+          format: uint64
+          minimum: 0
+          maximum: 5
+        idealTimeoutMessage:
+          type: string
+    AssistantApiDeployment:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        assistantId:
+          $ref: "#/components/schemas/Uint64String"
+        greeting:
+          type: string
+        mistake:
+          type: string
+        inputAudio:
+          $ref: "#/components/schemas/DeploymentAudioProvider"
+        outputAudio:
+          $ref: "#/components/schemas/DeploymentAudioProvider"
+        status:
+          type: string
+        maxSessionDuration:
+          type: integer
+          format: uint64
+          minimum: 180
+          maximum: 600
+        idealTimeout:
+          type: integer
+          format: uint64
+          minimum: 15
+          maximum: 120
+        idealTimeoutBackoff:
+          type: integer
+          format: uint64
+          minimum: 0
+          maximum: 5
+        idealTimeoutMessage:
+          type: string
+    AssistantWebpluginDeployment:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        assistantId:
+          $ref: "#/components/schemas/Uint64String"
+        greeting:
+          type: string
+        mistake:
+          type: string
+        inputAudio:
+          $ref: "#/components/schemas/DeploymentAudioProvider"
+        outputAudio:
+          $ref: "#/components/schemas/DeploymentAudioProvider"
+        suggestion:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+        maxSessionDuration:
+          type: integer
+          format: uint64
+          minimum: 180
+          maximum: 600
+        idealTimeout:
+          type: integer
+          format: uint64
+          minimum: 15
+          maximum: 120
+        idealTimeoutBackoff:
+          type: integer
+          format: uint64
+          minimum: 0
+          maximum: 5
+        idealTimeoutMessage:
+          type: string
+    AssistantWhatsappDeployment:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uint64String"
+        assistantId:
+          $ref: "#/components/schemas/Uint64String"
+        greeting:
+          type: string
+        mistake:
+          type: string
+        whatsappProviderName:
+          type: string
+        whatsappOptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Metadata"
+        status:
+          type: string
+        maxSessionDuration:
+          type: integer
+          format: uint64
+          minimum: 180
+          maximum: 600
+        idealTimeout:
+          type: integer
+          format: uint64
+          minimum: 15
+          maximum: 120
+        idealTimeoutBackoff:
+          type: integer
+          format: uint64
+          minimum: 0
+          maximum: 5
+        idealTimeoutMessage:
+          type: string
+
     DeploymentAudioProvider:
       type: object
       properties:
@@ -1284,6 +3655,40 @@ components:
           type: string
         value:
           type: string
+    Criteria:
+      type: object
+      properties:
+        key:
+          type: string
+          description: Field name to filter by.
+        value:
+          type: string
+          description: Value to match against the field.
+        logic:
+          type: string
+          description: Criteria logic, such as should or must.
+    Paginate:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: uint32
+          example: 1
+        pageSize:
+          type: integer
+          format: uint32
+          example: 20
+    Paginated:
+      type: object
+      properties:
+        currentPage:
+          type: integer
+          format: uint32
+          example: 1
+        totalItem:
+          type: integer
+          format: uint32
+          example: 1
     Argument:
       type: object
       properties:
