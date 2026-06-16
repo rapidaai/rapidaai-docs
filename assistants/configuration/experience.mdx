@@ -1,0 +1,175 @@
+---
+title: "Experience"
+description: "Define shared session behavior for assistant deployments."
+sidebarTitle: "Experience"
+---
+
+Experience settings control how a deployment behaves during a live session: what the assistant says first, what happens when the user goes quiet, how long the session can run, and which starter prompts appear in supported channels.
+
+These settings are configured per deployment. The same assistant can use different experience settings for Phone Call, Web Widget, Web App / SDK, WhatsApp, and Debugger deployments.
+
+<Info>
+Experience settings are separate from [Listen](/assistants/configuration/listen) and [Speak](/assistants/configuration/speak) settings. Use Listen for speech-to-text, VAD, noise cancellation, and end-of-speech configuration. Use Speak for text-to-speech, voice, pronunciation, and speech delivery.
+</Info>
+
+## Parameter reference
+
+| Dashboard label | SDK / API field | Type | Default | Range | Description |
+|-----------------|-----------------|------|---------|-------|-------------|
+| Greeting | `greeting` | `string` | None | Any text | First message sent when a session starts. In voice deployments, this is spoken. In text deployments, this is shown as the first assistant message. |
+| Greeting interruptible | `greetingInterruptible` | `boolean` | `true` | `true` / `false` | Controls whether users can interrupt the opening greeting in audio sessions. Set to `false` when the full greeting must be heard before the user can speak. |
+| Error message | `mistake` | `string` | None | Any text | Fallback message used when the assistant cannot understand the user input, cannot handle the request, or hits an unrecoverable runtime error. |
+| Idle silence timeout | `idealTimeout` | `uint64` seconds | `30` | `15`-`120` | Time to wait for user input before sending the idle message. |
+| Idle timeout backoff | `idealTimeoutBackoff` | `uint64` | `2` | `0`-`5` | Number of idle-timeout retries before the inactive session is allowed to end. |
+| Idle message | `idealTimeoutMessage` | `string` | `Are you there?` | Any text | Message sent when the idle silence timeout expires without user input. |
+| Maximum session duration | `maxSessionDuration` | `uint64` seconds | `300` | `180`-`600` | Hard cap on session length. The session ends when this limit is reached, even if the user is active. |
+| Quickstart questions | `suggestion` / `suggestionList` | `string[]` | None | List of text prompts | Starter prompts shown as clickable options in the Web Widget home screen. |
+
+<Note>
+Generated SDK method names vary by language. For example, the JavaScript SDK uses setters such as `setGreeting`, `setMistake`, and `setIdealtimeout`. The logical field names above match the deployment API and SDK reference pages.
+</Note>
+
+## Runtime overrides
+
+You can override experience settings for a single outbound phone call by passing experience options when creating the call. Runtime overrides do not update the saved Phone Call deployment; they only apply to the conversation being created.
+
+Use the `options` map on `CreatePhoneCallRequest` with `experience.*` keys:
+
+```json
+{
+  "assistant": {
+    "assistantId": "2230142097179373568",
+    "version": "latest"
+  },
+  "toNumber": "+14155550123",
+  "fromNumber": "+14155550100",
+  "args": {
+    "name": "Jane"
+  },
+  "options": {
+    "experience.greeting": "Hi {{name}}, this is Rapida calling about your appointment.",
+    "experience.greeting_interruptible": false,
+    "experience.mistake": "Sorry, I did not understand that.",
+    "experience.ideal_timeout": 30,
+    "experience.ideal_timeout_backoff": 2,
+    "experience.ideal_timeout_message": "Are you still there?",
+    "experience.max_session_duration": 300
+  }
+}
+```
+
+For bulk outbound calls, pass the same `options` object on each `CreatePhoneCallRequest` inside the bulk request. This lets each recipient receive a different greeting, timeout policy, or session duration.
+
+| Option key | Type | Overrides | Description |
+|------------|------|-----------|-------------|
+| `experience.greeting` | `string` | `greeting` | Opening message for this call. Supports the same `{{variable}}` syntax as the saved deployment greeting. |
+| `experience.greeting_interruptible` | `boolean` | `greetingInterruptible` | Controls whether the caller can interrupt the opening greeting. |
+| `experience.mistake` | `string` | `mistake` | Error or fallback message for this call. |
+| `experience.ideal_timeout` | `number` seconds | `idealTimeout` | Idle silence timeout for this call. |
+| `experience.ideal_timeout_backoff` | `number` | `idealTimeoutBackoff` | Number of idle prompts before the inactive call can end. |
+| `experience.ideal_timeout_message` | `string` | `idealTimeoutMessage` | Message sent when the idle timeout expires. |
+| `experience.max_session_duration` | `number` seconds | `maxSessionDuration` | Hard session duration limit for this call. |
+
+<Tip>
+Use `args` for values you want to interpolate into prompts, such as `{{name}}`. Use `options` for runtime experience overrides, such as `experience.greeting` or `experience.max_session_duration`.
+</Tip>
+
+## Session lifecycle
+
+<Steps>
+  <Step title="Session starts">
+    Rapida creates a session for the selected deployment and sends the configured `greeting`.
+  </Step>
+  <Step title="User becomes inactive">
+    If no user input arrives within `idealTimeout`, Rapida sends `idealTimeoutMessage`.
+  </Step>
+  <Step title="Idle retries are exhausted">
+    `idealTimeoutBackoff` controls how many idle prompts can be sent before the inactive session is allowed to end.
+  </Step>
+  <Step title="Session reaches its hard limit">
+    `maxSessionDuration` ends the session regardless of idle state. Use this to prevent runaway calls, long browser sessions, or abandoned conversations.
+  </Step>
+</Steps>
+
+## Greeting variables
+
+Use `{{variable}}` syntax in the greeting when the deployment receives runtime arguments.
+
+For Web App / SDK public URLs, query parameters are available to the greeting:
+
+```text
+https://app.rapida.ai/preview/public/assistant/{ASSISTANT_ID}?token={KEY}&name=John
+```
+
+```text
+Hello {{name}}, how can I help you today?
+```
+
+For outbound phone calls, pass runtime values through call `args` and reference the matching variable names in the greeting.
+
+## Quickstart questions
+
+Quickstart questions are only used by Web Widget deployments. They appear below the greeting as clickable prompts that help users start a conversation without typing.
+
+Good quickstart questions are short, specific, and action-oriented:
+
+| Good | Avoid |
+|------|-------|
+| `Book a demo` | `How can I use this assistant?` |
+| `Check my order status` | `Tell me more` |
+| `Talk to support` | `Question` |
+
+## Recommended defaults
+
+Use these defaults for most deployments unless the channel needs different behavior.
+
+| Setting | Recommended value | Notes |
+|---------|-------------------|-------|
+| Greeting | A short channel-specific opener | Voice greetings should be speakable in one sentence. |
+| Greeting interruptible | `true` | Set to `false` only when callers must hear the full greeting before speaking. |
+| Error message | `Sorry, I did not understand that.` | Keep it short and avoid exposing internal errors. |
+| Idle silence timeout | `30` | Lower values feel faster; higher values give users more time to respond. |
+| Idle timeout backoff | `2` | Gives the user two chances before ending an inactive session. |
+| Idle message | `Are you still there?` | Use a neutral prompt that works across channels. |
+| Maximum session duration | `300` | Five minutes is a good starting point for calls and live web sessions. |
+
+## SDK / API shape
+
+The same experience fields appear across deployment variants:
+
+```json
+{
+  "greeting": "Hi {{name}}, how can I help you today?",
+  "greetingInterruptible": true,
+  "mistake": "Sorry, I did not understand that.",
+  "idealTimeout": 30,
+  "idealTimeoutBackoff": 2,
+  "idealTimeoutMessage": "Are you still there?",
+  "maxSessionDuration": 300
+}
+```
+
+Web Widget deployments can also include quickstart questions:
+
+```json
+{
+  "suggestion": ["Book a demo", "Talk to support", "Check my order status"]
+}
+```
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Phone Call" icon="phone" href="/voice-deployment-options/phone">
+    Configure experience settings for inbound and outbound calls.
+  </Card>
+  <Card title="Web Widget" icon="message-square" href="/voice-deployment-options/web-widget">
+    Add greeting text, quickstart questions, and widget behavior.
+  </Card>
+  <Card title="Listen" icon="mic" href="/assistants/configuration/listen">
+    Configure speech-to-text, noise cancellation, VAD, and end-of-speech.
+  </Card>
+  <Card title="Speak" icon="volume-2" href="/assistants/configuration/speak">
+    Configure text-to-speech, voices, pronunciation, and spoken output.
+  </Card>
+</CardGroup>

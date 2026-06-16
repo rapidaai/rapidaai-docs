@@ -4,7 +4,7 @@ description: "Understand what an assistant is, how it is structured, how a live 
 sidebarTitle: "Overview"
 ---
 
-An **assistant** is the core unit of Rapida. It packages everything needed to run a production voice AI conversation — the LLM and prompt, the voice pipeline (STT, VAD, TTS), knowledge sources, tools, and deployment channels — into a single versioned object.
+An **assistant** is the core unit of Rapida. It packages everything needed to run a production voice AI conversation — the LLM and prompt, experience settings, listen/speak configuration, knowledge sources, tools, and deployment channels — into a single versioned object.
 
 One assistant configuration drives every channel. The same prompt, model, and voice settings that handle your inbound phone calls also power your web widget and WhatsApp deployment. Change something once and it propagates everywhere.
 
@@ -18,8 +18,8 @@ Assistants are **version-controlled**. Every prompt or model change creates a ne
   <Card title="Prompt & Model" icon="cpu">
     Define persona and behavior with a system prompt, then choose and tune the LLM model per version.
   </Card>
-  <Card title="Voice Pipeline" icon="mic" href="/assistants/voice-pipeline">
-    Tune STT, [VAD](/assistants/voice-activity-detection), noise cancellation, [end-of-speech detection](/assistants/end-of-speech), and TTS per deployment channel.
+  <Card title="Configuration" icon="sliders-horizontal" href="/assistants/configuration/experience">
+    Tune experience, [Listen](/assistants/configuration/listen), and [Speak](/assistants/configuration/speak) settings per deployment channel.
   </Card>
   <Card title="Knowledge Bases" icon="book-open">
     Attach one or more knowledge bases for retrieval-augmented responses during live calls.
@@ -112,7 +112,7 @@ flowchart LR
 
 **1. Create** — Define the assistant with an LLM provider and initial system prompt. The first version (`v1`) is created automatically in draft state.
 
-**2. Configure** — Attach knowledge bases, add tools, tune the voice pipeline, and set up deployments. Each deployment channel has its own voice settings and experience configuration.
+**2. Configure** — Attach knowledge bases, add tools, tune experience/listen/speak settings, and set up deployments. Each deployment channel has its own runtime configuration.
 
 **3. Test** — Use the built-in Debugger deployment to run live conversations before any real traffic hits the assistant. Inspect transcripts, latency breakdowns, and tool invocations.
 
@@ -132,7 +132,7 @@ Use separate assistants for distinct products or personas rather than a single a
 
 <CardGroup cols={2}>
   <Card title="Create an Assistant" icon="plus" href="/assistants/create-assistant">
-    Step-by-step guide through creation, prompt setup, model configuration, voice pipeline, and tools.
+    Step-by-step guide through creation, prompt setup, model configuration, runtime configuration, and tools.
   </Card>
   <Card title="Voice Activity Detection" icon="shield" href="/assistants/voice-activity-detection">
     Configure VAD providers (Silero, FireRed) — speech detection sensitivity, barge-in timing, and noise handling.

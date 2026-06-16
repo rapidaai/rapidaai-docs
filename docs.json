@@ -21,6 +21,9 @@
       "source": "openapi/talk-api.yaml",
       "directory": "api-reference/rest"
     },
+    "params": {
+      "expanded": "all"
+    },
     "playground": {
       "display": "interactive"
     },
@@ -54,14 +57,26 @@
                 ]
               },
               {
-                "group": "Voice Pipeline",
+                "group": "Configuration",
                 "pages": [
-                  "assistants/voice-pipeline",
-                  "assistants/noise-cancellation",
-                  "assistants/speech-to-text",
-                  "assistants/text-to-speech",
-                  "assistants/voice-activity-detection",
-                  "assistants/end-of-speech"
+                  "assistants/configuration/experience",
+                  {
+                    "group": "Listen",
+                    "pages": [
+                      "assistants/configuration/listen",
+                      "assistants/speech-to-text",
+                      "assistants/noise-cancellation",
+                      "assistants/voice-activity-detection",
+                      "assistants/end-of-speech"
+                    ]
+                  },
+                  {
+                    "group": "Speak",
+                    "pages": [
+                      "assistants/configuration/speak",
+                      "assistants/text-to-speech"
+                    ]
+                  }
                 ]
               },
               {

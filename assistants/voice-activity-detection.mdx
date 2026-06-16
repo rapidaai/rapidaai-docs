@@ -4,7 +4,7 @@ description: "Understand VAD providers, their parameters, and how to choose the 
 sidebarTitle: "Voice Activity Detection"
 ---
 
-Voice Activity Detection (VAD) determines when a caller is speaking and when they are silent. It is the first stage of the voice pipeline — audio flows through VAD before reaching STT or End of Speech. A well-tuned VAD prevents background noise from triggering transcription, enables barge-in (interrupting the assistant mid-sentence), and feeds the End of Speech detector with speech activity signals.
+Voice Activity Detection (VAD) determines when a caller is speaking and when they are silent. It is part of Listen configuration — audio flows through VAD before reaching STT or End of Speech. A well-tuned VAD prevents background noise from triggering transcription, enables barge-in (interrupting the assistant mid-sentence), and feeds the End of Speech detector with speech activity signals.
 
 All VAD providers in Rapida process **16 kHz LINEAR16 mono** audio and run locally — no network calls, no API keys, no added latency.
 
@@ -165,6 +165,6 @@ VAD silence frames are different from End of Speech timeout. VAD determines **sp
     Configure how the assistant detects when a caller has finished their turn.
   </Card>
   <Card title="Create an Assistant" icon="plus" href="/assistants/create-assistant">
-    Set up VAD as part of the full voice pipeline configuration.
+    Set up VAD as part of Listen configuration.
   </Card>
 </CardGroup>

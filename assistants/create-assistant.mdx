@@ -1,10 +1,10 @@
 ---
 title: "Create and Configure an Assistant"
-description: "Build a production-ready voice AI assistant — from prompt definition to voice pipeline, tools, knowledge, and deployment."
+description: "Build a production-ready voice AI assistant — from prompt definition to runtime configuration, tools, knowledge, and deployment."
 sidebarTitle: "Create Assistant"
 ---
 
-An assistant is the central object in Rapida. It holds your LLM configuration, system prompt, voice pipeline settings, tools, knowledge bases, and deployment channels — all versioned and deployable across phone, web, and messaging from one place.
+An assistant is the central object in Rapida. It holds your LLM configuration, system prompt, experience, listen and speak settings, tools, knowledge bases, and deployment channels — all versioned and deployable across phone, web, and messaging from one place.
 
 <Info>
 Before creating an assistant, set up credentials for your LLM, STT, and TTS providers in **Integration → Vault**. The creation wizard will ask you to select a provider — credentials must exist first.
@@ -78,8 +78,8 @@ After creation, open **Configure assistant** from the top-right of the assistant
   <Card title="Prompt & Model" icon="cpu">
     System prompt, model selection, temperature, token limits, and advanced LLM parameters.
   </Card>
-  <Card title="Voice Pipeline" icon="mic" href="/assistants/voice-pipeline">
-    STT provider and model, VAD sensitivity, noise cancellation, EOS detection, TTS provider and voice, pronunciation rules.
+  <Card title="Configuration" icon="sliders-horizontal" href="/assistants/configuration/experience">
+    Experience, Listen, and Speak settings for runtime behavior, speech input, and spoken output.
   </Card>
   <Card title="Knowledge & Retrieval" icon="book-open">
     Attach knowledge bases, set retrieval method (hybrid, semantic, text), top-K, score threshold, and reranking.
@@ -169,11 +169,11 @@ See the [AgentKit guide](/assistants/agentkit) for implementation examples with 
 
 ---
 
-### Voice pipeline
+### Configuration
 
-The voice pipeline controls how audio is captured, cleaned, converted to text, and how text responses are spoken back. These settings directly affect latency, accuracy, and caller experience.
+Configuration controls the runtime behavior of each deployment: how a session starts, how user audio is captured and transcribed, and how assistant responses are spoken back. These settings directly affect latency, accuracy, and caller experience.
 
-#### Voice input — STT, VAD, EOS, and noise processing
+#### Listen — STT, VAD, EOS, and noise processing
 
 <Tip>
 For telephone deployments (8kHz audio), choose STT providers with dedicated telephony models: Deepgram `nova-3`, Azure Speech (telephony mode), or AssemblyAI. For high-fidelity web audio (16kHz+), all providers perform well.
@@ -196,7 +196,7 @@ For telephone deployments (8kHz audio), choose STT providers with dedicated tele
 EOS is the most impactful latency lever after model selection. With Silence-Based EOS at 700ms, the assistant waits 0.7 seconds of silence before responding. Model-based providers (Pipecat, LiveKit) can reduce this wait by detecting turn completion before the full silence timeout expires — the assistant responds faster while cutting off callers less often.
 </Note>
 
-#### Voice output — TTS and pronunciation
+#### Speak — TTS and pronunciation
 
 **TTS providers:** ElevenLabs, Cartesia, Deepgram Aura, OpenAI TTS, Azure Speech, Google Cloud TTS, PlayHT, Sarvam AI
 

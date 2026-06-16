@@ -33,6 +33,9 @@ Creates a phone deployment for an assistant. Use user-scoped authentication beca
         <ParamField body="greeting" type="string">
           First message the assistant sends when the session starts.
         </ParamField>
+        <ParamField body="greetingInterruptible" type="boolean">
+          Controls whether users can interrupt the opening greeting in audio sessions.
+        </ParamField>
         <ParamField body="mistake" type="string">
           Message to use when the assistant cannot understand or handle the input.
         </ParamField>
@@ -101,6 +104,7 @@ outputAudio.setAudiooptionsList([outputVoice]);
 const deployment = new AssistantPhoneDeployment();
 deployment.setAssistantid("ASSISTANT_ID_PLACEHOLDER");
 deployment.setGreeting("Hi, how can I help you today?");
+deployment.setGreetinginterruptible(false);
 deployment.setMistake("Sorry, I did not understand that.");
 deployment.setIdealtimeout("30");
 deployment.setIdealtimeoutbackoff("2");
@@ -159,6 +163,7 @@ outputAudio.setAudiooptionsList([outputVoice]);
 const deployment = new AssistantPhoneDeployment();
 deployment.setAssistantid(process.env.RAPIDA_ASSISTANT_ID);
 deployment.setGreeting("Hi, how can I help you today?");
+deployment.setGreetinginterruptible(false);
 deployment.setMistake("Sorry, I did not understand that.");
 deployment.setIdealtimeout("30");
 deployment.setIdealtimeoutbackoff("2");
@@ -203,6 +208,7 @@ connection_config = ConnectionConfig.default_connection_config(auth)
 deployment = AssistantPhoneDeployment(
     assistantId=int(os.getenv("RAPIDA_ASSISTANT_ID")),
     greeting="Hi, how can I help you today?",
+    greetingInterruptible=False,
     mistake="Sorry, I did not understand that.",
     idealTimeout=30,
     idealTimeoutBackoff=2,
@@ -261,6 +267,7 @@ func main() {
 				Phone: &protos.AssistantPhoneDeployment{
 					AssistantId:         2227823180112723968,
 					Greeting:            proto.String("Hi, how can I help you today?"),
+					GreetingInterruptible: proto.Bool(false),
 					Mistake:             proto.String("Sorry, I did not understand that."),
 					IdealTimeout:        30,
 					IdealTimeoutBackoff: 2,
@@ -328,6 +335,9 @@ func main() {
     </ParamField>
     <ParamField body="greeting" type="string">
       First message for the session.
+    </ParamField>
+    <ParamField body="greetingInterruptible" type="boolean">
+      Controls whether users can interrupt the opening greeting in audio sessions.
     </ParamField>
     <ParamField body="mistake" type="string">
       Message used when the assistant cannot understand or handle input.
