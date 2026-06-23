@@ -1,7 +1,7 @@
 ---
-title: 'Get Assistant Webhook Log'
+title: 'Get Assistant HTTP Log'
 ---
-Retrieves a specific webhook log entry by its ID using the Rapida API.
+Retrieves a specific assistant HTTP log entry, including webhook delivery logs, by its ID using the Rapida API.
 <Info>
 For more authentication options, see: [https://doc.rapida.ai/api-reference/authentication](https://doc.rapida.ai/api-reference/authentication)
 </Info>
@@ -9,13 +9,13 @@ For more authentication options, see: [https://doc.rapida.ai/api-reference/authe
 <ParamField body="connectionConfig" type="ConnectionConfig" required>
 Configuration for the client connection.
 </ParamField>
-<ParamField body="request" type="GetAssistantWebhookLogRequest" required>
+<ParamField body="request" type="GetAssistantHTTPLogRequest" required>
 <Expandable>
 <ParamField body="projectId" type="uint64" optional>
 The project identifier for scope filtering.
 </ParamField>
 <ParamField body="id" type="uint64" required>
-The unique identifier of the webhook log to retrieve.
+The unique identifier of the HTTP log to retrieve.
 </ParamField>
 </Expandable>
 </ParamField>
@@ -25,17 +25,17 @@ The unique identifier of the webhook log to retrieve.
 ```python Python
 from rapida import (
     ConnectionConfig,
-    GetAssistantWebhookLogRequest,
-    get_assistant_webhook_log,
+    GetAssistantHTTPLogRequest,
+    get_assistant_http_log,
 )
 from pprint import pprint
 connection_config = ConnectionConfig.default_connection_config(
     ConnectionConfig.with_sdk("{rapida-api-key}")
 )
-response = get_assistant_webhook_log(
+response = get_assistant_http_log(
     client_cfg=connection_config,
-    request=GetAssistantWebhookLogRequest(
-        id="{assistant_webhook_log_id}", projectId="{project_id}"
+    request=GetAssistantHTTPLogRequest(
+        id="{assistant_http_log_id}", projectId="{project_id}"
     ),
 )
 pprint(response)
@@ -59,8 +59,8 @@ func main() {
 	connectionConfig := connections.
 		DefaultconnectionConfig(connections.WithSDK(os.Getenv("RAPIDA_PROJECT_CREDENTIAL")))
 
-	// Retrieve specific webhook log
-	response, err := clients.GetAssistantWebhookLog(context.Background(), connectionConfig, &rapida_proto.GetAssistantWebhookLogRequest{
+	// Retrieve specific HTTP log
+	response, err := clients.GetAssistantHTTPLog(context.Background(), connectionConfig, &rapida_proto.GetAssistantHTTPLogRequest{
 		Id: 567898765456788765,
 	})
 
@@ -77,8 +77,8 @@ func main() {
 ```typescript NodeJs
 import {
   ConnectionConfig,
-  GetAssistantWebhookLog,
-  GetAssistantWebhookLogRequest,
+  GetAssistantHTTPLog,
+  GetAssistantHTTPLogRequest,
 } from "@rapidaai/nodejs";
 
 (async () => {
@@ -87,19 +87,19 @@ import {
       ApiKey: process.env.RAPIDA_PROJECT_CREDENTIAL,
     })
   );
-  getAssistantWebhookLog(connectionCfg, 45678903456789);
+  getAssistantHTTPLog(connectionCfg, 45678903456789);
 })();
 
 
-async function getAssistantWebhookLog(connectionCfg, webhookLogId) {
-  const request = new GetAssistantWebhookLogRequest();
-  request.setId(webhookLogId);
+async function getAssistantHTTPLog(connectionCfg, httpLogId) {
+  const request = new GetAssistantHTTPLogRequest();
+  request.setId(httpLogId);
 
   try {
-    const response = await GetAssistantWebhookLog(connectionCfg, request);
-    console.log("Assistant Webhook Log Response:", response.toObject());
+    const response = await GetAssistantHTTPLog(connectionCfg, request);
+    console.log("Assistant HTTP Log Response:", response.toObject());
   } catch (error) {
-    console.error("Error with GetAssistantWebhookLog call:", error);
+    console.error("Error with GetAssistantHTTPLog call:", error);
   }
 }
 
@@ -113,14 +113,14 @@ Numeric status code for the operation.
 <ParamField body="success" type="boolean">
 Indicates whether the operation was successful.
 </ParamField>
-<ParamField body="data" type="AssistantWebhookLog">
-The webhook log entry details.
+<ParamField body="data" type="AssistantHTTPLog">
+The assistant HTTP log entry details.
 <Expandable>
 <ParamField body="id" type="uint64">
-Unique identifier for the webhook log.
+Unique identifier for the HTTP log.
 </ParamField>
-<ParamField body="webhookId" type="uint64">
-Identifier of the associated webhook.
+<ParamField body="sourceRefId" type="uint64">
+Source record identifier. For webhook deliveries, this is the webhook ID.
 </ParamField>
 <ParamField body="request" type="object">
 The request payload sent to the webhook.
@@ -152,8 +152,8 @@ Identifier of the associated conversation.
 <ParamField body="assetPrefix" type="string">
 Asset prefix used for the webhook.
 </ParamField>
-<ParamField body="event" type="string">
-Event type that triggered the webhook.
+<ParamField body="sourceEvent" type="string">
+Event type that triggered the HTTP request, such as a call, WebRTC, or conversation webhook event.
 </ParamField>
 <ParamField body="responseStatus" type="uint64">
 HTTP response status code from the webhook.
@@ -169,6 +169,15 @@ HTTP method used for the webhook request.
 </ParamField>
 <ParamField body="httpUrl" type="string">
 URL that was called for the webhook.
+</ParamField>
+<ParamField body="source" type="string">
+Source category for the HTTP log.
+</ParamField>
+<ParamField body="contextId" type="string">
+Context identifier associated with the source event, when available.
+</ParamField>
+<ParamField body="errorMessage" type="string">
+Delivery error message, when the HTTP request fails.
 </ParamField>
 </Expandable>
 </ParamField>

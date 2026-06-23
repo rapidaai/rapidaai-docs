@@ -1,7 +1,7 @@
 ---
-title: 'Get All Assistant Webhook Logs'
+title: 'Get All Assistant HTTP Logs'
 ---
-Retrieves a paginated list of webhook logs with optional filtering and ordering using the Rapida API.
+Retrieves a paginated list of assistant HTTP logs, including webhook delivery logs, with optional filtering and ordering using the Rapida API.
 <Info>
 For more authentication options, see: [https://doc.rapida.ai/api-reference/authentication](https://doc.rapida.ai/api-reference/authentication)
 </Info>
@@ -9,7 +9,7 @@ For more authentication options, see: [https://doc.rapida.ai/api-reference/authe
 <ParamField body="connectionConfig" type="ConnectionConfig" required>
 Configuration for the client connection.
 </ParamField>
-<ParamField body="request" type="GetAllAssistantWebhookLogRequest" required>
+<ParamField body="request" type="GetAllAssistantHTTPLogRequest" required>
 <Expandable>
 <ParamField body="projectId" type="uint64" optional>
 The project identifier for scope filtering.
@@ -58,16 +58,17 @@ Sort order: "asc" or "desc".
 ```python Python
 from rapida import (
     ConnectionConfig,
-    GetAllAssistantWebhookLogRequest,
-    get_all_assistant_webhook_log,
+    GetAllAssistantHTTPLogRequest,
+    Paginate,
+    get_all_assistant_http_log,
 )
 from pprint import pprint
 connection_config = ConnectionConfig.default_connection_config(
     ConnectionConfig.with_sdk("{rapida-api-key}")
 )
-response = get_all_assistant_webhook_log(
+response = get_all_assistant_http_log(
     client_cfg=connection_config,
-    request=GetAllAssistantWebhookLogRequest(
+    request=GetAllAssistantHTTPLogRequest(
         projectId="{project_id}",
         paginate=Paginate(page=0, pageSize=20),
         # criterias=[Criteria(key="KEY", value="VALUE", logic="should")],
@@ -93,8 +94,8 @@ func main() {
 	connectionConfig := connections.
 		DefaultconnectionConfig(connections.WithSDK(os.Getenv("RAPIDA_PROJECT_CREDENTIAL")))
 
-	// Retrieve paginated webhook logs
-	response, err := clients.GetAllAssistantWebhookLog(context.Background(), connectionConfig, &rapida_proto.GetAllAssistantWebhookLogRequest{
+	// Retrieve paginated HTTP logs
+	response, err := clients.GetAllAssistantHTTPLog(context.Background(), connectionConfig, &rapida_proto.GetAllAssistantHTTPLogRequest{
 		Paginate: &rapida_proto.Paginate{
 			Page:     0,
 			PageSize: 20,
@@ -125,8 +126,9 @@ func main() {
 ```typescript NodeJs
 import {
   ConnectionConfig,
-  GetAllAssistantWebhookLog,
-  GetAllAssistantWebhookLogRequest,
+  GetAllAssistantHTTPLog,
+  GetAllAssistantHTTPLogRequest,
+  Paginate,
 } from "@rapidaai/nodejs";
 
 (async () => {
@@ -135,23 +137,23 @@ import {
       ApiKey: process.env.RAPIDA_PROJECT_CREDENTIAL,
     })
   );
-  getAllAssistantWebhookLog(connectionCfg, 45678903456789);
+  getAllAssistantHTTPLog(connectionCfg);
 })();
 
 
-async function getAllAssistantWebhookLog(connectionCfg, page = 0, pageSize = 20) {
+async function getAllAssistantHTTPLog(connectionCfg, page = 0, pageSize = 20) {
   const pagination = new Paginate();
   pagination.setPage(page);
   pagination.setPageSize(pageSize);
 
-  const request = new GetAllAssistantWebhookLogRequest();
+  const request = new GetAllAssistantHTTPLogRequest();
   request.setPaginate(pagination);
 
   try {
-    const response = await GetAllAssistantWebhookLog(connectionCfg, request);
-    console.log("All Assistant Webhook Logs Response:", response.toObject());
+    const response = await GetAllAssistantHTTPLog(connectionCfg, request);
+    console.log("All Assistant HTTP Logs Response:", response.toObject());
   } catch (error) {
-    console.error("Error with GetAllAssistantWebhookLog call:", error);
+    console.error("Error with GetAllAssistantHTTPLog call:", error);
   }
 }
 
@@ -167,14 +169,14 @@ Numeric status code for the operation.
 <ParamField body="success" type="boolean">
 Indicates whether the operation was successful.
 </ParamField>
-<ParamField body="data" type="AssistantWebhookLog[]">
-Array of webhook log entries.
+<ParamField body="data" type="AssistantHTTPLog[]">
+Array of assistant HTTP log entries.
 <Expandable>
 <ParamField body="id" type="uint64">
-Unique identifier for the webhook log.
+Unique identifier for the HTTP log.
 </ParamField>
-<ParamField body="webhookId" type="uint64">
-Identifier of the associated webhook.
+<ParamField body="sourceRefId" type="uint64">
+Source record identifier. For webhook deliveries, this is the webhook ID.
 </ParamField>
 <ParamField body="request" type="object">
 The request payload sent to the webhook.
@@ -206,8 +208,8 @@ Identifier of the associated conversation.
 <ParamField body="assetPrefix" type="string">
 Asset prefix used for the webhook.
 </ParamField>
-<ParamField body="event" type="string">
-Event type that triggered the webhook.
+<ParamField body="sourceEvent" type="string">
+Event type that triggered the HTTP request, such as a call, WebRTC, or conversation webhook event.
 </ParamField>
 <ParamField body="responseStatus" type="uint64">
 HTTP response status code from the webhook.
@@ -223,6 +225,15 @@ HTTP method used for the webhook request.
 </ParamField>
 <ParamField body="httpUrl" type="string">
 URL that was called for the webhook.
+</ParamField>
+<ParamField body="source" type="string">
+Source category for the HTTP log.
+</ParamField>
+<ParamField body="contextId" type="string">
+Context identifier associated with the source event, when available.
+</ParamField>
+<ParamField body="errorMessage" type="string">
+Delivery error message, when the HTTP request fails.
 </ParamField>
 </Expandable>
 </ParamField>

@@ -163,34 +163,39 @@ async function getAllAssistantWebhook(connectionCfg, assistantId, page = 0, page
       Unique identifier for the webhook.
     </ParamField>
     <ParamField body="assistantEvents" type="string[]">
-      Array of events that trigger this webhook.
+      Array of call, WebRTC, or conversation event names that trigger this webhook.
     </ParamField>
     <ParamField body="description" type="string">
       Description of the webhook's purpose.
     </ParamField>
-    <ParamField body="httpMethod" type="string">
-      HTTP method used for the webhook (GET, POST, PUT, DELETE, etc.).
+    <ParamField body="provider" type="string">
+      Webhook provider. HTTP webhooks use `http`.
     </ParamField>
-    <ParamField body="httpUrl" type="string">
-      Target URL for the webhook.
-    </ParamField>
-    <ParamField body="httpHeaders" type="map[string]string">
-      HTTP headers to include with webhook requests.
-    </ParamField>
-    <ParamField body="httpBody" type="map[string]string">
-      HTTP body parameters for the webhook request.
-    </ParamField>
-    <ParamField body="timeoutSecond" type="uint32">
-      Timeout duration for webhook requests in seconds.
+    <ParamField body="options" type="Metadata[]">
+      Delivery options for the webhook.
+      <Expandable>
+        <ResponseField name="http_method" type="string">
+          HTTP method used for delivery. Supported values are `POST`, `PUT`, and `PATCH`.
+        </ResponseField>
+        <ResponseField name="http_url" type="string">
+          Target URL where webhook requests are sent.
+        </ResponseField>
+        <ResponseField name="http_headers" type="string">
+          JSON object containing HTTP headers included with each request.
+        </ResponseField>
+        <ResponseField name="retry_status_codes" type="string">
+          JSON array of response status entries used by the delivery retry policy.
+        </ResponseField>
+        <ResponseField name="max_retry_count" type="string">
+          Maximum number of retry attempts after a retryable failure.
+        </ResponseField>
+        <ResponseField name="timeout_seconds" type="string">
+          Maximum time in seconds to wait for the webhook endpoint to respond.
+        </ResponseField>
+      </Expandable>
     </ParamField>
     <ParamField body="executionPriority" type="uint32">
       Execution priority of the webhook.
-    </ParamField>
-    <ParamField body="retryStatusCodes" type="string[]">
-      HTTP status codes that should trigger a retry.
-    </ParamField>
-    <ParamField body="retryCount" type="uint32">
-      Maximum number of retry attempts.
     </ParamField>
     <ParamField body="assistantId" type="uint64">
       Associated assistant identifier.

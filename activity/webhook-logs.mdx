@@ -18,7 +18,7 @@ The main log view displays a table with the following columns:
 
 - **Webhook ID**: Unique identifier for each webhook
 - **Session ID**: Identifier for the session associated with the webhook
-- **Event**: Type of event (e.g., conversation.begin, conversation.completed)
+- **Event**: Type of event, such as `call.received`, `call.ringing`, `call.ended`, `webrtc.connected`, `webrtc.reconnecting`, `conversation.begin`, `conversation.completed`, or `conversation.error`
 - **Endpoint**: The URL endpoint where the webhook is sent
 - **HTTP Status**: Response status code (e.g., 200 for success)
 - **Time Taken**: Processing time for the request in milliseconds
@@ -38,18 +38,17 @@ Clicking on a log entry reveals more detailed information, divided into two tabs
   />
 </Frame>
 
-Contains the data sent in the webhook request:
+Contains the JSON payload sent to your webhook endpoint:
 
-- **data**: Object containing various details about the webhook trigger
-  - **analysis**: Any analysis data (empty in this example)
-  - **assistant**: Information about the AI assistant
-    - **id**: Unique identifier for the assistant
-    - **version**: Version of the assistant
-  - **conversation**: Details about the conversation
-    - **id**: Unique identifier for the conversation
-    - **messages**: Array of message objects in the conversation
-      - **message**: The content of the message
-      - **role**: The role of the sender (e.g., "user" or "assistant")
+- **event**: Event name that triggered delivery.
+- **assistant**: Assistant context, including the assistant ID.
+- **conversation**: Conversation context, including the conversation ID when available.
+- **data**: Event-specific data. For call events, this can include call status, provider, direction, context ID, channel UUID, failure reason, or duration when available. For WebRTC events, this can include session ID, media session ID, codec, ICE latency, peer connection state, reconnect reason, or recovery counters when available. For `conversation.completed`, this includes:
+  - **reason**: Completion reason, usually `conversation_completed`.
+  - **status**: Final conversation status.
+  - **messages**: Transcript entries with message ID, role, and content.
+  - **metadata**: Conversation metadata, including successful analysis results under `analysis.<analysis_name>`.
+  - **metrics**: Conversation metrics recorded during the session.
 
 ### Response
 
@@ -88,7 +87,7 @@ Shows the response details from the webhook endpoint:
     examining detailed webhook logs.
   </Card>
   <Card title="Monitor Event Flow" icon="network" iconType="duotone">
-    Track conversation events and ensure they are being properly transmitted to
+    Track call, WebRTC, and conversation events and ensure they are being properly transmitted to
     external systems.
   </Card>
   <Card title="Optimize Performance" icon="brain" iconType="duotone">

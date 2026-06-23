@@ -274,9 +274,9 @@ These settings control the runtime behaviour of a live session — what happens 
 
 ### Webhooks and post-call analysis
 
-**Webhooks** fire at `conversation.begin`, `conversation.completed`, and `conversation.failed` events. Deliver transcripts, metadata, and analysis results to your CRM, data warehouse, or alerting system in real time.
+**Webhooks** fire for call lifecycle events such as `call.received`, `call.ringing`, `call.started`, `call.hangup`, `call.ended`, `call.failed`, and `call.cancelled`; WebRTC media events such as `webrtc.connected`, `webrtc.audio_track_received`, `webrtc.reconnecting`, `webrtc.failed`, and `webrtc.disconnected`; and conversation lifecycle events such as `conversation.begin`, `conversation.resume`, `conversation.completed`, and `conversation.error`. Completed conversation webhooks include transcripts, metadata, metrics, and any successful post-call analysis output.
 
-**Analysis pipelines** run after a conversation ends. They invoke a configured Rapida endpoint — typically an LLM prompt — against the conversation transcript to produce structured output: sentiment scores, intent labels, CSAT predictions, compliance flags, or any custom metric.
+**Analysis pipelines** run before the `conversation.completed` webhook is recorded. They invoke a configured Rapida endpoint — typically an LLM prompt — against the conversation transcript to produce structured output: sentiment scores, intent labels, CSAT predictions, compliance flags, or any custom metric. Successful analysis output is added to webhook metadata as `analysis.<analysis_name>`.
 
 See [Webhooks](/assistants/webhook/overview) and [Analysis](/assistants/analysis/overview) for full configuration details.
 
