@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Rapida Assistant API
   version: 0.1.0
-  description: REST endpoints for creating assistants and starting outbound assistant phone calls.
+  description: REST endpoints for creating assistants, managing assistant deployments, and starting outbound assistant phone calls.
 servers:
   - url: https://assistant-01.in.rapida.ai
     description: Rapida managed assistant API
