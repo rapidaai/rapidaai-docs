@@ -73,6 +73,28 @@ paths:
                       topK: 5
                       scoreThreshold: 0.5
                       retrievalMethod: "semantic"
+              agentkit:
+                summary: Create an AgentKit assistant
+                value:
+                  name: "AgentKit support assistant"
+                  description: "Routes live conversations to a custom AgentKit backend."
+                  visibility: "private"
+                  language: "en"
+                  assistantProvider:
+                    description: "AgentKit production backend"
+                    agentkit:
+                      agentKitUrl: "agent.your-domain.com:50051"
+                      metadata:
+                        authorization: "shared-token"
+                        tenant: "acme"
+                      transportSecurity: "TLS"
+                      tlsVerification: "VERIFY"
+                      tlsServerName: "agent.your-domain.com"
+                      connectTimeoutMs: 10000
+                      keepaliveTimeMs: 30000
+                      keepaliveTimeoutMs: 10000
+                      maxRecvMessageBytes: 16777216
+                      maxSendMessageBytes: 16777216
       responses:
         "200":
           description: Assistant created.
@@ -2910,15 +2932,69 @@ components:
       properties:
         agentKitUrl:
           type: string
-          format: uri
-          description: AgentKit endpoint URL.
-          example: "https://agent.example.com/run"
+          description: AgentKit gRPC endpoint in `host` or `host:port` format.
+          example: "agent.your-domain.com:50051"
         certificate:
           type: string
+          description: Optional PEM CA certificate for private or self-signed TLS.
         metadata:
           type: object
+          description: gRPC metadata sent to the AgentKit backend.
           additionalProperties:
             type: string
+        transportSecurity:
+          type: string
+          description: AgentKit transport security mode.
+          enum:
+            - TLS
+            - PLAINTEXT
+          default: TLS
+        tlsVerification:
+          type: string
+          description: AgentKit TLS verification mode.
+          enum:
+            - VERIFY
+            - SKIP_VERIFY
+          default: VERIFY
+        tlsServerName:
+          type: string
+          description: TLS server name override for certificate verification.
+          example: "agent.your-domain.com"
+        connectTimeoutMs:
+          type: integer
+          format: uint32
+          minimum: 1
+          maximum: 300000
+          description: Connection timeout in milliseconds.
+          default: 10000
+        keepaliveTimeMs:
+          type: integer
+          format: uint32
+          minimum: 10000
+          maximum: 3600000
+          description: Keepalive ping interval in milliseconds.
+          default: 30000
+        keepaliveTimeoutMs:
+          type: integer
+          format: uint32
+          minimum: 1000
+          maximum: 300000
+          description: Keepalive response timeout in milliseconds.
+          default: 10000
+        maxRecvMessageBytes:
+          type: integer
+          format: uint32
+          minimum: 1024
+          maximum: 104857600
+          description: Maximum inbound gRPC message size.
+          default: 16777216
+        maxSendMessageBytes:
+          type: integer
+          format: uint32
+          minimum: 1024
+          maximum: 104857600
+          description: Maximum outbound gRPC message size.
+          default: 16777216
     CreateAssistantProviderWebsocket:
       type: object
       required:
@@ -3486,6 +3562,27 @@ components:
           type: object
           additionalProperties:
             type: string
+        transportSecurity:
+          type: string
+        tlsVerification:
+          type: string
+        tlsServerName:
+          type: string
+        connectTimeoutMs:
+          type: integer
+          format: uint32
+        keepaliveTimeMs:
+          type: integer
+          format: uint32
+        keepaliveTimeoutMs:
+          type: integer
+          format: uint32
+        maxRecvMessageBytes:
+          type: integer
+          format: uint32
+        maxSendMessageBytes:
+          type: integer
+          format: uint32
     AssistantProviderWebsocket:
       type: object
       properties:

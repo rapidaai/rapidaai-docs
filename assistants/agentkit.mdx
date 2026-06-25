@@ -30,14 +30,15 @@ With AgentKit, you can connect any LLM backend with Rapida over gRPC.
     1. Open your Rapida dashboard and create (or edit) an assistant.
     2. In provider/model settings, choose **AgentKit** as the LLM backend.
     3. Configure the AgentKit connection:
-       - **URL**: your gRPC server address (for example: `your-host:50051`)
-       - **Auth token**: if your server enforces token auth
-       - **TLS certificate settings**: if your server uses TLS
+       - **AgentKit endpoint**: your gRPC server address, such as `agent.your-domain.com:50051`
+       - **Metadata**: gRPC metadata sent on the `Talk` stream, such as `authorization` or tenant routing keys
+       - **Connection tuning**: connect timeout, keepalive, and max message sizes
+       - **Security**: transport security, TLS verification, TLS server name, and optional CA certificate
     4. Save the assistant version and release it.
     5. Attach your voice deployment channel (phone/web/etc.) to this version.
 
     <Info>
-      Your AgentKit server must be reachable from Rapida network. Localhost works only for local development setups where connectivity is bridged.
+      Your AgentKit endpoint must be reachable from the Rapida network and should be provided as `host:port`, without `http://`, `https://`, or `grpc://`. Localhost works only for local development setups where connectivity is bridged.
     </Info>
   </Step>
 
@@ -187,6 +188,8 @@ With AgentKit, you can connect any LLM backend with Rapida over gRPC.
     )
     ```
 
+    In Rapida, add the same token as AgentKit metadata. For example, set metadata key `authorization` to the shared token if your server checks the gRPC `authorization` metadata key.
+
     TLS:
 
     ```python
@@ -215,6 +218,59 @@ With AgentKit, you can connect any LLM backend with Rapida over gRPC.
     - tool call and tool call result events (for tooling flows)
   </Step>
 </Steps>
+
+---
+
+## AgentKit configuration options
+
+AgentKit versions store both the backend address and the gRPC connection policy. Use the same fields when you create a new AgentKit assistant or create a new AgentKit version for an existing assistant.
+
+| Setting | API field | Default | Allowed values or range | When to change it |
+|---|---|---|---|---|
+| AgentKit endpoint | `agentKitUrl` | Required | `host` or `host:port` | Set this to the reachable gRPC endpoint for your backend. |
+| Metadata | `metadata` | `{}` | String key/value map | Pass auth tokens, tenant IDs, or routing headers as gRPC metadata. |
+| Transport security | `transportSecurity` | `TLS` | `TLS`, `PLAINTEXT` | Use `PLAINTEXT` only for trusted private networks or local testing. |
+| TLS verification | `tlsVerification` | `VERIFY` | `VERIFY`, `SKIP_VERIFY` | Use `SKIP_VERIFY` only while diagnosing certificate issues. |
+| TLS server name | `tlsServerName` | Endpoint host | DNS name | Set this when the certificate SAN does not match the dial address. |
+| TLS certificate | `certificate` | Empty | PEM CA certificate | Add a CA certificate for private or self-signed TLS. |
+| Connect timeout | `connectTimeoutMs` | `10000` | `1` to `300000` ms | Raise this for slow private links; lower it to fail over faster. |
+| Keepalive time | `keepaliveTimeMs` | `30000` | `10000` to `3600000` ms | Controls how often the client sends keepalive pings. |
+| Keepalive timeout | `keepaliveTimeoutMs` | `10000` | `1000` to `300000` ms | Controls how long Rapida waits for a keepalive response. |
+| Max receive message size | `maxRecvMessageBytes` | `16777216` | `1024` to `104857600` bytes | Increase for large tool results or custom payloads. |
+| Max send message size | `maxSendMessageBytes` | `16777216` | `1024` to `104857600` bytes | Increase if your backend receives large initialization or message payloads. |
+
+<Warning>
+  Do not use `SKIP_VERIFY` or `PLAINTEXT` for production internet-facing traffic unless the connection is protected by another trusted network boundary.
+</Warning>
+
+### API shape
+
+Use `agentkit` inside `CreateAssistantProviderRequest` for both initial assistant creation and new AgentKit versions.
+
+```json
+{
+  "assistantId": "2227823180112723968",
+  "description": "Move AgentKit to the production backend",
+  "agentkit": {
+    "agentKitUrl": "agent.your-domain.com:50051",
+    "metadata": {
+      "authorization": "shared-token",
+      "tenant": "acme"
+    },
+    "transportSecurity": "TLS",
+    "tlsVerification": "VERIFY",
+    "tlsServerName": "agent.your-domain.com",
+    "connectTimeoutMs": 10000,
+    "keepaliveTimeMs": 30000,
+    "keepaliveTimeoutMs": 10000,
+    "maxRecvMessageBytes": 16777216,
+    "maxSendMessageBytes": 16777216,
+    "certificate": "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----"
+  }
+}
+```
+
+See [Create assistant provider](/api-reference/assistant/create-assistant-provider) for SDK examples.
 
 ---
 

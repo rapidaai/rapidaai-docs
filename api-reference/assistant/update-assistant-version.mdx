@@ -1,0 +1,171 @@
+---
+title: "Update Assistant Version"
+description: "Promote an assistant provider version to the active assistant version."
+sidebarTitle: "Update version"
+---
+
+Updates the active provider version for an assistant. Use this after creating a provider with [Create assistant provider](/api-reference/assistant/create-assistant-provider).
+
+<Info>
+  For setup and authentication options, see the [Installation guide](/api-reference/installation) and [Authentication](/api-reference/authentication).
+</Info>
+
+## Parameters
+
+<ParamField body="connectionConfig" type="ConnectionConfig" required>
+  Configuration for the client connection.
+</ParamField>
+
+<ParamField body="request" type="UpdateAssistantVersionRequest" required>
+  Provider version to promote.
+  <Expandable>
+    <ParamField body="assistantId" type="uint64" required>
+      Assistant ID to update.
+    </ParamField>
+    <ParamField body="assistantProviderId" type="uint64" required>
+      Provider version ID to make active.
+    </ParamField>
+    <ParamField body="assistantProvider" type="string" required>
+      Provider type for the version. Use `MODEL`, `AGENTKIT`, or `WEBSOCKET`.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Usage
+
+<CodeGroup>
+
+```ts React
+import {
+  ConnectionConfig,
+  UpdateAssistantVersion,
+  UpdateAssistantVersionRequest,
+} from "@rapidaai/react";
+
+const auth = ConnectionConfig.WithDebugger({
+  authorization: "AUTHORIZATION_TOKEN_PLACEHOLDER",
+  userId: "AUTH_ID_PLACEHOLDER",
+  projectId: "PROJECT_ID_PLACEHOLDER",
+});
+const connectionCfg = ConnectionConfig.DefaultConnectionConfig(auth);
+
+const request = new UpdateAssistantVersionRequest();
+request.setAssistantid("ASSISTANT_ID_PLACEHOLDER");
+request.setAssistantproviderid("PROVIDER_VERSION_ID_PLACEHOLDER");
+request.setAssistantprovider("AGENTKIT");
+
+const response = await UpdateAssistantVersion(connectionCfg, request);
+console.dir(response.toObject());
+```
+
+```javascript Node.js
+import {
+  ConnectionConfig,
+  UpdateAssistantVersion,
+  UpdateAssistantVersionRequest,
+} from "@rapidaai/nodejs";
+
+const auth = ConnectionConfig.WithDebugger({
+  authorization: process.env.RAPIDA_AUTHORIZATION,
+  userId: process.env.RAPIDA_AUTH_ID,
+  projectId: process.env.RAPIDA_PROJECT_ID,
+});
+const connectionCfg = ConnectionConfig.DefaultConnectionConfig(auth);
+
+const request = new UpdateAssistantVersionRequest();
+request.setAssistantid(process.env.RAPIDA_ASSISTANT_ID);
+request.setAssistantproviderid(process.env.RAPIDA_PROVIDER_VERSION_ID);
+request.setAssistantprovider("AGENTKIT");
+
+try {
+  const response = await UpdateAssistantVersion(connectionCfg, request);
+  console.dir(response.toObject());
+} catch (error) {
+  console.error("Error with UpdateAssistantVersion call:", error);
+}
+```
+
+```python Python
+import os
+from pprint import pprint
+
+from rapida import (
+    ConnectionConfig,
+    UpdateAssistantVersionRequest,
+    update_assistant_version,
+)
+
+auth = ConnectionConfig.with_debugger(
+    authorization=os.getenv("RAPIDA_AUTHORIZATION"),
+    user_id=os.getenv("RAPIDA_AUTH_ID"),
+    project_id=os.getenv("RAPIDA_PROJECT_ID"),
+)
+connection_config = ConnectionConfig.default_connection_config(auth)
+
+response = update_assistant_version(
+    client_cfg=connection_config,
+    request=UpdateAssistantVersionRequest(
+        assistantId=int(os.getenv("RAPIDA_ASSISTANT_ID")),
+        assistantProviderId=int(os.getenv("RAPIDA_PROVIDER_VERSION_ID")),
+        assistantProvider="AGENTKIT",
+    ),
+)
+pprint(response)
+```
+
+```go Go
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+
+	"github.com/rapidaai/rapida-go/rapida/clients"
+	"github.com/rapidaai/rapida-go/rapida/connections"
+	protos "github.com/rapidaai/rapida-go/protos"
+)
+
+func main() {
+	connectionConfig := connections.DefaultconnectionConfig(
+		connections.WithPersonalToken(
+			os.Getenv("RAPIDA_AUTHORIZATION"),
+			os.Getenv("RAPIDA_AUTH_ID"),
+			os.Getenv("RAPIDA_PROJECT_ID"),
+		),
+	)
+
+	request := &protos.UpdateAssistantVersionRequest{
+		AssistantId:         2227823180112723968,
+		AssistantProviderId: 2230142097179373568,
+		AssistantProvider:   "AGENTKIT",
+	}
+
+	response, err := clients.UpdateAssistantVersion(context.Background(), connectionConfig, request)
+	if err != nil {
+		fmt.Printf("error while updating assistant version: %+v\n", err)
+		return
+	}
+	fmt.Printf("update assistant version response: %+v\n", response)
+}
+```
+
+</CodeGroup>
+
+## Response
+
+<ParamField body="code" type="int32">
+  Numeric status code for the operation.
+</ParamField>
+
+<ParamField body="success" type="boolean">
+  Indicates whether the operation was successful.
+</ParamField>
+
+<ParamField body="data" type="Assistant">
+  Updated assistant with the active provider version.
+</ParamField>
+
+<ParamField body="error" type="Error">
+  Error details when the operation fails.
+</ParamField>

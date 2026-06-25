@@ -439,6 +439,8 @@
             "group": "Assistant",
             "pages": [
               "api-reference/assistant/create-assistant",
+              "api-reference/assistant/create-assistant-provider",
+              "api-reference/assistant/update-assistant-version",
               "api-reference/assistant/create-debugger-deployment",
               "api-reference/assistant/create-api-deployment",
               "api-reference/assistant/create-webplugin-deployment",

@@ -42,6 +42,41 @@ Creates an assistant with one provider configuration. You can also attach tags, 
         </ParamField>
         <ParamField body="agentkit" type="CreateAssistantProviderAgentkit">
           AgentKit provider configuration.
+          <Expandable>
+            <ParamField body="agentKitUrl" type="string" required>
+              AgentKit gRPC endpoint in `host` or `host:port` format.
+            </ParamField>
+            <ParamField body="metadata" type="map<string, string>">
+              gRPC metadata sent to your AgentKit server, such as auth or routing keys.
+            </ParamField>
+            <ParamField body="transportSecurity" type="string">
+              Transport mode. Use `TLS` or `PLAINTEXT`. Defaults to `TLS`.
+            </ParamField>
+            <ParamField body="tlsVerification" type="string">
+              TLS verification mode. Use `VERIFY` or `SKIP_VERIFY`. Defaults to `VERIFY`.
+            </ParamField>
+            <ParamField body="tlsServerName" type="string">
+              Server name used for TLS verification when it differs from the dial address.
+            </ParamField>
+            <ParamField body="certificate" type="string">
+              Optional PEM CA certificate for private or self-signed TLS.
+            </ParamField>
+            <ParamField body="connectTimeoutMs" type="uint32">
+              Connection timeout in milliseconds. Allowed range: `1` to `300000`.
+            </ParamField>
+            <ParamField body="keepaliveTimeMs" type="uint32">
+              Keepalive ping interval in milliseconds. Allowed range: `10000` to `3600000`.
+            </ParamField>
+            <ParamField body="keepaliveTimeoutMs" type="uint32">
+              Keepalive response timeout in milliseconds. Allowed range: `1000` to `300000`.
+            </ParamField>
+            <ParamField body="maxRecvMessageBytes" type="uint32">
+              Maximum inbound gRPC message size. Allowed range: `1024` to `104857600`.
+            </ParamField>
+            <ParamField body="maxSendMessageBytes" type="uint32">
+              Maximum outbound gRPC message size. Allowed range: `1024` to `104857600`.
+            </ParamField>
+          </Expandable>
         </ParamField>
         <ParamField body="websocket" type="CreateAssistantProviderWebsocket">
           WebSocket provider configuration.
@@ -283,6 +318,189 @@ func main() {
 
 </CodeGroup>
 
+## Create an AgentKit assistant
+
+Use the `agentkit` provider when Rapida should handle telephony, STT, and TTS while your backend handles reasoning over the AgentKit gRPC stream.
+
+<CodeGroup>
+
+```json REST request
+{
+  "name": "AgentKit support assistant",
+  "description": "Routes live conversations to a custom AgentKit backend.",
+  "visibility": "private",
+  "language": "en",
+  "tags": ["support", "agentkit"],
+  "assistantProvider": {
+    "description": "AgentKit production backend",
+    "agentkit": {
+      "agentKitUrl": "agent.your-domain.com:50051",
+      "metadata": {
+        "authorization": "shared-token",
+        "tenant": "acme"
+      },
+      "transportSecurity": "TLS",
+      "tlsVerification": "VERIFY",
+      "tlsServerName": "agent.your-domain.com",
+      "connectTimeoutMs": 10000,
+      "keepaliveTimeMs": 30000,
+      "keepaliveTimeoutMs": 10000,
+      "maxRecvMessageBytes": 16777216,
+      "maxSendMessageBytes": 16777216
+    }
+  }
+}
+```
+
+```javascript Node.js
+import {
+  ConnectionConfig,
+  CreateAssistant,
+  CreateAssistantProviderRequest,
+  CreateAssistantRequest,
+} from "@rapidaai/nodejs";
+
+const auth = ConnectionConfig.WithPersonalToken({
+  Authorization: process.env.RAPIDA_AUTHORIZATION,
+  AuthId: process.env.RAPIDA_AUTH_ID,
+  ProjectId: process.env.RAPIDA_PROJECT_ID,
+});
+const connectionCfg = ConnectionConfig.DefaultConnectionConfig(auth);
+
+const agentkit = new CreateAssistantProviderRequest.CreateAssistantProviderAgentkit();
+agentkit.setAgentkiturl("agent.your-domain.com:50051");
+agentkit.setTransportsecurity("TLS");
+agentkit.setTlsverification("VERIFY");
+agentkit.setTlsservername("agent.your-domain.com");
+agentkit.setConnecttimeoutms(10000);
+agentkit.setKeepalivetimems(30000);
+agentkit.setKeepalivetimeoutms(10000);
+agentkit.setMaxrecvmessagebytes(16777216);
+agentkit.setMaxsendmessagebytes(16777216);
+agentkit.getMetadataMap().set("authorization", process.env.AGENTKIT_TOKEN || "");
+
+const provider = new CreateAssistantProviderRequest();
+provider.setDescription("AgentKit production backend");
+provider.setAgentkit(agentkit);
+
+const request = new CreateAssistantRequest();
+request.setName("AgentKit support assistant");
+request.setDescription("Routes live conversations to a custom AgentKit backend.");
+request.setVisibility("private");
+request.setLanguage("en");
+request.setTagsList(["support", "agentkit"]);
+request.setAssistantprovider(provider);
+
+const response = await CreateAssistant(connectionCfg, request, auth);
+console.dir(response.toObject());
+```
+
+```python Python
+import os
+from pprint import pprint
+
+from rapida import (
+    ConnectionConfig,
+    CreateAssistantProviderRequest,
+    CreateAssistantRequest,
+    create_assistant,
+)
+
+auth = ConnectionConfig.with_personal_token(
+    authorization=os.getenv("RAPIDA_AUTHORIZATION"),
+    auth_id=os.getenv("RAPIDA_AUTH_ID"),
+    project_id=os.getenv("RAPIDA_PROJECT_ID"),
+)
+connection_config = ConnectionConfig.default_connection_config(auth)
+
+provider = CreateAssistantProviderRequest(
+    description="AgentKit production backend",
+    agentkit=CreateAssistantProviderRequest.CreateAssistantProviderAgentkit(
+        agentKitUrl="agent.your-domain.com:50051",
+        metadata={"authorization": os.getenv("AGENTKIT_TOKEN", "")},
+        transportSecurity="TLS",
+        tlsVerification="VERIFY",
+        tlsServerName="agent.your-domain.com",
+        connectTimeoutMs=10000,
+        keepaliveTimeMs=30000,
+        keepaliveTimeoutMs=10000,
+        maxRecvMessageBytes=16777216,
+        maxSendMessageBytes=16777216,
+    ),
+)
+
+response = create_assistant(
+    client_cfg=connection_config,
+    request=CreateAssistantRequest(
+        name="AgentKit support assistant",
+        description="Routes live conversations to a custom AgentKit backend.",
+        visibility="private",
+        language="en",
+        tags=["support", "agentkit"],
+        assistantProvider=provider,
+    ),
+)
+pprint(response)
+```
+
+```go Go
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+
+	"github.com/rapidaai/rapida-go/rapida/clients"
+	"github.com/rapidaai/rapida-go/rapida/connections"
+	protos "github.com/rapidaai/rapida-go/protos"
+)
+
+func main() {
+	connectionConfig := connections.DefaultconnectionConfig(
+		connections.WithPersonalToken(
+			os.Getenv("RAPIDA_AUTHORIZATION"),
+			os.Getenv("RAPIDA_AUTH_ID"),
+			os.Getenv("RAPIDA_PROJECT_ID"),
+		),
+	)
+
+	request := &protos.CreateAssistantRequest{
+		Name:        "AgentKit support assistant",
+		Description: "Routes live conversations to a custom AgentKit backend.",
+		Visibility:  "private",
+		Language:    "en",
+		Tags:        []string{"support", "agentkit"},
+		AssistantProvider: &protos.CreateAssistantProviderRequest{
+			Description: "AgentKit production backend",
+			AssistantProvider: &protos.CreateAssistantProviderRequest_Agentkit{
+				Agentkit: &protos.CreateAssistantProviderRequest_CreateAssistantProviderAgentkit{
+					AgentKitUrl:         "agent.your-domain.com:50051",
+					Metadata:            map[string]string{"authorization": os.Getenv("AGENTKIT_TOKEN")},
+					TransportSecurity:   "TLS",
+					TlsVerification:     "VERIFY",
+					TlsServerName:       "agent.your-domain.com",
+					ConnectTimeoutMs:    10000,
+					KeepaliveTimeMs:     30000,
+					KeepaliveTimeoutMs:  10000,
+					MaxRecvMessageBytes: 16777216,
+					MaxSendMessageBytes: 16777216,
+				},
+			},
+		},
+	}
+
+	response, err := clients.CreateAssistant(context.Background(), connectionConfig, request)
+	if err != nil {
+		fmt.Printf("error while creating AgentKit assistant: %+v\n", err)
+		return
+	}
+	fmt.Printf("create assistant response: %+v\n", response)
+}
+```
+
+</CodeGroup>
+
 ## Response
 
 <ParamField body="code" type="int32">
@@ -319,6 +537,41 @@ func main() {
     </ParamField>
     <ParamField body="assistantProviderAgentkit" type="AssistantProviderAgentkit">
       AgentKit provider details when the assistant uses AgentKit.
+      <Expandable>
+        <ParamField body="id" type="uint64">
+          Unique identifier for the AgentKit provider version.
+        </ParamField>
+        <ParamField body="url" type="string">
+          AgentKit gRPC endpoint.
+        </ParamField>
+        <ParamField body="metadata" type="map<string, string>">
+          Metadata sent to the AgentKit backend.
+        </ParamField>
+        <ParamField body="transportSecurity" type="string">
+          Transport mode for the AgentKit connection.
+        </ParamField>
+        <ParamField body="tlsVerification" type="string">
+          TLS verification mode.
+        </ParamField>
+        <ParamField body="tlsServerName" type="string">
+          TLS server name override.
+        </ParamField>
+        <ParamField body="connectTimeoutMs" type="uint32">
+          Connection timeout in milliseconds.
+        </ParamField>
+        <ParamField body="keepaliveTimeMs" type="uint32">
+          Keepalive ping interval in milliseconds.
+        </ParamField>
+        <ParamField body="keepaliveTimeoutMs" type="uint32">
+          Keepalive response timeout in milliseconds.
+        </ParamField>
+        <ParamField body="maxRecvMessageBytes" type="uint32">
+          Maximum inbound gRPC message size.
+        </ParamField>
+        <ParamField body="maxSendMessageBytes" type="uint32">
+          Maximum outbound gRPC message size.
+        </ParamField>
+      </Expandable>
     </ParamField>
     <ParamField body="assistantProviderWebsocket" type="AssistantProviderWebsocket">
       WebSocket provider details when the assistant uses a WebSocket provider.
