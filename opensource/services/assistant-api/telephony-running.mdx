@@ -405,18 +405,24 @@ SIP__RTP_PORT_RANGE_END=20000
 </Step>
 
 <Step title="Dial from any SIP client">
-Use this connection string from any SIP phone, softphone, or PBX:
+Use one of these route users from any SIP phone, softphone, or PBX:
 
 ```
-sip:{assistantID}:{apiKey}@{SIP__EXTERNAL_IP}:{SIP__PORT}
+sip:agent-{assistantID}@{SIP__EXTERNAL_IP}:{SIP__PORT}
+sip:did-{did}@{SIP__EXTERNAL_IP}:{SIP__PORT}
+sip:{did}@{SIP__EXTERNAL_IP}:{SIP__PORT}
 ```
 
 | Field | Value |
 |-------|-------|
 | `assistantID` | Numeric assistant ID from the Rapida dashboard |
-| `apiKey` | Rapida API key scoped to the project (`rpd-xxx`) |
+| `did` | Phone value configured on the assistant's active SIP phone deployment |
 | `SIP__EXTERNAL_IP` | Public IP set in env var |
 | `SIP__PORT` | `5090` (default) |
+
+<Warning>
+Credential-style users such as `sip:{assistantID}:{apiKey}@host` are not accepted for inbound routing.
+</Warning>
 </Step>
 
 <Step title="Connect Asterisk as a SIP trunk (optional)">
@@ -430,13 +436,6 @@ context=rapida-outbound
 disallow=all
 allow=ulaw
 aors=rapida-trunk-aor
-outbound_auth=rapida-trunk-auth
-
-[rapida-trunk-auth]
-type=auth
-auth_type=userpass
-username={assistantID}
-password={apiKey}
 
 [rapida-trunk-aor]
 type=aor
@@ -452,7 +451,7 @@ match={SIP__EXTERNAL_IP}
 ; /etc/asterisk/extensions.conf
 [rapida-outbound]
 exten => _X.,1,NoOp(Route through Rapida SIP)
- same => n,Dial(PJSIP/${EXTEN}@rapida-trunk)
+ same => n,Dial(PJSIP/did-${EXTEN}@rapida-trunk)
  same => n,Hangup()
 ```
 </Step>

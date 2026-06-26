@@ -215,7 +215,9 @@ The built-in SIP server handles direct SIP INVITE connections and Asterisk SIP t
 **SIP connection string:**
 
 ```
-sip:{assistantID}:{apiKey}@{SIP__EXTERNAL_IP}:{SIP__PORT}
+sip:agent-{assistantID}@{SIP__EXTERNAL_IP}:{SIP__PORT}
+sip:did-{did}@{SIP__EXTERNAL_IP}:{SIP__PORT}
+sip:{did}@{SIP__EXTERNAL_IP}:{SIP__PORT}
 ```
 
 ---

@@ -166,7 +166,7 @@ Add a dial plan entry that routes specific numbers or patterns to the Rapida SIP
 ```xml
 <extension name="rapida-ai">
   <condition field="destination_number" expression="^(5551234567)$">
-    <action application="bridge" data="sofia/external/sip:sip-01.in.rapida.ai:5060"/>
+    <action application="bridge" data="sofia/external/sip:did-$1@sip-01.in.rapida.ai:5060"/>
   </condition>
 </extension>
 ```
@@ -174,7 +174,7 @@ Add a dial plan entry that routes specific numbers or patterns to the Rapida SIP
 **Asterisk example (extensions.conf):**
 ```ini
 [rapida-trunk]
-exten => _X.,1,Dial(SIP/rapida-trunk/${EXTEN})
+exten => _X.,1,Dial(SIP/did-${EXTEN}@rapida-trunk)
 ```
 </Step>
 
@@ -182,6 +182,30 @@ exten => _X.,1,Dial(SIP/rapida-trunk/${EXTEN})
 Place a test call to confirm the call reaches Rapida and the AI assistant answers.
 </Step>
 </Steps>
+
+---
+
+## Inbound SIP URI Routing
+
+Rapida routes inbound SIP calls from the user portion of the request URI. The `To` URI is used first; if it has no user, Rapida falls back to the `From` URI.
+
+Accepted inbound destination formats:
+
+| Format | Example | Resolution |
+|--------|---------|------------|
+| `sip:agent-{assistantID}@{host}:{port}` | `sip:agent-123456789@sip-01.in.rapida.ai:5060` | Routes directly by numeric assistant ID |
+| `sip:did-{did}@{host}:{port}` | `sip:did-+15551234567@sip-01.in.rapida.ai:5060` | Looks up the active SIP phone deployment whose phone value exactly matches `{did}` |
+| `sip:{did}@{host}:{port}` | `sip:+15551234567@sip-01.in.rapida.ai:5060` | Same DID lookup, without the `did-` prefix |
+
+The same route user forms are accepted with `sips:` when the SIP listener is configured for TLS.
+
+<Note>
+The DID value is matched exactly against the phone number stored on the assistant's active SIP phone deployment. `+15551234567` and `15551234567` are different route values.
+</Note>
+
+<Warning>
+Credential-style users such as `sip:{assistantID}:{apiKey}@host` are not accepted for inbound routing. Use `agent-{assistantID}`, `did-{did}`, or the raw DID form.
+</Warning>
 
 ---
 

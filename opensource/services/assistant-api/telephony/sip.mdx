@@ -36,23 +36,21 @@ SIP__RTP_PORT_RANGE_END=20000
 
 ## Connecting a SIP Client
 
-Use this connection string from any SIP phone, softphone (e.g. Zoiper, Linphone), or PBX:
+Route inbound calls to one of the accepted SIP destination users:
 
-```
-sip:{assistantID}:{apiKey}@{SIP__EXTERNAL_IP}:{SIP__PORT}
-```
+| Format | Example | Resolution |
+|--------|---------|------------|
+| `sip:agent-{assistantID}@{SIP__EXTERNAL_IP}:{SIP__PORT}` | `sip:agent-123456789@203.0.113.10:5090` | Routes directly by numeric assistant ID |
+| `sip:did-{did}@{SIP__EXTERNAL_IP}:{SIP__PORT}` | `sip:did-+15551234567@203.0.113.10:5090` | Looks up the active SIP phone deployment whose phone value exactly matches `{did}` |
+| `sip:{did}@{SIP__EXTERNAL_IP}:{SIP__PORT}` | `sip:+15551234567@203.0.113.10:5090` | Same DID lookup, without the `did-` prefix |
 
-| Field | Value |
-|-------|-------|
-| `assistantID` | Numeric assistant ID from the Rapida dashboard |
-| `apiKey` | Rapida API key for the project (`rpd-xxx`) |
-| `SIP__EXTERNAL_IP` | Public IP set in env var |
-| `SIP__PORT` | `5090` (default) |
+The DID value is matched exactly. For example, `+15551234567` and `15551234567`
+are different route values.
 
-**Example:**
-```
-sip:123456789:rpd-abc123@203.0.113.10:5090
-```
+<Warning>
+Credential-style users such as `sip:{assistantID}:{apiKey}@host` are not
+accepted for inbound routing.
+</Warning>
 
 ---
 
@@ -70,13 +68,6 @@ To route calls from Asterisk through Rapida over SIP:
     disallow=all
     allow=ulaw
     aors=rapida-trunk-aor
-    outbound_auth=rapida-trunk-auth
-
-    [rapida-trunk-auth]
-    type=auth
-    auth_type=userpass
-    username={assistantID}
-    password={apiKey}
 
     [rapida-trunk-aor]
     type=aor
@@ -93,7 +84,7 @@ To route calls from Asterisk through Rapida over SIP:
     ; /etc/asterisk/extensions.conf
     [rapida-outbound]
     exten => _X.,1,NoOp(Route through Rapida SIP)
-     same => n,Dial(PJSIP/${EXTEN}@rapida-trunk)
+     same => n,Dial(PJSIP/did-${EXTEN}@rapida-trunk)
      same => n,Hangup()
     ```
   </Tab>
@@ -106,7 +97,14 @@ To route calls from Asterisk through Rapida over SIP:
 For Rapida SaaS, the production SIP server is:
 
 ```
-sip:{assistantID}:{apiKey}@sip-01.in.rapida.ai:5060
+sip:agent-{assistantID}@sip-01.in.rapida.ai:5060
+```
+
+You can also route by DID:
+
+```
+sip:did-{did}@sip-01.in.rapida.ai:5060
+sip:{did}@sip-01.in.rapida.ai:5060
 ```
 
 ---
