@@ -23,7 +23,7 @@ Before creating an assistant, set up credentials for your LLM, STT, and TTS prov
   <Step title="Select your LLM provider and model">
     ![Select your LLM](/images/create_assistant/create_assistant_3.png)
 
-    Choose your LLM provider and the specific model to power this assistant. Supported providers: [OpenAI](/integrations/llm/openai), [Anthropic](/integrations/llm/anthropic), [Azure OpenAI](/integrations/llm/azure-openai), [Google Gemini](/integrations/llm/google-ai), [Cohere](/integrations/llm/cohere), [Vertex AI](/integrations/llm/vertexai), or a custom [AgentKit](/assistants/agentkit) gRPC backend.
+    Choose your LLM provider and the specific model to power this assistant. Supported providers: [OpenAI](/integrations/llm/openai), [Anthropic](/integrations/llm/anthropic), [Azure OpenAI](/integrations/llm/azure-openai), [Google Gemini](/integrations/llm/google-ai), [Cohere](/integrations/llm/cohere), [Vertex AI](/integrations/llm/google-vertex-ai), or a custom [AgentKit](/assistants/agentkit) gRPC backend.
 
     Each provider requires a vault credential. The model you select here sets the default — you can tune all parameters after creation.
 
@@ -85,7 +85,7 @@ After creation, open **Configure assistant** from the top-right of the assistant
     Attach knowledge bases, set retrieval method (hybrid, semantic, text), top-K, score threshold, and reranking.
   </Card>
   <Card title="Tools" icon="zap">
-    Knowledge retrieval, API request, endpoint invocation, call hold, and end-of-conversation tool types.
+    Knowledge retrieval, API request, endpoint invocation, call transfer, call hold, and end-of-conversation tool types.
   </Card>
   <Card title="Deployments" icon="phone">
     Phone, web widget, web app, WhatsApp, and API deployment channels — each with its own voice and experience settings.
@@ -242,6 +242,9 @@ Tools extend what your assistant can do mid-conversation without breaking the vo
   </Card>
   <Card title="Endpoint (LLM Call)" icon="cpu" href="/assistants/tools/add-endpoint-tool">
     Invoke a Rapida endpoint — a separately configured LLM prompt — for specialised sub-tasks: classification, extraction, or complex reasoning offloaded from the main conversation model.
+  </Card>
+  <Card title="Transfer Call" icon="phone-forwarded" href="/assistants/tools/add-transfer-call-tool">
+    Hand an active phone call to a human agent, queue, department number, or SIP endpoint when the assistant should escalate the conversation.
   </Card>
   <Card title="Put On Hold" icon="phone" href="/assistants/tools/add-put-on-hold-tool">
     Pause the call and play hold music while a backend process completes — useful when a lookup or action takes longer than a voice turn allows.

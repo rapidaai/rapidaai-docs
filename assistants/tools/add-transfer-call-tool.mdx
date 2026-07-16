@@ -1,0 +1,186 @@
+---
+title: "Transfer Call Tool"
+description: "Configure and use the Transfer Call Tool to hand an active phone call to another phone number or SIP target."
+---
+
+The Transfer Call Tool lets your assistant hand an active phone call to another destination, such as a human agent, queue, department number, or SIP endpoint. Use it when the conversation should leave the AI flow and continue with another party.
+
+## Prerequisites
+
+Before adding the Transfer Call Tool, ensure that you have:
+
+- [Created an assistant](/assistants/create-assistant)
+- Configured a phone deployment for a provider that supports live transfer
+- A transfer destination, such as an E.164 phone number or SIP URI
+
+## Adding the Transfer Call Tool
+
+<Steps>
+  <Step title="Navigate to Your Assistant">
+    1. Go to the Assistants section in the main navigation menu.
+    2. Select the assistant you want to configure.
+    3. Click "Configure assistant" in the top right corner.
+    4. Select "Tools and MCP" from the left sidebar menu.
+    5. Click **Add Tools**.
+  </Step>
+
+  <Step title="Configure the Tool">
+    Configure the Transfer Call Tool with the following settings:
+
+    1. **Name**: A unique identifier for your tool.
+       - Example: `transfer_call`
+       - Use only letters, numbers, and underscores.
+
+    2. **Description**: Details on when the assistant should transfer the caller.
+       - Example: "Transfer the caller to a human support agent when they ask for a person, request escalation, or need help outside the assistant's scope."
+       - Mention any confirmation the assistant should collect before transferring.
+
+    3. **Fields**: Define the arguments the model can provide when it calls the tool:
+
+       ```json
+       {
+         "type": "object",
+         "additionalProperties": false,
+         "properties": {
+           "transfer_to": {
+             "type": "string",
+             "description": "Phone number or SIP URI to transfer the call to. Omit this when the tool should always use the configured default destination."
+           },
+           "transfer_message": {
+             "type": "string",
+             "description": "Short message the assistant should say before transferring the call."
+           },
+           "transfer_delay": {
+             "type": "number",
+             "description": "Delay in milliseconds before dispatching the transfer after the transfer message is played."
+           },
+           "post_transfer_action": {
+             "type": "string",
+             "enum": ["end_call", "resume_ai"],
+             "description": "What to do after the transfer leg ends. Use end_call for one-way transfers. Use resume_ai only on channels that support bridge transfer."
+           }
+         },
+         "required": []
+       }
+       ```
+
+       If every transfer should go to the same destination, leave `transfer_to` out of the schema and configure the default destination in the tool settings.
+
+    4. **Expected Action**: Select the transfer call action. In API payloads, this is `executionMethod: "transfer_call"`.
+
+    5. **Transfer destination**: Set the default target as `tool.transfer_to`.
+       - Example phone number: `+15551234567`
+       - Example SIP URI: `sip:support@pbx.example.com`
+
+    6. **Post-transfer action**: Set `tool.post_transfer_action` to `end_call` or `resume_ai`.
+       - `end_call` ends the AI leg after dispatching the transfer.
+       - `resume_ai` resumes the assistant after the transferred leg ends, only where the channel supports bridge transfer.
+  </Step>
+
+  <Step title="Save Configuration">
+    After configuring the tool, click **Configure Tool** to save your changes.
+  </Step>
+</Steps>
+
+## Tool definition
+
+When creating the tool through the API, use `transfer_call` as both the tool name and execution method unless you need a different model-facing name.
+
+```json
+{
+  "name": "transfer_call",
+  "description": "Transfer the caller to a human support agent after confirming they want to be transferred.",
+  "executionMethod": "transfer_call",
+  "fields": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "transfer_to": {
+        "type": "string",
+        "description": "Phone number or SIP URI to transfer the call to."
+      },
+      "transfer_message": {
+        "type": "string",
+        "description": "Short message to say before transferring."
+      },
+      "transfer_delay": {
+        "type": "number",
+        "description": "Delay in milliseconds before dispatching the transfer."
+      },
+      "post_transfer_action": {
+        "type": "string",
+        "enum": ["end_call", "resume_ai"]
+      }
+    },
+    "required": []
+  },
+  "executionOptions": [
+    {
+      "key": "tool.transfer_to",
+      "value": "+15551234567"
+    },
+    {
+      "key": "tool.post_transfer_action",
+      "value": "end_call"
+    }
+  ]
+}
+```
+
+## Arguments
+
+The tool has two layers of configuration:
+
+- **Execution options** set defaults for the tool when it is created.
+- **Fields** define arguments the model can provide when it calls the tool.
+
+### Execution options
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `tool.transfer_to` | Required | Default destination phone number or SIP URI. |
+| `tool.transfer_message` | Optional | Default message injected before the transfer is dispatched. |
+| `tool.transfer_delay` | Optional | Default delay in milliseconds before dispatching the transfer. |
+| `tool.post_transfer_action` | Optional | `end_call` or `resume_ai`. Defaults to `end_call`. |
+
+### Call arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `transfer_to` | Required in tool options, optional in call arguments | Destination phone number or SIP URI. If the model provides this argument, it overrides the configured default. |
+| `transfer_message` | Optional | Message injected before the transfer is dispatched. |
+| `transfer_delay` | Optional | Delay in milliseconds before dispatching the transfer. |
+| `post_transfer_action` | Optional | `end_call` or `resume_ai`. Defaults to `end_call`. |
+
+To provide multiple candidate targets, join them with `<|||>` in `transfer_to`. Channels that support only one-way transfer use the first target and ignore the rest.
+
+## Provider behavior
+
+Transfer support depends on the active phone channel:
+
+| Channel | Behavior |
+|---------|----------|
+| Twilio | Dispatches a one-way transfer with the first `transfer_to` target. The AI leg ends after dispatch. |
+| Asterisk WebSocket / ARI | Dispatches a one-way redirect with the first `transfer_to` target. The AI leg ends after dispatch. |
+| SIP | Starts bridge transfer mode and can use `post_transfer_action`. |
+| Vonage, Exotel, Telnyx, Vobiz, Asterisk AudioSocket | Returns a failed tool result because live transfer is not supported on those streams. |
+
+<Warning>
+  Test transfer behavior on the same telephony provider you use in production. Unsupported channels return a failed tool result instead of silently transferring the call.
+</Warning>
+
+## Using the Transfer Call Tool
+
+Once configured, your assistant can use the Transfer Call Tool when appropriate. The process typically follows these steps:
+
+1. The assistant determines that a human or external destination should take over.
+2. It says any configured transfer message or model-provided `transfer_message`.
+3. It calls the Transfer Call Tool.
+4. Rapida dispatches the channel-level transfer action and records the tool result.
+
+## Best Practices
+
+- Ask for confirmation before transferring unless your use case requires immediate escalation.
+- Keep the transfer message short so the caller knows what is happening.
+- Use a fixed `tool.transfer_to` for common queues and expose `transfer_to` only when the assistant must choose between destinations.
+- Use `end_call` unless you have verified that your channel supports `resume_ai`.

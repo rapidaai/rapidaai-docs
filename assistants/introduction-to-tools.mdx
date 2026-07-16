@@ -1,70 +1,45 @@
 ---
 title: "Tools"
-description: "Enhance your assistant's capabilities with built-in and custom tools"
+description: "Enhance your assistant with knowledge retrieval, API calls, endpoint calls, call transfer, call hold, and conversation-ending actions."
 sidebarTitle: "Tools"
 ---
 
-[**Tools**](/api-reference/tools/create) allow your assistant to take actions beyond just conversation. They enable your assistant to perform tasks like transferring calls, accessing external data, or triggering actions in your application. Tools can be either built-in default tools provided by Vapi or custom tools that you create.
+Tools let your assistant take actions during a conversation. The assistant decides when to call a tool from the tool name, description, and argument schema you configure.
 
-There are three types of tools available:
+## Available tools
 
-1. **Default Tools**: Built-in functions provided by Vapi for common operations like call transfers and control.
-2. **Custom Tools**: Your own functions that can be called by the assistant to interact with your systems.
-3. **Integration Tools**: Pre-built integrations with platforms like [Make](https://www.make.com/en/integrations/vapi) and GoHighLevel (GHL) that let you trigger automated workflows via voice.
-
-<Info>
-  Tools are configured as part of your assistant's model configuration. You can
-  find the complete API reference [here](/api-reference/tools/create-tool).
-</Info>
-
-## Available Tools
-
-<Cards>
-  <Card title="Default Tools" icon="settings" href="/tools/default-tools">
-    Built-in tools for call control, transfers, and basic operations
+<CardGroup cols={2}>
+  <Card title="Knowledge Retrieval" icon="book-open" href="/assistants/tools/add-knowledge-tool">
+    Query a Rapida knowledge base and return relevant document chunks to the assistant.
   </Card>
-  <Card
-    title="Custom Tools"
-    icon="wrench"
-    href="/tools/custom-tools"
-  >
-    Create your own tools to extend assistant capabilities
+  <Card title="API Request" icon="zap" href="/assistants/tools/add-api-tool">
+    Call an external HTTP API for CRM lookups, booking flows, inventory checks, and other backend actions.
   </Card>
-  <Card title="Make & GHL Tools" icon="puzzle" href="/tools/GHL">
-    Import Make scenarios and GHL workflows as voice-activated tools
+  <Card title="Endpoint (LLM Call)" icon="cpu" href="/assistants/tools/add-endpoint-tool">
+    Invoke a separate Rapida endpoint for specialized prompt, classification, extraction, or reasoning tasks.
   </Card>
-</Cards>
+  <Card title="Transfer Call" icon="phone-forwarded" href="/assistants/tools/add-transfer-call-tool">
+    Hand an active phone call to a human agent, queue, phone number, or SIP target.
+  </Card>
+  <Card title="Put On Hold" icon="phone" href="/assistants/tools/add-put-on-hold-tool">
+    Pause the conversation while a longer-running lookup or backend action completes.
+  </Card>
+  <Card title="End of Conversation" icon="phone-off" href="/assistants/tools/add-end-of-conversation-tool">
+    End the session when the assistant determines the conversation is complete.
+  </Card>
+</CardGroup>
 
-## Integration Tools
+<Note>
+  Tool names must use only letters, numbers, and underscores. Write descriptions that tell the model exactly when to call the tool and what information to collect first.
+</Note>
 
-With Make and GHL integrations, you can:
+## How tools run
 
-- Import existing Make scenarios and GHL workflows directly into Vapi
-- Trigger automated workflows using voice commands
-- Connect your voice AI to hundreds of apps and services
-- Automate complex business processes through voice interaction
+Most tools follow the same runtime flow:
 
-Common use cases include:
+1. The assistant selects a tool based on the conversation and the tool description.
+2. The assistant fills the tool fields from conversation context.
+3. Rapida executes the configured action or sends the channel-level directive.
+4. The tool result is recorded in conversation logs and used by the assistant when the conversation continues.
 
-- Booking appointments via voice
-- Updating CRM records during calls
-- Triggering email or SMS follow-ups
-- Processing orders and payments
-- Managing customer support tickets
-
-## Key Features
-
-{" "}
-
-<Card title="Function Calling" icon="terminal">
-  Assistants can trigger functions based on conversation context
-</Card>
-<Card title="Async Support" icon="clock">
-  Tools can run synchronously or asynchronously
-</Card>
-<Card title="Server Integration" icon="server">
-  Connect tools to your backend via webhooks
-</Card>
-<Card title="Error Handling" icon="alert-triangle">
-  Built-in error handling and fallback options
-</Card>
+Call-control tools such as [Transfer Call](/assistants/tools/add-transfer-call-tool) and [End of Conversation](/assistants/tools/add-end-of-conversation-tool) can end or redirect the active call instead of returning data to the model.

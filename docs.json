@@ -99,6 +99,7 @@
                   "assistants/tools/add-knowledge-tool",
                   "assistants/tools/add-endpoint-tool",
                   "assistants/tools/add-api-tool",
+                  "assistants/tools/add-transfer-call-tool",
                   "assistants/tools/add-put-on-hold-tool",
                   "assistants/tools/add-end-of-conversation-tool"
                 ]
