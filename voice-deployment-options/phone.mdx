@@ -148,6 +148,10 @@ Each provider has a specific webhook format. See the integration guides:
 
 Use the Rapida SDK or REST API to programmatically initiate outbound calls:
 
+<Note>
+  Outbound call requests can override saved deployment settings for a single call through `CreatePhoneCallRequest.options`. Use this for per-recipient greetings, language, STT/TTS model, voice, model parameters, or AgentKit connection settings without editing the deployment.
+</Note>
+
 <CardGroup cols={2}>
   <Card title="Create Call API" href="/api-reference/call/create-call">
     Trigger a single outbound call to a phone number with your assistant.

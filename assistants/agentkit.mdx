@@ -243,6 +243,46 @@ AgentKit versions store both the backend address and the gRPC connection policy.
   Do not use `SKIP_VERIFY` or `PLAINTEXT` for production internet-facing traffic unless the connection is protected by another trusted network boundary.
 </Warning>
 
+### Runtime overrides
+
+You can override AgentKit connection settings for a single outbound phone call by passing `agentkit.*` keys in `CreatePhoneCallRequest.options`. Runtime overrides apply only to the conversation being created.
+
+```json
+{
+  "options": {
+    "agentkit.metadata": {
+      "authorization": "shared-token",
+      "tenant": "acme"
+    },
+    "agentkit.transportSecurity": "TLS",
+    "agentkit.tlsVerification": "VERIFY",
+    "agentkit.tlsServerName": "agent.your-domain.com",
+    "agentkit.connectTimeoutMs": 10000,
+    "agentkit.keepaliveTimeMs": 30000,
+    "agentkit.keepaliveTimeoutMs": 10000,
+    "agentkit.maxRecvMessageBytes": 16777216,
+    "agentkit.maxSendMessageBytes": 16777216
+  }
+}
+```
+
+| Option key | Type | Overrides |
+|------------|------|-----------|
+| `agentkit.metadata` | `object` | gRPC metadata sent to the AgentKit server. Values are merged with saved metadata. |
+| `agentkit.transportSecurity` | `string` | Transport security policy, such as `TLS` or `PLAINTEXT`. |
+| `agentkit.tlsVerification` | `string` | TLS verification policy, such as `VERIFY` or `SKIP_VERIFY`. |
+| `agentkit.tlsServerName` | `string` | TLS server name used for certificate verification. |
+| `agentkit.certificate` | `string` | PEM CA certificate. |
+| `agentkit.connectTimeoutMs` | `number` | Connect timeout in milliseconds. |
+| `agentkit.keepaliveTimeMs` | `number` | Keepalive ping interval in milliseconds. |
+| `agentkit.keepaliveTimeoutMs` | `number` | Keepalive timeout in milliseconds. |
+| `agentkit.maxRecvMessageBytes` | `number` | Maximum inbound message size. |
+| `agentkit.maxSendMessageBytes` | `number` | Maximum outbound message size. |
+
+<Note>
+`agentkit.*` keys configure Rapida's connection to your AgentKit server. They are not forwarded in the AgentKit initialization payload. Other call options remain available to your backend through the initialization `options` map.
+</Note>
+
 ### API shape
 
 Use `agentkit` inside `CreateAssistantProviderRequest` for both initial assistant creation and new AgentKit versions.

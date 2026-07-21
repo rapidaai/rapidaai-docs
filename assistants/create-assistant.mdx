@@ -167,6 +167,33 @@ See the [AgentKit guide](/assistants/agentkit) for implementation examples with 
   </Accordion>
 </AccordionGroup>
 
+#### Runtime model overrides
+
+Outbound phone calls can override model provider options for a single conversation through `CreatePhoneCallRequest.options`. Pass the same option keys used by the assistant provider model, plus the connection keys below when you need to route a call to a different credential or model endpoint.
+
+```json
+{
+  "options": {
+    "model.name": "gpt-4o-mini",
+    "model.temperature": 0.2,
+    "model.credential_id": "2230142097179373568",
+    "model.connection.transport": "chat_complete",
+    "model.connection.endpoint": "/v1/chat/completions"
+  }
+}
+```
+
+| Option key | Type | Description |
+|------------|------|-------------|
+| `model.name` and provider-specific `model.*` keys | varies | Override the saved model provider options for this call, such as model name, temperature, token limits, or response format. |
+| `model.credential_id` | `string` / `number` | Use a different saved provider credential for this call. |
+| `model.connection.transport` | `string` | Override the model connection transport. |
+| `model.connection.endpoint` | `string` | Override the model connection endpoint. |
+
+<Warning>
+Use model runtime overrides for controlled routing, testing, or tenant-specific credentials. Invalid model credentials or connection settings can prevent the call from starting.
+</Warning>
+
 ---
 
 ### Configuration

@@ -60,6 +60,44 @@ Open your assistant, select **Configure Assistant**, then open **Deployments**. 
 Tune listen settings from real conversation logs. If a caller gets cut off, start with EOS and VAD. If transcription is wrong, check language, audio quality, noise cancellation, and STT model.
 </Tip>
 
+## Runtime overrides
+
+You can override listen settings for a single outbound phone call by passing `listen.*` keys in `CreatePhoneCallRequest.options`. Runtime overrides do not update the saved deployment.
+
+```json
+{
+  "options": {
+    "listen.language": "en",
+    "listen.model": "nova-3",
+    "listen.threshold": 0.75,
+    "listen.audio.encoding": "mulaw",
+    "listen.audio.sample_rate": 8000,
+    "listen.smart_format": true,
+    "listen.filler_words": false,
+    "listen.endpointing": "300"
+  }
+}
+```
+
+| Option key | Type | Description |
+|------------|------|-------------|
+| `listen.language` | `string` | Primary transcription language or provider language code. |
+| `listen.model` | `string` | Provider-specific STT model for this call. |
+| `listen.threshold` | `number` | Speech detection threshold used by supported providers. |
+| `listen.audio.encoding` | `string` | Input audio encoding, such as `mulaw` or `pcm_s16le`, when supported by the provider. |
+| `listen.audio.sample_rate` | `number` | Input audio sample rate, such as `8000` for telephony audio. |
+| `listen.region` | `string` | Provider region for services that support regional endpoints. |
+| `listen.smart_format` | `boolean` | Enables provider smart formatting when supported. |
+| `listen.filler_words` | `boolean` | Controls filler-word transcription when supported. |
+| `listen.vad_events` | `boolean` | Enables provider VAD events when supported. |
+| `listen.endpointing` | `string` | Provider endpointing or silence setting. |
+| `listen.multichannel` | `boolean` | Enables multichannel transcription when supported. |
+| `listen.keyword` | `string` / `string[]` | Provider keyword boosting terms. |
+| `listen.operating_point` | `string` | Provider accuracy/latency tier, such as Speechmatics operating point. |
+| `listen.query_params` | JSON object string | Custom STT provider query parameters. |
+| `listen.request_rules` | JSON array string | Custom STT request DSL rules. |
+| `listen.response_rules` | JSON array string | Custom STT response DSL rules. |
+
 ## Troubleshooting map
 
 | Symptom | First place to look |

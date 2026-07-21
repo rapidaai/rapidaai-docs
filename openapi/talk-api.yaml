@@ -2154,7 +2154,13 @@ paths:
                   args:
                     customerName: "Jane"
                   options:
-                    priority: "standard"
+                    experience.greeting: "Hi {{customerName}}, this is Rapida calling about your appointment."
+                    experience.greeting_interruptible: false
+                    listen.language: "en"
+                    listen.model: "nova-3"
+                    speak.voice.id: "VOICE_ID_PLACEHOLDER"
+                    speak.language: "en"
+                    model.name: "gpt-4o-mini"
       responses:
         "200":
           description: Outbound phone call request accepted.
@@ -2255,12 +2261,22 @@ paths:
                       fromNumber: "+14155550100"
                       metadata:
                         customerId: "cust_123"
+                      args:
+                        customerName: "Jane"
+                      options:
+                        experience.greeting: "Hi {{customerName}}, this is Rapida calling about your appointment."
+                        listen.language: "en"
+                        speak.voice.id: "VOICE_ID_PLACEHOLDER"
                     - assistant:
                         assistantId: "2227823180112723968"
                         version: latest
                       toNumber: "+14155550124"
                       metadata:
                         customerId: "cust_124"
+                      args:
+                        customerName: "Sam"
+                      options:
+                        experience.greeting: "Hi {{customerName}}, this is Rapida calling with an update."
       responses:
         "200":
           description: Bulk outbound phone call request accepted.
@@ -3687,9 +3703,16 @@ components:
         options:
           type: object
           additionalProperties: true
-          description: Runtime options for call behavior and configuration.
+          description: |
+            Runtime overrides for this call. Supported option groups include `experience.*` for session behavior, `listen.*` for speech-to-text and voice input, `speak.*` and `speaker.*` for text-to-speech and spoken output, `model.*` for model provider options, and `agentkit.*` for AgentKit connection settings.
           example:
-            priority: "standard"
+            experience.greeting: "Hi {{customerName}}, this is Rapida calling about your appointment."
+            experience.greeting_interruptible: false
+            listen.language: "en"
+            listen.model: "nova-3"
+            speak.voice.id: "VOICE_ID_PLACEHOLDER"
+            speak.language: "en"
+            model.name: "gpt-4o-mini"
         fromNumber:
           type: string
           description: Caller ID phone number in E.164 format. If omitted, Rapida uses the configured default.

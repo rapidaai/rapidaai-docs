@@ -42,7 +42,7 @@ Creates multiple outbound phone calls in a single request using your configured 
           Additional arguments passed to the call as a key-value map.
         </ParamField>
         <ParamField body="options" type="Map<string, google_protobuf_any_pb.Any>">
-          Call options for runtime behavior and configuration.
+          Runtime overrides for this call. Use namespaced keys such as `experience.*`, `listen.*`, `speak.*`, `speaker.*`, `model.*`, or `agentkit.*`.
         </ParamField>
         <ParamField body="metadata" type="Map<string, google_protobuf_any_pb.Any>">
           Arbitrary metadata to associate with the call for tracking and analytics.
@@ -51,6 +51,34 @@ Creates multiple outbound phone calls in a single request using your configured 
     </ParamField>
   </Expandable>
 </ParamField>
+
+## Runtime options
+
+Each item in `phoneCalls` is a `CreatePhoneCallRequest`, so each recipient can receive different runtime overrides.
+
+```json
+{
+  "phoneCalls": [
+    {
+      "assistant": {
+        "assistantId": "2230142097179373568",
+        "version": "latest"
+      },
+      "toNumber": "+14155550123",
+      "args": {
+        "name": "Jane"
+      },
+      "options": {
+        "experience.greeting": "Hi {{name}}, this is Rapida calling about your appointment.",
+        "listen.language": "en",
+        "speak.voice.id": "VOICE_ID_PLACEHOLDER"
+      }
+    }
+  ]
+}
+```
+
+See [Create Phone Call](/api-reference/call/create-call#runtime-options) for supported option groups and links to the detailed option references.
 
 
 ### Usage

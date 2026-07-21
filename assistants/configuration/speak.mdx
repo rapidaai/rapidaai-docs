@@ -50,6 +50,46 @@ Open your assistant, select **Configure Assistant**, then open **Deployments**. 
 Tune speak settings by listening to full conversations in the target channel. A voice that sounds good in a browser preview can still sound unclear over phone audio.
 </Tip>
 
+## Runtime overrides
+
+You can override speak settings for a single outbound phone call by passing `speak.*` or `speaker.*` keys in `CreatePhoneCallRequest.options`. Runtime overrides do not update the saved deployment.
+
+```json
+{
+  "options": {
+    "speak.voice.id": "VOICE_ID_PLACEHOLDER",
+    "speak.language": "en",
+    "speak.model": "sonic-2",
+    "speak.audio.encoding": "mulaw",
+    "speak.audio.sample_rate": 8000,
+    "speaker.conjunction.boundaries": "and<|||>but<|||>or",
+    "speaker.conjunction.break": 240
+  }
+}
+```
+
+| Option key | Type | Description |
+|------------|------|-------------|
+| `speak.voice.id` | `string` | TTS voice ID for this call. |
+| `speak.language` | `string` | Output speech language or provider language code. |
+| `speak.model` | `string` | Provider-specific TTS model. |
+| `speak.audio.encoding` | `string` | Output audio encoding when supported by the provider. |
+| `speak.audio.sample_rate` | `number` | Output audio sample rate. |
+| `speak.query_params` | JSON object string | Custom TTS provider query parameters. |
+| `speak.request_rules` | JSON array string | Custom TTS request DSL rules. |
+| `speak.response_rules` | JSON array string | Custom TTS response DSL rules. |
+| `speak.__experimental_controls.speed` | `string` | Provider-specific experimental speed control. |
+| `speak.__experimental_controls.emotion` | `string` | Provider-specific experimental emotion control. |
+| `speak.speed_alpha` | `string` | Provider-specific speed alpha control. |
+| `speak.speed` | `string` | Provider-specific speaking speed. |
+| `speaker.language` | `string` | Speaker normalization language. |
+| `speaker.voice.name` | `string` | Human-readable speaker or voice name. |
+| `speaker.conjunction.boundaries` | `string` | Delimiter-separated words where Rapida can insert pauses. |
+| `speaker.conjunction.break` | `number` | Pause duration at conjunction boundaries in milliseconds. |
+| `speaker.pronunciation.dictionaries` | `string` | Pronunciation dictionary configuration. |
+| `speaker.ambient` | `string` | Ambient audio preset. |
+| `speaker.ambient_volume` | `number` | Ambient audio volume. |
+
 ## Troubleshooting map
 
 | Symptom | First place to look |

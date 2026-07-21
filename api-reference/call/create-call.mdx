@@ -39,13 +39,52 @@ Creates an outbound phone call to the specified number using your configured ass
         Additional arguments passed to the call as a key-value map.
         </ParamField>
         <ParamField body="options" type="Map<string, google_protobuf_any_pb.Any>">
-        Call options for runtime behavior and configuration.
+        Runtime overrides for this call. Use namespaced keys such as `experience.*`, `listen.*`, `speak.*`, `speaker.*`, `model.*`, or `agentkit.*`.
         </ParamField>
         <ParamField body="metadata" type="Map<string, google_protobuf_any_pb.Any>">
         Arbitrary metadata to associate with the call for tracking and analytics.
         </ParamField>
   </Expandable>
 </ParamField>
+
+## Runtime options
+
+Use `options` to override saved assistant and deployment settings for one outbound call. Runtime options do not update the assistant version or Phone Call deployment.
+
+```json
+{
+  "assistant": {
+    "assistantId": "2230142097179373568",
+    "version": "latest"
+  },
+  "toNumber": "+14155550123",
+  "fromNumber": "+14155550100",
+  "args": {
+    "name": "Jane"
+  },
+  "options": {
+    "experience.greeting": "Hi {{name}}, this is Rapida calling about your appointment.",
+    "experience.greeting_interruptible": false,
+    "listen.language": "en",
+    "listen.model": "nova-3",
+    "speak.voice.id": "VOICE_ID_PLACEHOLDER",
+    "speak.language": "en",
+    "model.name": "gpt-4o-mini"
+  }
+}
+```
+
+| Option group | What it overrides | Reference |
+|--------------|-------------------|-----------|
+| `experience.*` | Greeting, idle timeout, error message, and maximum session duration for this call. | [Experience](/assistants/configuration/experience#runtime-overrides) |
+| `listen.*` | Speech-to-text, language, model, audio format, and provider-specific transcription settings. | [Listen](/assistants/configuration/listen#runtime-overrides) |
+| `speak.*` / `speaker.*` | Text-to-speech voice, language, model, audio format, pronunciation, pauses, and ambient audio. | [Speak](/assistants/configuration/speak#runtime-overrides) |
+| `model.*` | Model provider options for this call, such as model name, temperature, credential, or connection settings. | [Create Assistant](/assistants/create-assistant#runtime-model-overrides) |
+| `agentkit.*` | AgentKit connection policy and metadata for this call. | [AgentKit](/assistants/agentkit#runtime-overrides) |
+
+<Tip>
+Use `args` for prompt and greeting variables, such as `{{name}}`. Use `options` for runtime configuration overrides, such as `experience.greeting`, `listen.model`, or `speak.voice.id`.
+</Tip>
 
 
 
