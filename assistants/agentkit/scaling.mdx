@@ -1,0 +1,499 @@
+---
+title: "Scale AgentKit backends"
+description: "Benchmark, horizontally scale, route, and operate customer-owned AgentKit gRPC backends."
+sidebarTitle: "Scaling"
+---
+
+AgentKit backends scale like long-lived gRPC services. Rapida opens one `Talk` stream for each live conversation and keeps that stream attached to one backend replica until the conversation ends.
+
+Use a stable load-balanced endpoint as your AgentKit URL, such as `agent.your-domain.com:50051`. Scale the backend replicas behind that endpoint.
+
+<Info>
+  Active conversations are distributed when new streams are created. An active stream is not moved between replicas during the conversation.
+</Info>
+
+## Capacity benchmark per instance
+
+There is no universal conversations-per-pod number. Capacity depends on your runtime, LLM latency, tool latency, memory use, streaming behavior, and how much state you keep in the process.
+
+Benchmark each AgentKit backend shape before setting production autoscaling limits.
+
+Track these metrics during a load test:
+
+| Metric | Target to record | Why it matters |
+|---|---:|---|
+| Active conversations per pod | Maximum stable value | Primary scaling unit for AgentKit. |
+| Agent response latency | p50, p95, p99 | Confirms the agent can respond within voice latency targets. |
+| Stream setup latency | p50, p95 | Shows whether new calls can attach quickly. |
+| Stream disconnect/error rate | Percentage | Detects overload, network drops, and backend crashes. |
+| CPU and memory | p95 utilization | Defines safe pod requests, limits, and autoscaling thresholds. |
+| External dependency latency | p95 by provider/tool | LLMs and tools are often the real bottleneck. |
+
+Use the highest stable conversation count that keeps latency and error rate inside your SLO, then add headroom.
+
+```text
+required_pods = ceil(target_concurrent_conversations / safe_conversations_per_pod * headroom_factor)
+```
+
+Example:
+
+```text
+target_concurrent_conversations = 2000
+safe_conversations_per_pod = 250
+headroom_factor = 1.4
+
+required_pods = ceil(2000 / 250 * 1.4) = 12
+```
+
+Use the example only as a sizing pattern. Replace `safe_conversations_per_pod` with your measured benchmark.
+
+### Text-only EC2 benchmark
+
+Use this benchmark only for a text-only AgentKit backend.
+
+In this benchmark:
+
+- One active conversation means one open AgentKit `Talk` stream.
+- Rapida handles telephony, audio, STT, and TTS.
+- Your AgentKit backend receives text and returns text.
+- The benchmark backend does not call an LLM, database, workflow engine, or external tool.
+- Each message is small, usually under `4 KB`.
+- Each active conversation sends one user message every `10` to `15` seconds.
+- A passing test keeps CPU under `60%`, memory under `70%`, and stream errors under `0.1%`.
+
+<Info>
+  The numbers below are safe starting targets for capacity planning. They are not hard limits. Measure your own backend before using these numbers for a production commitment.
+</Info>
+
+### SDK concurrency knobs
+
+AgentKit SDKs expose concurrency differently.
+
+| SDK | Concurrency knob | How to scale |
+|---|---|---|
+| Python | `AgentKitServer(..., max_workers=10)` | Increase `max_workers` for the synchronous starter, then scale with more processes, pods, or instances. |
+| Node.js | No `max_workers` option | Scale with more Node.js processes, pods, or instances behind the load balancer. |
+
+Use `max_workers` guidance only for the Python SDK. For Node.js, use process and pod counts as the concurrency unit.
+
+If you use Node.js, Go, or async Python, start with these targets:
+
+| EC2 instance | Safe active text conversations | Approx. user messages/sec | Use this when |
+|---|---:|---:|---|
+| `c7i.large` | `2,000` | `150` | Small production shard. |
+| `c7i.xlarge` | `5,000` | `300` | Standard production shard. |
+| `c7i.2xlarge` | `10,000` | `700` | Higher-density production shard. |
+| `c7i.4xlarge` | `20,000` | `1,200` | Large production shard with tuned file descriptors. |
+| `m7i.large` | `3,000` | `150` | Text streams with more memory per conversation. |
+| `m7i.xlarge` | `7,000` | `300` | Balanced CPU and memory. |
+| `m7i.2xlarge` | `14,000` | `700` | Memory-heavy text context. |
+| `m7i.4xlarge` | `28,000` | `1,200` | Large memory-heavy shard. |
+
+Read the table like this:
+
+```text
+If you need 20,000 active text conversations:
+
+Option A: 10 x c7i.large instances at 2,000 conversations each
+Option B: 4 x c7i.xlarge instances at 5,000 conversations each
+Option C: 2 x c7i.2xlarge instances at 10,000 conversations each
+Option D: 1 x c7i.4xlarge instance at 20,000 conversations each
+```
+
+For high availability, use at least two instances even when one larger instance can handle the expected load.
+
+If you use the synchronous Python starter, size by `max_workers`. Each open stream can occupy a worker thread, so the safe active conversation count is close to the worker count.
+
+| EC2 instance size | Suggested `max_workers` | Safe active text conversations |
+|---|---:|---:|
+| 2 vCPU | `100` - `250` | `100` - `250` |
+| 4 vCPU | `250` - `600` | `250` - `600` |
+| 8 vCPU | `600` - `1,200` | `600` - `1,200` |
+| 16 vCPU | `1,200` - `2,500` | `1,200` - `2,500` |
+
+Use this process to find your real number:
+
+1. Start at the target in the table.
+2. Keep all streams open for at least `30` minutes.
+3. Send one user message per conversation every `10` to `15` seconds.
+4. Increase active conversations by `25%`.
+5. Stop when CPU exceeds `60%`, memory exceeds `70%`, p95 response latency increases sharply, or stream errors exceed `0.1%`.
+6. Use the last passing value as your measured capacity.
+7. Plan production at `70%` of measured capacity so you have headroom.
+
+Before testing above `10,000` active streams on one host:
+
+- raise `ulimit -n` for the AgentKit process
+- confirm proxy and server HTTP/2 max stream settings
+- tune keepalive and idle timeouts across the load balancer, proxy, and server
+- use connection draining before deploys
+- track per-stream memory with production logging enabled
+
+## Horizontal scaling
+
+Run multiple AgentKit backend replicas behind one gRPC-aware load balancer.
+
+Recommended production shape:
+
+- Run AgentKit on Kubernetes, ECS, Nomad, or another orchestrator that supports health checks and rolling deploys.
+- Put a gRPC-capable load balancer or service mesh in front of the replicas.
+- Configure the Rapida AgentKit endpoint to the load-balanced address.
+- Keep per-conversation state either stream-local or in an external store such as Redis or Postgres.
+- Drain replicas before deployment so existing streams can finish.
+
+For Python AgentKit servers, tune `max_workers` based on your benchmark and blocking behavior:
+
+```python
+server = AgentKitServer(
+    agent=MyAgent(),
+    host="0.0.0.0",
+    port=50051,
+    max_workers=50,
+)
+```
+
+For Node.js AgentKit servers, there is no `max_workers` setting. Run more Node.js processes, pods, or instances when you need more concurrency. Expose health checks for Kubernetes or the load balancer:
+
+```js
+const server = new AgentKitServer({
+  agent: new EchoAgent(),
+  port: Number(process.env.AGENTKIT_PORT || 50051),
+  httpHealthCheck: {
+    host: "0.0.0.0",
+    port: 8080,
+    path: "/healthz",
+  },
+});
+```
+
+Scale on a mix of signals:
+
+| Signal | Use |
+|---|---|
+| Active streams per pod | Primary AgentKit-specific scaling signal. |
+| CPU and memory | Baseline infrastructure protection. |
+| p95 response latency | Detects saturation before hard failures. |
+| Queue depth or tool backlog | Useful when the agent delegates work asynchronously. |
+| LLM/provider rate-limit errors | Prevents scaling pods beyond downstream capacity. |
+
+## Traffic distribution by tenant or dynamic value
+
+You can route AgentKit traffic dynamically with metadata and a gRPC-aware L7 proxy.
+
+Rapida sends saved AgentKit metadata on the `Talk` stream. For outbound calls, you can override or add metadata for one conversation with `agentkit.metadata`.
+
+```json
+{
+  "options": {
+    "agentkit.metadata": {
+      "authorization": "shared-token",
+      "tenant": "acme",
+      "region": "us-east",
+      "tier": "premium"
+    }
+  }
+}
+```
+
+Distribution model:
+
+1. Rapida dials one stable AgentKit endpoint.
+2. The gRPC proxy inspects request metadata.
+3. The proxy routes the new `Talk` stream to the matching backend pool.
+4. The stream stays on that backend replica until the conversation ends.
+
+Use this for:
+
+- tenant-specific backend pools
+- regional routing
+- premium or regulated customer isolation
+- model-tier routing
+- canary releases by tenant or percentage
+
+<Warning>
+  A TCP/L4 load balancer cannot inspect AgentKit metadata. Use an L7 gRPC proxy such as Envoy, Istio, Linkerd, Traefik, or NGINX with gRPC routing support when routing depends on metadata.
+</Warning>
+
+Keep metadata keys simple and lowercase, such as `tenant`, `region`, or `tier`. If metadata can be influenced by customer input, validate or sign it before using it for authorization or isolation.
+
+### NGINX metadata routing
+
+Use NGINX as an L7 gRPC proxy when you want one public AgentKit endpoint and multiple backend pools.
+
+This example routes by the AgentKit metadata key `tenant`:
+
+```nginx
+worker_processes auto;
+
+events {
+  worker_connections 65535;
+}
+
+http {
+  resolver kube-dns.kube-system.svc.cluster.local valid=10s ipv6=off;
+
+  # AgentKit gRPC metadata is received as HTTP/2 headers.
+  # Metadata key "tenant" is available as $http_tenant.
+  map $http_tenant $agentkit_backend {
+    default "";
+    acme    grpc://agentkit-acme.agentkit.svc.cluster.local:50051;
+    globex  grpc://agentkit-globex.agentkit.svc.cluster.local:50051;
+  }
+
+  map $http_authorization $agentkit_auth_present {
+    default 1;
+    ""      0;
+  }
+
+  server {
+    listen 50051 http2;
+
+    location /talk_api.AgentKit/Talk {
+      # Reject calls that do not include required routing/auth metadata.
+      if ($agentkit_auth_present = 0) {
+        return 401;
+      }
+
+      if ($agentkit_backend = "") {
+        return 403;
+      }
+
+      # Keep streams alive for long conversations.
+      grpc_read_timeout 1h;
+      grpc_send_timeout 1h;
+      grpc_socket_keepalive on;
+
+      # Forward routing/auth metadata to the selected backend.
+      grpc_set_header tenant $http_tenant;
+      grpc_set_header authorization $http_authorization;
+
+      grpc_pass $agentkit_backend;
+    }
+  }
+}
+```
+
+Configure Rapida with the NGINX address as the AgentKit endpoint:
+
+```text
+agentkit-router.your-domain.com:50051
+```
+
+Then set per-call metadata when the conversation should go to a specific tenant pool:
+
+```json
+{
+  "options": {
+    "agentkit.metadata": {
+      "tenant": "acme",
+      "authorization": "shared-token"
+    }
+  }
+}
+```
+
+<Tip>
+  If you use metadata key `x-tenant-id`, NGINX exposes it as `$http_x_tenant_id`. Hyphens become underscores in NGINX header variables.
+</Tip>
+
+### Kubernetes NGINX router
+
+A Kubernetes `Service` can load balance between pods, but it cannot inspect AgentKit metadata. To route by metadata, run a gRPC-aware proxy such as NGINX in front of tenant-specific AgentKit services.
+
+This example creates one public router service and two internal tenant backend services:
+
+- `agentkit-acme`
+- `agentkit-globex`
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agentkit-nginx-router
+  namespace: agentkit
+data:
+  nginx.conf: |
+    worker_processes auto;
+
+    events {
+      worker_connections 65535;
+    }
+
+    http {
+      resolver kube-dns.kube-system.svc.cluster.local valid=10s ipv6=off;
+
+      map $http_tenant $agentkit_backend {
+        default "";
+        acme    grpc://agentkit-acme.agentkit.svc.cluster.local:50051;
+        globex  grpc://agentkit-globex.agentkit.svc.cluster.local:50051;
+      }
+
+      map $http_authorization $agentkit_auth_present {
+        default 1;
+        ""      0;
+      }
+
+      server {
+        listen 50051 http2;
+
+        location /talk_api.AgentKit/Talk {
+          if ($agentkit_auth_present = 0) {
+            return 401;
+          }
+
+          if ($agentkit_backend = "") {
+            return 403;
+          }
+
+          grpc_read_timeout 1h;
+          grpc_send_timeout 1h;
+          grpc_socket_keepalive on;
+
+          grpc_set_header tenant $http_tenant;
+          grpc_set_header authorization $http_authorization;
+
+          grpc_pass $agentkit_backend;
+        }
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agentkit-nginx-router
+  namespace: agentkit
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: agentkit-nginx-router
+  template:
+    metadata:
+      labels:
+        app: agentkit-nginx-router
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27
+          ports:
+            - containerPort: 50051
+              name: grpc
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+          readinessProbe:
+            tcpSocket:
+              port: grpc
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: agentkit-nginx-router
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agentkit-router
+  namespace: agentkit
+spec:
+  type: LoadBalancer
+  selector:
+    app: agentkit-nginx-router
+  ports:
+    - name: grpc
+      port: 50051
+      targetPort: grpc
+```
+
+Point the Rapida AgentKit endpoint to the router service DNS name or load balancer DNS name.
+
+Each tenant backend can be a normal Kubernetes `Deployment` and `Service`. The router selects the service based on metadata; the selected service then load-balances across that tenant's pods.
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: agentkit-acme
+  namespace: agentkit
+spec:
+  selector:
+    app: agentkit-acme
+  ports:
+    - name: grpc
+      port: 50051
+      targetPort: grpc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agentkit-acme
+  namespace: agentkit
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: agentkit-acme
+  template:
+    metadata:
+      labels:
+        app: agentkit-acme
+    spec:
+      containers:
+        - name: agentkit
+          image: your-registry/agentkit-acme:latest
+          ports:
+            - containerPort: 50051
+              name: grpc
+          readinessProbe:
+            grpc:
+              port: 50051
+            initialDelaySeconds: 5
+            periodSeconds: 10
+```
+
+Repeat the backend `Service` and `Deployment` for each pool you reference in the NGINX `map`.
+
+<Warning>
+  Do not use tenant metadata as the only security boundary. Validate the metadata at the proxy or backend, and use token auth or signed routing claims when tenant isolation matters.
+</Warning>
+
+External references:
+
+- [NGINX gRPC proxy module](https://nginx.org/en/docs/http/ngx_http_grpc_module.html)
+- [Kubernetes liveness, readiness, and startup probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+- [gRPC health checking](https://grpc.io/docs/guides/health-checking/)
+
+## Retries, failover, and draining
+
+Retries are safe only before a stream is established. Once a conversation is active, retrying on another replica can duplicate tool calls or lose in-memory conversation state unless your backend is designed for resumability.
+
+Recommended retry policy:
+
+| Situation | Recommendation |
+|---|---|
+| Initial connection fails | Retry at the load balancer or client connection layer within the configured connect timeout. |
+| Stream opens but initialization fails | Treat as startup failure; retry only if your backend guarantees idempotent initialization. |
+| Active stream drops mid-conversation | End or fail the conversation unless you have externalized state and a resume protocol. |
+| Tool call times out | Retry inside your AgentKit backend only when the tool is idempotent or has an idempotency key. |
+| Rolling deployment | Mark the replica unhealthy, stop new streams, wait for active streams to drain, then terminate. |
+
+Production recommendations:
+
+- Set `connectTimeoutMs` low enough to fail over quickly during startup, but high enough for your private network.
+- Keep `keepaliveTimeMs` and `keepaliveTimeoutMs` aligned with your proxy and firewall timeouts.
+- Use readiness checks that fail before shutdown so new streams stop landing on draining pods.
+- Set a termination grace period long enough for normal conversations to finish.
+- Make tool calls idempotent with a stable `tool_id` where possible.
+- Store critical conversation state outside the process if the business requires recovery from pod failure.
+
+## Customer checklist
+
+- Benchmark safe active conversations per pod before production traffic.
+- Configure Rapida with a load-balanced `agentKitUrl`.
+- Use TLS and metadata-based auth for production.
+- Route by metadata only through a gRPC-aware L7 proxy.
+- Scale on active streams, latency, CPU, memory, and downstream provider limits.
+- Drain pods before deploys.
+- Treat active-stream failover as an application-level feature, not a load-balancer feature.

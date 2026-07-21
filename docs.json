@@ -52,7 +52,13 @@
                 "group": "Agent Executor",
                 "pages": [
                   "assistants/create-new-version",
-                  "assistants/agentkit",
+                  {
+                    "group": "AgentKit",
+                    "pages": [
+                      "assistants/agentkit",
+                      "assistants/agentkit/scaling"
+                    ]
+                  },
                   "assistants/prompt-templating"
                 ]
               },
