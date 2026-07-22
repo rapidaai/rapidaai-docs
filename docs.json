@@ -66,6 +66,7 @@
                 "group": "Configuration",
                 "pages": [
                   "assistants/configuration/experience",
+                  "assistants/configuration/authentication",
                   {
                     "group": "Listen",
                     "pages": [

@@ -1,0 +1,239 @@
+---
+title: "Authentication"
+description: "Configure conversation-time authentication from Rapida Console."
+sidebarTitle: "Authentication"
+---
+
+Assistant authentication runs at the start of a conversation. Rapida calls your authentication service before the assistant, tools, STT, TTS, or AgentKit backend starts. Use it to verify the user, tenant, subscription, account state, or channel context for the live session.
+
+<Info>
+This is not Rapida API authentication. Rapida API authentication controls who can manage assistants and start sessions. Assistant authentication controls whether one conversation should continue, and what extra context should be added to that conversation.
+</Info>
+
+```mermaid
+flowchart LR
+    A["Conversation starts"] --> B["Load assistant"]
+    B --> C["Run authentication"]
+    C --> D{"Result"}
+    D -->|2xx| E["Merge overrides"]
+    D -->|Skipped or allowed| F["Continue unauthenticated"]
+    D -->|Blocked failure| G["Stop session"]
+    E --> H["Start assistant runtime"]
+    F --> H
+```
+
+## Configure in Rapida Console
+
+<Steps>
+  <Step title="Open the assistant">
+    In Rapida Console, open the assistant you want to protect.
+  </Step>
+  <Step title="Open Configure Assistant">
+    Go to **Configure Assistant** and open the **Authentication** configuration.
+  </Step>
+  <Step title="Enable authentication">
+    Turn on authentication for the assistant. If authentication is disabled or no authentication configuration exists, Rapida skips this step and the conversation continues normally.
+  </Step>
+  <Step title="Select HTTP provider">
+    Choose **HTTP** as the authentication provider. HTTP is the supported provider for assistant authentication.
+  </Step>
+  <Step title="Enter endpoint details">
+    Add the authentication endpoint URL, method, timeout, static headers, and request body mapping.
+  </Step>
+  <Step title="Choose failure behavior">
+    Use **Block** when authentication is required. Use **Allow** only when the endpoint is used for optional enrichment.
+  </Step>
+  <Step title="Save and test">
+    Save the configuration, then test from the target channel, such as Debugger, Phone Call, Web Widget, Web App, or WhatsApp.
+  </Step>
+</Steps>
+
+## What to configure
+
+| Console field | Runtime key | Required | Description |
+|---------------|-------------|----------|-------------|
+| Provider | `provider=http` | Yes | Calls an external HTTP service. Other providers are not supported for assistant authentication. |
+| Endpoint URL | `http_url` | Yes | Full URL of your authentication endpoint. |
+| Method | `http_method` | No | Defaults to `POST`. Supported write methods are `POST`, `PUT`, and `PATCH`; other values are sent as `GET`. |
+| Headers | `http_headers` | No | Static headers sent to the authentication endpoint. Use this for fixed integration headers. |
+| Body mapping | `http_body` | Yes | Maps Rapida conversation variables into the JSON body sent to your endpoint. |
+| Timeout | `timeout_ms` | No | Defaults to `5000` milliseconds. |
+| Failure behavior | `fail_behavior` | No | Defaults to `block`. Controls non-`2xx` authentication responses. |
+| Apply when / condition | `authentication.condition` | No | Limits authentication to specific source, mode, or direction values. |
+
+<Warning>
+Configure a valid body mapping. If the body mapping is missing or invalid, Rapida cannot build authentication arguments and the session continues unauthenticated.
+</Warning>
+
+## Request body mapping
+
+The body mapping is not a literal JSON body. It maps **source variables** to **request body field names**.
+
+Example body mapping:
+
+```json
+{
+  "client.phone": "phone",
+  "metadata.tenant": "tenant",
+  "conversation.id": "conversationId",
+  "argument.customerId": "customerId",
+  "custom.source": "rapida"
+}
+```
+
+If the session has phone `+14155550123`, tenant `acme`, conversation ID `2230142097179373568`, and argument `customerId=cust_123`, Rapida sends this body:
+
+```json
+{
+  "phone": "+14155550123",
+  "tenant": "acme",
+  "conversationId": "2230142097179373568",
+  "customerId": "cust_123",
+  "source": "rapida"
+}
+```
+
+Use these namespaces in the mapping:
+
+| Namespace | Example | Use for |
+|-----------|---------|---------|
+| `assistant.*` | `"assistant.id": "assistantId"` | Active assistant fields. |
+| `conversation.*` | `"conversation.id": "conversationId"` | Current conversation fields. |
+| `session.*` | `"session.source": "source"` | Session source and mode. |
+| `argument.*` | `"argument.customerId": "customerId"` | Runtime arguments passed when the session starts. |
+| `metadata.*` | `"metadata.tenant": "tenant"` | Conversation metadata. |
+| `option.*` | `"option.agentkit.url": "agentkitUrl"` | Runtime options. |
+| `client.*` | `"client.phone": "phone"` | Client metadata projected from `metadata.client.*`. |
+| `custom.*` | `"custom.source": "rapida"` | Literal values. The suffix becomes the request field name and the value becomes the request field value. |
+
+Unknown or unavailable variables are skipped. Your authentication service should reject requests that are missing required fields.
+
+## Endpoint response
+
+Return any `2xx` status code to authenticate the session. The response body can be empty, or it can return overrides that Rapida merges before the assistant runtime starts.
+
+```json
+{
+  "args": {
+    "customerName": "Jane",
+    "plan": "enterprise"
+  },
+  "metadata": {
+    "customerId": "cust_123",
+    "tenant": "acme"
+  },
+  "options": {
+    "experience.greeting": "Hi Jane, I found your account.",
+    "agentkit.metadata": {
+      "tenant": "acme",
+      "customerId": "cust_123"
+    }
+  }
+}
+```
+
+| Response field | What it does |
+|----------------|--------------|
+| `args` or `arguments` | Adds or overrides runtime arguments. Use these for prompt variables such as customer name, plan, case ID, or order ID. |
+| `metadata` | Adds or overrides conversation metadata. Use these for tenant, customer ID, routing label, audit ID, or authenticated user ID. |
+| `options` | Adds or overrides runtime options. Use these for dynamic greeting, AgentKit metadata, model settings, or other supported runtime options. |
+
+Returned values override existing values with the same key. Nested maps are merged, so returning `agentkit.metadata.tenant` can add tenant routing context without replacing unrelated AgentKit metadata.
+
+## Failure behavior
+
+| Situation | Result |
+|-----------|--------|
+| No authentication configuration | Authentication is skipped and the conversation continues. |
+| Authentication disabled | Authentication is skipped and the conversation continues. |
+| Condition does not match | Authentication is skipped and the conversation continues unauthenticated. |
+| Missing or invalid body mapping | Authentication arguments cannot be built; the conversation continues unauthenticated. |
+| Missing endpoint URL | Authentication execution fails and the session stops. |
+| Endpoint timeout or network error | Authentication execution fails and the session stops. |
+| Endpoint returns `2xx` | Session is authenticated. Returned `args`, `metadata`, and `options` are merged. |
+| Endpoint returns non-`2xx` and failure behavior is `block` | Session stops before the assistant starts. |
+| Endpoint returns non-`2xx` and failure behavior is `allow`, `none`, `do_nothing`, or `do-nothing` | Session continues unauthenticated. Returned overrides are not applied. |
+
+Use `block` for login, subscription, tenant authorization, compliance, or account access checks. Use `allow` only when authentication is being used as optional personalization or lookup.
+
+## Conditions
+
+Conditions let one assistant use authentication only for specific channels or session types. The supported condition keys are:
+
+| Key | Allowed values |
+|-----|----------------|
+| `source` | `all`, `sdk`, `web_plugin`, `debugger`, `phone`, `phone-call`, `whatsapp` |
+| `mode` or `conversation_mode` | `all`, `text`, `voice`, `audio` |
+| `direction` | `both`, `all`, `inbound`, `outbound` |
+
+If multiple rules are configured, all rules must match. If the condition is malformed, authentication is treated as not allowed and the session continues unauthenticated.
+
+Example condition for inbound phone voice sessions:
+
+```json
+[
+  {
+    "key": "source",
+    "condition": "=",
+    "value": "phone"
+  },
+  {
+    "key": "mode",
+    "condition": "=",
+    "value": "voice"
+  },
+  {
+    "key": "direction",
+    "condition": "=",
+    "value": "inbound"
+  }
+]
+```
+
+## Dynamic AgentKit routing
+
+Assistant authentication can return AgentKit metadata in `options`. Rapida merges it before opening the AgentKit stream, so your AgentKit backend or load balancer can use authenticated tenant or customer context.
+
+```json
+{
+  "options": {
+    "agentkit.metadata": {
+      "tenant": "acme",
+      "customerTier": "enterprise",
+      "authorization": "Bearer backend-session-token"
+    }
+  }
+}
+```
+
+Use metadata for distribution labels such as `tenant`, `region`, or `customerShard`. Keep authorization checks in the AgentKit backend as well; load-balancer routing should not be the only security control.
+
+See [Scale AgentKit backends](/assistants/agentkit/scaling) for metadata-based routing examples.
+
+## Recommended setup
+
+| Area | Recommendation |
+|------|----------------|
+| Failure behavior | Start with `block` for any real access control. |
+| Timeout | Start with `5000` ms, then lower after measuring endpoint latency. |
+| Body mapping | Include all fields your auth service needs to make a deterministic allow/deny decision. |
+| Required fields | Validate required fields in your auth service and return non-`2xx` when they are missing. |
+| Overrides | Return only context the assistant, tools, AgentKit backend, routing layer, or logs need. |
+| Secrets | Do not pass long-lived secrets from public clients. Use short-lived session tokens or server-side validation. |
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Experience" icon="sliders-horizontal" href="/assistants/configuration/experience">
+    Use authentication overrides to adjust greeting and session behavior.
+  </Card>
+  <Card title="AgentKit" icon="bot" href="/assistants/agentkit">
+    Run assistant logic in your own AgentKit backend.
+  </Card>
+  <Card title="Scale AgentKit backends" icon="network" href="/assistants/agentkit/scaling">
+    Route AgentKit traffic by authenticated metadata.
+  </Card>
+  <Card title="Telemetry" icon="activity" href="/assistants/telemetry">
+    Export conversation events and runtime metadata.
+  </Card>
+</CardGroup>
