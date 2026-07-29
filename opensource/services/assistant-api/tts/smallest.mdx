@@ -1,0 +1,62 @@
+---
+title: "Smallest AI TTS"
+description: "Configure Smallest AI Lightning text-to-speech in assistant-api."
+sidebarTitle: "Smallest AI"
+---
+
+Smallest AI's Lightning models stream over a realtime WebSocket with ~100ms to first audio chunk. `lightning_v3.1` covers 12 languages with voice cloning; `lightning_v3.1_pro` is a premium voice pool (American, British, and Indian accents) selected per-request via the same connection.
+
+**Provider identifier:** `smallest`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | Smallest AI API key from [app.smallest.ai/dashboard](https://app.smallest.ai/dashboard) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get a Smallest AI API key">
+Sign in at [app.smallest.ai/dashboard](https://app.smallest.ai/dashboard) → **Developer → API Keys**.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Providers and Models**, add a credential, select provider **Smallest AI**, enter `key` = your API key.
+
+The same credential is used for both Smallest AI STT and TTS.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant's deployment settings → **Audio Output (TTS)**, select **Smallest AI** and pick a **Model**:
+
+- `lightning_v3.1` — standard pool, voice cloning supported, 12 languages
+- `lightning_v3.1_pro` — premium pool with curated American, British, and Indian accented voices (English + Hindi)
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `speak.model` | `lightning_v3.1` | `lightning_v3.1` or `lightning_v3.1_pro` |
+| `speak.voice.id` | `magnus` | Catalog voice, scoped to the selected model — Pro-only voices (e.g. `meher`) aren't offered under `lightning_v3.1` and vice versa |
+| `speak.language` | `en` | Language code — Pro supports a broader set than standard |
+| `speak.speed` | `1.0` | Speech speed multiplier (0.5–2.0) |
+
+Pairing a voice with the wrong model pool is rejected by the API — the provider surfaces this as an error rather than hanging or producing garbled audio.
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Smallest AI STT" icon="audio-waveform" href="/opensource/services/assistant-api/stt/smallest">
+    Smallest AI Pulse speech-to-text
+  </Card>
+  <Card title="TTS Overview" icon="volume" href="/opensource/services/assistant-api/tts/overview">
+    All TTS providers
+  </Card>
+</CardGroup>
