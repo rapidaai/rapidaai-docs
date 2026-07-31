@@ -1,0 +1,64 @@
+---
+title: "Smallest AI STT"
+description: "Configure Smallest AI Pulse speech-to-text in assistant-api."
+sidebarTitle: "Smallest AI"
+---
+
+Smallest AI's Pulse model streams over a realtime WebSocket with 64ms time-to-first-transcript, supporting 38 languages plus word/sentence-level timestamps, speaker diarization, and PII/PCI redaction.
+
+**Provider identifier:** `smallest`
+
+---
+
+## Vault Credential
+
+| Key | Description |
+|-----|-------------|
+| `key` | Smallest AI API key from [app.smallest.ai/dashboard](https://app.smallest.ai/dashboard) |
+
+---
+
+## Setup
+
+<Steps>
+
+<Step title="Get a Smallest AI API key">
+Sign in at [app.smallest.ai/dashboard](https://app.smallest.ai/dashboard) → **Developer → API Keys**.
+</Step>
+
+<Step title="Add to Rapida vault">
+In the Rapida dashboard → **Providers and Models**, add a credential, select provider **Smallest AI**, enter `key` = your API key.
+
+The same credential is used for both Smallest AI STT and TTS.
+</Step>
+
+<Step title="Configure the assistant">
+In the assistant's deployment settings → **Audio Input (STT)**, select **Smallest AI**.
+
+| Option | Example | Description |
+|--------|---------|-------------|
+| `listen.model` | `pulse` | Only `pulse` is wired to the realtime endpoint — Pulse Pro is pre-recorded/HTTP only |
+| `listen.language` | `en` | ISO language code, or omit for auto-detect across 38 languages |
+| `listen.word_timestamps` | `true` | Per-word start/end/confidence timing |
+| `listen.sentence_timestamps` | `true` | Sentence-level utterance segments |
+| `listen.diarize` | `true` | Speaker labels on words/utterances |
+| `listen.redact_pii` | `true` | Redacts names, addresses, phone numbers as `[ENTITYTYPE_N]` placeholders |
+| `listen.redact_pci` | `true` | Redacts card numbers, CVVs, ZIP codes, account numbers |
+| `listen.numerals` | `auto` | Inverse text normalization mode |
+| `listen.smart_format` | `true` | Punctuation/capitalization in the transcript (defaults to `true` server-side) |
+
+All feature flags are opt-in — omitted entirely from the connection string unless explicitly set.
+</Step>
+
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Smallest AI TTS" icon="volume" href="/opensource/services/assistant-api/tts/smallest">
+    Smallest AI Lightning text-to-speech
+  </Card>
+  <Card title="STT Overview" icon="audio-waveform" href="/opensource/services/assistant-api/stt/overview">
+    All STT providers
+  </Card>
+</CardGroup>
