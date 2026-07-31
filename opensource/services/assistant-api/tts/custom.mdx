@@ -40,7 +40,7 @@ Set the audio format, query parameters, request rules, and response rules. The a
 
 ## TTS arguments
 
-The UI stores these keys with the `speaker.` metadata prefix, but the transformer reads the option keys shown below. The current UI exposes the audio and DSL fields; `speak.voice.id`, `speak.model`, and `speak.language` are optional API/import metadata keys that request rules and query parameters can read when present.
+The custom TTS transformer reads the option keys shown below. The current UI exposes the audio and DSL fields; `speak.voice.id`, `speak.model`, and `speak.language` are optional API/import metadata keys that request rules and query parameters can read when present. The UI may preserve other speaker-level settings under `speaker.*`, but the custom TTS DSL fields are unprefixed `speak.*` keys.
 
 | Option key | Required | Default | Description |
 |---|---:|---|---|
@@ -49,15 +49,15 @@ The UI stores these keys with the `speaker.` metadata prefix, but the transforme
 | `speak.language` | No | Empty | Optional provider language code. Reference it in DSL as `language` or `config.language`. |
 | `speak.audio.encoding` | Yes | `LINEAR16` | Audio encoding expected back from the provider. Supported values: `LINEAR16`, `MuLaw8`. |
 | `speak.audio.sample_rate` | Yes | `16000` | Audio sample rate expected back from the provider. Supported UI values are `8000`, `16000`, `22050`, `24000`, `32000`, `44100`, and `48000`. |
-| `speak.ws.query_params` | No | `{}` | Flat JSON object appended to `baseUrl` as query parameters. Values can use DSL expressions. |
-| `speak.ws.request_rules` | Yes | See example below | Ordered JSON array that tells Rapida what to send for each outbound packet. Must contain at least one `text` rule. |
-| `speak.ws.response_rules` | Yes | None | Ordered JSON array that tells Rapida how to parse provider WebSocket frames into audio, done, or error events. |
+| `speak.query_params` | No | `{}` | Flat JSON object appended to `baseUrl` as query parameters. Values can use DSL expressions. |
+| `speak.request_rules` | Yes | See example below | Ordered JSON array that tells Rapida what to send for each outbound packet. Must contain at least one `text` rule. |
+| `speak.response_rules` | Yes | None | Ordered JSON array that tells Rapida how to parse provider WebSocket frames into audio, done, or error events. |
 
 ---
 
 ## Query parameters
 
-Use `speak.ws.query_params` when your provider expects configuration in the WebSocket URL.
+Use `speak.query_params` when your provider expects configuration in the WebSocket URL.
 
 Supported variables:
 
@@ -83,7 +83,7 @@ Supported variables:
 ```
 
 <Note>
-If your provider needs a voice, model, or language and those values are not present as metadata, set them as static values inside `speak.ws.request_rules`.
+If your provider needs a voice, model, or language and those values are not present as metadata, set them as static values inside `speak.request_rules`.
 </Note>
 
 ---
@@ -316,7 +316,7 @@ Limits:
 
 ### Query parameter rules
 
-`speak.ws.query_params` must be a flat JSON object. Each value must resolve to a primitive value: string, number, boolean, or null. Nested objects and arrays are rejected unless the object is a DSL expression.
+`speak.query_params` must be a flat JSON object. In the UI, each value must resolve to a string, number, or boolean. The backend also accepts null values and skips them when building the URL. Nested objects and arrays are rejected unless the object is a DSL expression.
 
 ```json
 {
@@ -329,7 +329,7 @@ Limits:
 }
 ```
 
-The rendered query parameters are appended to `baseUrl`. Existing query parameters in `baseUrl` are preserved unless the same key is rendered by `speak.ws.query_params`.
+The rendered query parameters are appended to `baseUrl`. Existing query parameters in `baseUrl` are preserved unless the same key is rendered by `speak.query_params`.
 
 <Note>
 TTS request rules can read `packet.text`, but `text` is not a supported query parameter variable.
@@ -337,7 +337,7 @@ TTS request rules can read `packet.text`, but `text` is not a supported query pa
 
 ### Request rule shape
 
-`speak.ws.request_rules` is an ordered JSON array. Every matching rule is sent, so one packet can produce multiple WebSocket messages.
+`speak.request_rules` is an ordered JSON array. Every matching rule is sent, so one packet can produce multiple WebSocket messages.
 
 | Field | Required | Description |
 |---|---:|---|
@@ -382,7 +382,7 @@ For `done` and `interrupt`, `packet.text` is present but may be empty.
 
 ### Response rule shape
 
-`speak.ws.response_rules` is an ordered JSON array. The first matching rule is evaluated; later rules are skipped for that frame.
+`speak.response_rules` is an ordered JSON array. The first matching rule is evaluated; later rules are skipped for that frame.
 
 | Field | Required | Description |
 |---|---:|---|
@@ -506,7 +506,7 @@ Use this pattern when the provider expects text payloads, an explicit final mess
 
 ### Runtime behavior
 
-- The connection URL is built from `baseUrl` and `speak.ws.query_params`.
+- The connection URL is built from `baseUrl` and `speak.query_params`.
 - Headers are copied from the credential and are not templated.
 - The transformer opens a connection per active message/context. A new context closes the previous connection.
 - `text` packets open the WebSocket connection if needed.
@@ -538,8 +538,8 @@ The WebSocket v1 transformer validates:
 - `baseUrl` is present in the credential.
 - `speak.audio.encoding` is not empty.
 - `speak.audio.sample_rate` is positive.
-- `speak.ws.request_rules` contains at least one `text` packet rule.
-- `speak.ws.response_rules` contains at least one rule.
+- `speak.request_rules` contains at least one `text` packet rule.
+- `speak.response_rules` contains at least one rule.
 
 <CardGroup cols={2}>
   <Card title="Custom STT" icon="audio-waveform" href="/opensource/services/assistant-api/stt/custom">

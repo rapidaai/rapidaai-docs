@@ -40,14 +40,14 @@ Set the audio format, query parameters, request rules, and response rules. The a
 
 ## STT arguments
 
-The UI stores these keys with the `microphone.` metadata prefix, but the transformer reads the option keys shown below. The current UI exposes the audio and DSL fields; `listen.model` and `listen.language` are optional API/import metadata keys that request rules and query parameters can read when present.
+The custom STT transformer reads the option keys shown below. The current UI exposes the audio and DSL fields; `listen.model` and `listen.language` are optional API/import metadata keys that request rules and query parameters can read when present. The UI may preserve other microphone-level settings under `microphone.*`, but the custom STT DSL fields are unprefixed `listen.*` keys.
 
 | Option key | Required | Default | Description |
 |---|---:|---|---|
 | `listen.model` | No | Empty | Optional provider model identifier. Reference it in DSL as `model` or `config.model`. |
 | `listen.language` | No | Empty | Optional provider language code. Reference it in DSL as `language` or `config.language`. |
-| `listen.audio.encoding` | Yes | `LINEAR16` | Audio encoding sent to the provider. Supported values: `LINEAR16`, `MuLaw8`. |
-| `listen.audio.sample_rate` | Yes | `16000` | Audio sample rate sent to the provider. Supported UI values: `8000`, `16000`, `22050`, `24000`, `32000`, `44100`, `48000`. |
+| `listen.audio.encoding` | Yes | `LINEAR16` | Audio encoding setting exposed to the DSL as `encoding` and `config.audio.encoding`. For `websocket_v1`, binary audio is prepared with this encoding. Supported values: `LINEAR16`, `MuLaw8`. |
+| `listen.audio.sample_rate` | Yes | `16000` | Audio sample rate used while preparing audio and exposed to the DSL as `sample_rate` and `config.audio.sample_rate`. Supported UI values: `8000`, `16000`, `22050`, `24000`, `32000`, `44100`, `48000`. |
 | `listen.query_params` | No | `{}` | Flat JSON object appended to `baseUrl` as query parameters. Values can use DSL expressions. |
 | `listen.request_rules` | Yes | See example below | Ordered JSON array that tells Rapida what to send for each outbound packet. Must contain at least one `audio` rule. |
 | `listen.response_rules` | Yes | None | Ordered JSON array that tells Rapida how to parse provider WebSocket frames or HTTP response bodies into transcripts or errors. |
@@ -286,7 +286,7 @@ Limits:
 
 ### Query parameter rules
 
-`listen.query_params` must be a flat JSON object. Each value must resolve to a primitive value: string, number, boolean, or null. Nested objects and arrays are rejected unless the object is a DSL expression.
+`listen.query_params` must be a flat JSON object. In the UI, each value must resolve to a string, number, or boolean. The backend also accepts null values and skips them when building the URL. Nested objects and arrays are rejected unless the object is a DSL expression.
 
 ```json
 {
@@ -459,7 +459,7 @@ Use this pattern when the provider expects a session-start message, binary audio
 
 - The URL is built from `baseUrl` and `listen.query_params`.
 - Headers are copied from the credential and are not templated.
-- Audio is resampled from Rapida's internal audio format to `listen.audio.encoding` and `listen.audio.sample_rate` before request rules are evaluated.
+- Audio is prepared before request rules are evaluated. WebSocket binary audio uses the configured encoding and sample rate; HTTP v1 request scope exposes PCM bytes plus PCM/WAV base64 for the completed speech segment.
 - For `websocket_v1`, `turn_change` and `audio` packets open the WebSocket connection if needed.
 - For `http_v1`, Rapida buffers audio while the user is speaking and sends one HTTP POST when the STT end packet arrives.
 - `interrupt` rules are sent only by the WebSocket transport when a connection is already active.

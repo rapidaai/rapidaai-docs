@@ -1,102 +1,116 @@
 ---
 title: "Custom Text-to-Speech"
-description: "Configure a custom WebSocket TTS provider with query parameters, request rules, response rules, and the Rapida WebSocket DSL."
+description: "Configure a custom WebSocket text-to-speech provider with credentials, audio settings, query parameters, request rules, response rules, and the Rapida DSL."
 sidebarTitle: "Custom TTS"
 ---
 
-Custom Text-to-Speech lets you connect Rapida to a WebSocket speech synthesis service that is not available as a built-in provider. You configure the provider URL, handshake headers, audio settings, and a small JSON DSL that maps assistant text packets to your provider's WebSocket protocol.
+Custom Text-to-Speech lets you connect Rapida to a WebSocket speech synthesis service that is not available as a built-in TTS provider. You provide the provider endpoint, authentication headers, output audio format, and a JSON DSL that tells Rapida how to send assistant text and how to read provider audio, done, and error responses.
 
-Use Custom TTS when your provider can receive text over WebSocket and return audio as binary frames or base64 audio in JSON frames.
+Use Custom TTS when your provider can receive text over WebSocket and return audio as one of the following:
+
+- Binary WebSocket frames containing raw audio.
+- JSON WebSocket messages containing base64-encoded audio.
 
 **Provider identifier:** `custom-tts`
 
+**API compatibility:** `websocket_v1`
+
 <Info>
-Custom TTS is an end-user configuration feature. You do not need to write a new Rapida transformer when your provider can be described with the WebSocket DSL below.
+Custom TTS is configured from credentials and assistant voice output settings. You do not need to write a new Rapida transformer when the provider protocol can be described with the DSL on this page.
 </Info>
 
 ## Setup flow
 
 <Steps>
+  <Step title="Confirm the provider protocol">
+    Custom TTS supports `websocket_v1`. Your provider must accept a WebSocket connection and return audio or status messages over that same connection.
+  </Step>
+
   <Step title="Create the Custom TTS credential">
-    Open **Credentials** or **Integrations > Models**, choose **Custom TTS**, and create a credential with your WebSocket connection details.
+    Open **Credentials** or **Integrations > Models**, choose **Custom TTS**, and create a credential with `apiCompatibility`, `baseUrl`, and any required `headers`.
   </Step>
 
-  <Step title="Select Custom TTS in Voice Output">
-    Open your assistant deployment, go to **Voice Output**, and select **Custom TTS** as the text-to-speech provider.
+  <Step title="Select Custom TTS for voice output">
+    Open the assistant or deployment voice settings, go to **Voice Output**, and select **Custom TTS** as the text-to-speech provider.
   </Step>
 
-  <Step title="Set audio and DSL arguments">
-    Configure audio encoding, sample rate, query parameters, request rules, and response rules so Rapida can send text and interpret provider audio correctly.
+  <Step title="Set the output audio format">
+    Choose the audio encoding and sample rate returned by your provider.
+
+    Rapida interprets provider audio using these values, then resamples it to Rapida's internal audio format when needed.
   </Step>
 
-  <Step title="Write WebSocket DSL rules">
-    Define query parameters, request rules, and response rules so Rapida knows how to send text and receive audio.
+  <Step title="Write the DSL configuration">
+    Fill `speak.query_params`, `speak.request_rules`, and `speak.response_rules`.
+
+    Query parameters build the provider WebSocket URL. Request rules map Rapida text lifecycle packets to outbound provider frames. Response rules map provider frames to audio, done, or error events.
   </Step>
 
-  <Step title="Test interruption behavior">
-    Run a test conversation and interrupt the assistant while it is speaking. Add an `interrupt` rule if your provider requires explicit cancellation.
+  <Step title="Test speech and interruption">
+    Run a test conversation. Confirm that audio plays, done events end the response cleanly, and interruption stops any queued provider audio.
   </Step>
 </Steps>
 
 ## Credential fields
 
+Create one credential for the external TTS provider.
+
 | Field | Required | Description |
 |-------|----------|-------------|
-| `apiCompatibility` | No | Must be `websocket_v1` when supplied. Defaults to `websocket_v1` when omitted. |
+| `apiCompatibility` | No | Selects the transport. Custom TTS supports `websocket_v1`. Defaults to `websocket_v1` when omitted. |
 | `baseUrl` | Yes | WebSocket URL for your TTS service, for example `wss://tts.example.com/v1/speak`. |
-| `headers` | No | Header map sent during the WebSocket handshake, for example `{"Authorization":"Bearer sk_..."}`. |
+| `headers` | No | Static header map sent during the WebSocket handshake. Use this for authorization and provider-required headers, for example `{"Authorization":"Bearer sk_..."}`. |
 
-The runtime also accepts snake case keys: `api_compatibility` and `base_url`.
+The runtime also accepts snake case credential keys: `api_compatibility` and `base_url`.
 
 <Warning>
-Headers are copied from the credential as static values. The DSL cannot template headers or change the WebSocket path dynamically.
+Headers are static credential values. The DSL cannot template headers, read environment variables, sign requests, or change the WebSocket path dynamically.
 </Warning>
 
-## TTS arguments
+## Assistant TTS arguments
+
+These fields are configured on the assistant or deployment voice output provider. The UI stores them with the provider metadata, and the runtime reads the option keys shown below.
 
 | Option key | Required | Default | Description |
 |------------|----------|---------|-------------|
-| `speak.voice.id` | No | Empty | Optional provider voice identifier. Available as `voice_id` in query params and `config.voice.id` in request rules when supplied by API or imported metadata. |
-| `speak.model` | No | Empty | Optional provider model identifier. Available as `model` in query params and `config.model` in request rules when supplied by API or imported metadata. |
-| `speak.language` | No | Empty | Optional provider language code. Available as `language` in query params and `config.language` in request rules when supplied by API or imported metadata. |
-| `speak.audio.encoding` | Yes | `LINEAR16` | Audio encoding expected back from the provider. Supported values: `LINEAR16`, `MuLaw8`. |
-| `speak.audio.sample_rate` | Yes | `16000` | Audio sample rate expected back from the provider. Supported UI values are `8000`, `16000`, `22050`, `24000`, `32000`, `44100`, and `48000`. |
-| `speak.ws.query_params` | No | `{}` | Flat JSON object appended to `baseUrl` as query parameters. |
-| `speak.ws.request_rules` | Yes | None | Ordered JSON array that maps Rapida TTS packets to outbound WebSocket frames. Must contain at least one `text` rule. |
-| `speak.ws.response_rules` | Yes | None | Ordered JSON array that maps provider frames to audio, done, or error events. |
+| `speak.audio.encoding` | Yes | `LINEAR16` | Audio encoding expected from the provider. Rapida uses this when interpreting returned audio. Supported values are `LINEAR16` and `MuLaw8`. |
+| `speak.audio.sample_rate` | Yes | `16000` | Audio sample rate expected from the provider. Supported UI values are `8000`, `16000`, `22050`, `24000`, `32000`, `44100`, and `48000`. |
+| `speak.query_params` | No | `{}` | Flat JSON object appended to `baseUrl` as query parameters. Values can be static primitives or query DSL expressions. |
+| `speak.request_rules` | Yes | None | Ordered JSON array that maps Rapida packets to outbound provider messages. Must contain at least one rule with `when.packet` set to `text`. |
+| `speak.response_rules` | Yes | None | Ordered JSON array that maps provider WebSocket frames to Rapida audio, done, or error events. Must contain at least one rule. |
+| `speak.voice.id` | No | Empty | Optional provider voice identifier. When present, query params can read it with `{ "$var": "voice_id" }` and request rules can read it with `{ "$path": "config.voice.id" }`. |
+| `speak.model` | No | Empty | Optional provider model identifier. When present, query params can read it with `{ "$var": "model" }` and request rules can read it with `{ "$path": "config.model" }`. |
+| `speak.language` | No | Empty | Optional provider language code. When present, query params can read it with `{ "$var": "language" }` and request rules can read it with `{ "$path": "config.language" }`. |
 
-## DSL sections
+<Note>
+The UI exposes the audio and DSL fields. `speak.voice.id`, `speak.model`, and `speak.language` are optional metadata keys for API-driven or imported configurations. If your provider needs fixed voice, model, or language values and those fields are not available in your UI, put the values directly in query params or request rules.
+</Note>
 
-Custom TTS has three DSL sections:
+<Info>
+When you work with raw assistant metadata, use the unprefixed custom TTS option keys, such as `speak.request_rules`. The UI may preserve other speaker-level settings under `speaker.*`, but the custom TTS DSL fields are the `speak.*` keys listed above.
+</Info>
 
-| Section | Purpose |
-|---------|---------|
-| Query parameters | Add static or dynamic query params to the WebSocket URL. |
-| Request rules | Convert Rapida text, done, and interrupt packets into provider WebSocket messages. |
-| Response rules | Convert provider WebSocket frames into Rapida audio, done, or error events. |
+## DSL overview
 
-The DSL is intentionally small. It does not run JavaScript, call functions, read environment variables, use regex, concatenate strings, or perform compound conditions.
+Custom TTS has three DSL sections.
+
+| Section | Option key | Purpose |
+|---------|------------|---------|
+| Query parameters | `speak.query_params` | Adds provider settings to the WebSocket URL, such as message ID, voice, model, language, encoding, and sample rate. |
+| Request rules | `speak.request_rules` | Converts Rapida text lifecycle packets into provider WebSocket frames. |
+| Response rules | `speak.response_rules` | Converts provider WebSocket frames into audio, done, or error events. |
+
+The DSL is intentionally small. It does not run JavaScript, call functions, perform regex matching, concatenate strings, perform compound conditions, read environment variables, or compute authentication signatures.
 
 ## Query parameters
 
-Use `speak.ws.query_params` when your provider expects configuration in the WebSocket URL.
-
-Supported variables:
-
-| Variable | Source |
-|----------|--------|
-| `message_id` | Current synthesis message ID |
-| `voice_id` | `speak.voice.id` |
-| `model` | `speak.model` |
-| `language` | `speak.language` |
-| `encoding` | `speak.audio.encoding` |
-| `sample_rate` | `speak.audio.sample_rate` |
+Use `speak.query_params` when your provider expects configuration in the WebSocket URL.
 
 ```json
 {
   "voice": { "$var": "voice_id" },
   "model": { "$var": "model" },
-  "language": { "$var": "language" },
+  "message_id": { "$var": "message_id" },
   "sample_rate": {
     "$cast": "number",
     "value": { "$var": "sample_rate" }
@@ -104,36 +118,154 @@ Supported variables:
 }
 ```
 
-Rules:
+### Query variable reference
 
-- Query params must be a flat JSON object.
-- Values must resolve to a primitive: string, number, boolean, or null.
-- Existing query params in `baseUrl` are preserved unless the rendered DSL uses the same key.
-- `text` is not a supported query parameter variable. Use `packet.text` in request rules instead.
+Query parameter expressions can use `$var` to read these variables.
 
-<Note>
-The Custom TTS UI exposes audio and DSL fields. If your provider needs a voice, model, or language, set those as static values in request rules or provide the optional metadata keys through API-driven configuration.
-</Note>
+| Variable | Source value | Example output |
+|----------|--------------|----------------|
+| `message_id` | Current synthesis message or context ID | `msg_123` |
+| `voice_id` | `speak.voice.id` | `voice_123` |
+| `model` | `speak.model` | `sonic-2` |
+| `language` | `speak.language` | `en-US` |
+| `encoding` | `speak.audio.encoding` | `LINEAR16` |
+| `sample_rate` | `speak.audio.sample_rate` | `16000` |
+
+### Query parameter rules
+
+- `speak.query_params` must be a JSON object.
+- The object must be flat. A query parameter value cannot be a nested object or array unless that object is a supported DSL expression.
+- Each rendered value must be a primitive supported by the UI validator: string, number, or boolean.
+- Existing query parameters in `baseUrl` are preserved unless `speak.query_params` renders the same key.
+- A key that starts with `$` is treated as an unsupported operator and is rejected.
+- `text` is not a supported query parameter variable. Use `packet.text` in request rules.
+
+This configuration:
+
+```json
+{
+  "voice": "narrator-1",
+  "message_id": { "$var": "message_id" },
+  "sample_rate": {
+    "$cast": "number",
+    "value": { "$var": "sample_rate" }
+  }
+}
+```
+
+can produce a provider URL like:
+
+```text
+wss://tts.example.com/v1/speak?message_id=msg_123&sample_rate=16000&voice=narrator-1
+```
 
 ## Request rules
 
-Request rules are evaluated for normalized TTS packets produced by Rapida.
+`speak.request_rules` is an ordered JSON array. Each rule has a `when` block and a `send` block.
 
-| Packet | When it is sent | Available paths |
-|--------|-----------------|-----------------|
-| `text` | LLM text is ready for synthesis | `packet.kind`, `packet.message_id`, `packet.text`, `config.voice.id`, `config.model`, `config.language`, `config.audio.encoding`, `config.audio.sample_rate` |
-| `done` | The LLM response is complete | `packet.kind`, `packet.message_id`, `packet.text`, `config.*` |
-| `interrupt` | User interruption is detected | `packet.kind`, `packet.message_id`, `packet.text`, `config.*` |
+```json
+[
+  {
+    "when": { "packet": "text" },
+    "send": {
+      "frame": "json",
+      "body": {
+        "text": { "$path": "packet.text" },
+        "message_id": { "$path": "packet.message_id" }
+      }
+    }
+  }
+]
+```
 
-Supported outbound frames:
+| Field | Required | Description |
+|-------|----------|-------------|
+| `when.packet` | Yes | Rapida packet that triggers the rule. Supported values are `text`, `done`, and `interrupt`. |
+| `send.frame` | Yes | Outbound provider message type. Supported values are `binary`, `json`, and `text`. |
+| `send.body` | Yes | Static value or DSL expression tree used as the outbound body. |
 
-| Frame | Body must resolve to |
-|-------|----------------------|
-| `binary` | Bytes or string. |
-| `json` | Valid JSON value. |
-| `text` | Value convertible to string. |
+### Request packet reference
 
-### One-shot synthesis
+| Packet | When Rapida sends it | Common use |
+|--------|----------------------|------------|
+| `text` | Assistant text is ready for synthesis. | Send text, voice, model, and audio options to the provider. |
+| `done` | The assistant response text stream is complete. | Send a provider flush, finalization, or end-of-input message. |
+| `interrupt` | User interruption is detected. | Send a provider cancel, clear, or stop message before Rapida closes the WebSocket. |
+
+### Request frame reference
+
+| `send.frame` | `send.body` must resolve to | Use when |
+|--------------|-----------------------------|----------|
+| `binary` | Bytes or string | The provider expects a binary control or payload frame. This is uncommon for TTS text input. |
+| `json` | Valid JSON value | The provider expects structured text, voice, model, or control messages. |
+| `text` | Value convertible to string | The provider expects raw text WebSocket messages. |
+
+Every matching request rule for a packet is sent in order. This lets one `text`, `done`, or `interrupt` packet produce more than one provider message when required.
+
+### Request scope
+
+Request rules use `$path` to read from the request scope.
+
+For `text`:
+
+```json
+{
+  "config": {
+    "voice": {
+      "id": "voice_123"
+    },
+    "model": "sonic-2",
+    "language": "en-US",
+    "audio": {
+      "encoding": "LINEAR16",
+      "sample_rate": 16000
+    }
+  },
+  "packet": {
+    "kind": "text",
+    "message_id": "msg_123",
+    "text": "Hello world"
+  }
+}
+```
+
+For `done` and `interrupt`, `packet.text` is present but may be empty:
+
+```json
+{
+  "config": {
+    "voice": {
+      "id": "voice_123"
+    },
+    "model": "sonic-2",
+    "language": "en-US",
+    "audio": {
+      "encoding": "LINEAR16",
+      "sample_rate": 16000
+    }
+  },
+  "packet": {
+    "kind": "done",
+    "message_id": "msg_123",
+    "text": ""
+  }
+}
+```
+
+### Request path reference
+
+| Path | Available on | Description |
+|------|--------------|-------------|
+| `config.voice.id` | All packets | Optional provider voice from `speak.voice.id`. Empty when not configured. |
+| `config.model` | All packets | Optional provider model from `speak.model`. Empty when not configured. |
+| `config.language` | All packets | Optional provider language from `speak.language`. Empty when not configured. |
+| `config.audio.encoding` | All packets | Audio encoding expected from provider responses. |
+| `config.audio.sample_rate` | All packets | Audio sample rate expected from provider responses. |
+| `packet.kind` | All packets | Current packet type. |
+| `packet.message_id` | All packets | Current synthesis message or context ID. |
+| `packet.text` | All packets | Assistant text for `text` packets. Empty or provider-specific for `done` and `interrupt` packets. |
+
+### One-shot synthesis example
 
 Use this when the provider synthesizes each text packet immediately.
 
@@ -162,7 +294,7 @@ Use this when the provider synthesizes each text packet immediately.
 ]
 ```
 
-### Text, done, and interrupt
+### Text, done, and interrupt example
 
 Use this when the provider expects text payloads, an explicit final message, and an explicit cancel message.
 
@@ -211,32 +343,12 @@ Use this when the provider expects text payloads, an explicit final message, and
 ```
 
 <Warning>
-Add an `interrupt` rule if your provider needs an explicit cancel or clear message. Without it, queued provider audio can continue after the user starts speaking.
+Add an `interrupt` rule if your provider needs an explicit cancel or clear message. Rapida sends the matching `interrupt` request first, then closes the WebSocket connection.
 </Warning>
 
 ## Response rules
 
-Response rules parse provider WebSocket frames into Rapida audio packets. The first matching rule is evaluated and later rules are skipped for that frame.
-
-Supported inbound frames:
-
-| Frame | Use when |
-|-------|----------|
-| `binary` | Provider streams raw audio frames. |
-| `json` | Provider returns JSON with base64 audio, done, or error fields. |
-
-Supported emit keys:
-
-| Emit key | Type | Effect |
-|----------|------|--------|
-| `audio` | bytes | Emits a TTS audio chunk. |
-| `message_id` | string | Associates audio, error, or done with a message. Falls back to the current context ID when omitted. |
-| `done` | boolean | Ends synthesis for the message, closes the connection, and emits a TTS end packet. |
-| `error` | string | Emits a TTS error. |
-
-### Binary audio response
-
-Use this when the provider streams raw audio as binary WebSocket frames.
+`speak.response_rules` is an ordered JSON array. Each provider WebSocket response is parsed into a `binary`, `json`, or `text` frame, then the first matching response rule is evaluated. Custom TTS response rules support `binary` and `json`; text responses are ignored unless you change the provider to send JSON status messages.
 
 ```json
 [
@@ -249,9 +361,318 @@ Use this when the provider streams raw audio as binary WebSocket frames.
 ]
 ```
 
-### JSON base64 audio response
+| Field | Required | Description |
+|-------|----------|-------------|
+| `when.frame` | Yes | Provider response frame type. Supported values are `binary` and `json`. |
+| `when.path` | No | Dot path inside a JSON response frame. Must be paired with `when.equals`. Not allowed for binary frames. |
+| `when.equals` | No | Primitive value compared against `when.path` for JSON frames. |
+| `emit` | Yes | Object that tells Rapida what to emit. Supported keys are `audio`, `message_id`, `done`, and `error`. |
+
+### Response frame parsing
+
+| Provider response | Parsed as | Notes |
+|-------------------|-----------|-------|
+| WebSocket binary message | `binary` | Use `{ "$frame": "binary" }` to emit the full frame as audio. |
+| WebSocket text message containing one JSON value | `json` | Use `$path` to read fields from JSON objects. |
+| WebSocket text message that is not valid JSON | `text` | Custom TTS response rules do not support text frames. |
+
+### Response matching
+
+| Rule shape | Match behavior |
+|------------|----------------|
+| `{ "frame": "binary" }` | Matches any binary frame. |
+| `{ "frame": "json" }` | Matches any JSON response. |
+| `{ "frame": "json", "path": "type", "equals": "chunk" }` | Matches a JSON response where `type` equals `chunk`. |
+
+For JSON rules, `when.path` and `when.equals` must be provided together. `when.equals` must be a primitive JSON value: string, number, boolean, or null.
+
+For binary rules, `when.path` and `when.equals` are not allowed.
+
+### Emit keys
+
+| Emit key | Required | Type after evaluation | Effect |
+|----------|----------|-----------------------|--------|
+| `audio` | No | bytes or string | Emits a TTS audio chunk. Use bytes for raw audio or `$decode` for base64 audio in JSON. |
+| `message_id` | No | string | Associates audio, error, or done with a message. Falls back to the current context ID when omitted. |
+| `done` | No | boolean | When `true`, ends synthesis for the message, closes the connection, and emits a TTS end packet. |
+| `error` | No | string | Emits a TTS error when the value is non-empty. |
+
+<Warning>
+If a response rule emits `error`, Rapida emits a TTS error. If a response emits `done: true`, Rapida closes the provider connection. If a rule emits neither `audio`, non-empty `error`, nor `done: true`, the response is ignored.
+</Warning>
+
+### Binary audio response example
+
+Use this when the provider streams raw audio as binary WebSocket frames.
+
+```json
+[
+  {
+    "when": { "frame": "binary" },
+    "emit": {
+      "audio": { "$frame": "binary" }
+    }
+  },
+  {
+    "when": { "frame": "json", "path": "type", "equals": "done" },
+    "emit": {
+      "message_id": { "$path": "message_id" },
+      "done": true
+    }
+  },
+  {
+    "when": { "frame": "json", "path": "type", "equals": "error" },
+    "emit": {
+      "message_id": { "$path": "message_id" },
+      "error": { "$path": "error.message" },
+      "done": true
+    }
+  }
+]
+```
+
+### JSON base64 audio response example
 
 Use `$decode` when the provider returns base64-encoded audio inside JSON.
+
+```json
+[
+  {
+    "when": { "frame": "json", "path": "type", "equals": "chunk" },
+    "emit": {
+      "audio": {
+        "$decode": "base64",
+        "value": { "$path": "audio" }
+      },
+      "message_id": { "$path": "message_id" }
+    }
+  },
+  {
+    "when": { "frame": "json", "path": "type", "equals": "done" },
+    "emit": {
+      "message_id": { "$path": "message_id" },
+      "done": true
+    }
+  }
+]
+```
+
+## DSL operators
+
+Every DSL operator is a JSON object with one operator key. Operator objects must contain only the operator and its required fields.
+
+### `$var`
+
+Reads a supported query variable inside `speak.query_params`.
+
+```json
+{ "$var": "voice_id" }
+```
+
+| Supported in | Supported values |
+|--------------|------------------|
+| Query parameters only | `message_id`, `voice_id`, `model`, `language`, `encoding`, `sample_rate` |
+
+Rules:
+
+- `$var` must be a non-empty string.
+- The operator object must contain only `$var`.
+- `$var` is not supported in request rules or response rules. Use `$path` there.
+- `text` is not supported as a query variable.
+
+### `$path`
+
+Reads a dot-separated path from the current request scope or JSON response frame.
+
+```json
+{ "$path": "packet.text" }
+```
+
+```json
+{ "$path": "chunks.0.audio" }
+```
+
+| Supported in | Path source |
+|--------------|-------------|
+| Request rules | `config` and `packet` request scope. |
+| Response rules | Current JSON response object. |
+
+Rules:
+
+- `$path` must be a non-empty string.
+- The operator object must contain only `$path`.
+- Dot-separated object keys are traversed by key.
+- Arrays are traversed by numeric index, such as `chunks.0.audio`.
+- Keys that contain a literal dot are not addressable.
+- Missing paths in `when.path` cause the rule not to match.
+- Missing paths in `send.body` or `emit` cause an error.
+- Response rules can use `$path` only when the current frame is `json`.
+
+### `$cast`
+
+Casts a rendered value to another type.
+
+```json
+{
+  "$cast": "number",
+  "value": { "$path": "config.audio.sample_rate" }
+}
+```
+
+| Supported in | Supported casts |
+|--------------|-----------------|
+| Query parameters, request rules, response rules | `string`, `number`, `boolean` |
+
+Rules:
+
+- `$cast` must be `string`, `number`, or `boolean`.
+- The operator object must contain only `$cast` and `value`.
+- `value` can be a literal or another DSL expression.
+
+Cast behavior:
+
+| Cast | Behavior |
+|------|----------|
+| `string` | Converts strings, bytes, numbers, booleans, and null to string form. |
+| `number` | Converts JSON numbers, numeric values, and numeric strings to an integer or float. |
+| `boolean` | Converts booleans, boolean strings, and numeric values. JSON numbers are accepted as `0` or `1`; typed numeric values use zero as `false` and non-zero as `true`. |
+
+### `$frame`
+
+Reads the full current binary response frame.
+
+```json
+{ "$frame": "binary" }
+```
+
+| Supported in | Supported selector |
+|--------------|--------------------|
+| Response rules only | `binary` |
+
+Rules:
+
+- `$frame` must be `binary`.
+- The operator object must contain only `$frame`.
+- `$frame` is useful when the provider streams raw audio as binary WebSocket frames.
+- `$frame: "text"` and `$frame: "json"` are not supported for Custom TTS.
+
+### `$decode`
+
+Decodes a base64 string into bytes.
+
+```json
+{
+  "$decode": "base64",
+  "value": { "$path": "audio" }
+}
+```
+
+| Supported in | Supported format |
+|--------------|------------------|
+| Response rules only | `base64` |
+
+Rules:
+
+- `$decode` must be `base64`.
+- The operator object must contain only `$decode` and `value`.
+- `value` must resolve to a base64 string.
+- Use `$decode` when a JSON response contains base64 audio that should become a playable audio chunk.
+
+### Unsupported operators and expressions
+
+The following are not supported in Custom TTS:
+
+- `$frame: "text"`
+- `$frame: "json"`
+- `$decode` formats other than `base64`
+- Text response frames
+- Regex, contains, starts-with, greater-than, less-than, and compound conditions
+- String interpolation or concatenation
+- Fallback values inside expressions
+- Dynamic headers
+- Dynamic URL path segments
+- Environment variable reads
+- JavaScript or function calls
+
+## Complete setup example
+
+Credential:
+
+```json
+{
+  "apiCompatibility": "websocket_v1",
+  "baseUrl": "wss://tts.example.com/v1/speak",
+  "headers": {
+    "Authorization": "Bearer sk_example"
+  }
+}
+```
+
+Audio settings:
+
+```json
+{
+  "speak.audio.encoding": "LINEAR16",
+  "speak.audio.sample_rate": "16000"
+}
+```
+
+Query parameters:
+
+```json
+{
+  "voice": "narrator-1",
+  "message_id": { "$var": "message_id" }
+}
+```
+
+Request rules:
+
+```json
+[
+  {
+    "when": { "packet": "text" },
+    "send": {
+      "frame": "json",
+      "body": {
+        "type": "speak",
+        "text": { "$path": "packet.text" },
+        "voice": "narrator-1",
+        "request_id": { "$path": "packet.message_id" },
+        "audio": {
+          "encoding": { "$path": "config.audio.encoding" },
+          "sample_rate": {
+            "$cast": "number",
+            "value": { "$path": "config.audio.sample_rate" }
+          }
+        }
+      }
+    }
+  },
+  {
+    "when": { "packet": "done" },
+    "send": {
+      "frame": "json",
+      "body": {
+        "type": "done",
+        "request_id": { "$path": "packet.message_id" }
+      }
+    }
+  },
+  {
+    "when": { "packet": "interrupt" },
+    "send": {
+      "frame": "json",
+      "body": {
+        "type": "interrupt",
+        "request_id": { "$path": "packet.message_id" }
+      }
+    }
+  }
+]
+```
+
+Response rules:
 
 ```json
 [
@@ -283,87 +704,49 @@ Use `$decode` when the provider returns base64-encoded audio inside JSON.
 ]
 ```
 
-## Operators
-
-Every operator object must contain only that operator and its required fields.
-
-| Operator | Where supported | Description |
-|----------|-----------------|-------------|
-| `$var` | Query parameters | Reads `message_id`, `voice_id`, `model`, `language`, `encoding`, or `sample_rate`. |
-| `$path` | Request rules, response rules | Reads a dot path from request scope or a JSON response frame. |
-| `$cast` | Query parameters, request rules, response rules | Casts to `string`, `number`, or `boolean`. |
-| `$frame` | Response rules | Reads the full current binary response frame. |
-| `$decode` | Response rules | Decodes a base64 string into bytes. Only `base64` is supported. |
-
-Unsupported for Custom TTS:
-
-- Text response frames
-- `$frame: "text"`
-- `$frame: "json"`
-- Decode formats other than `base64`
-
-### Cast behavior
-
-| Cast | Behavior |
-|------|----------|
-| `string` | Converts strings, bytes, numbers, booleans, and null to string form. |
-| `number` | Converts JSON numbers, numeric values, or numeric strings to an integer or float. |
-| `boolean` | Converts booleans, boolean strings, and numeric values. JSON numbers are accepted as `0` or `1`; typed numeric values use zero as `false` and non-zero as `true`. |
-
-### Path behavior
-
-`$path` uses dot-separated paths.
-
-```json
-{ "$path": "packet.text" }
-```
-
-Objects are traversed by key. Arrays are traversed by numeric index.
-
-```json
-{ "$path": "chunks.0.audio" }
-```
-
-Limits:
-
-- Keys containing a literal dot are not addressable.
-- Request rules can only read from `config` and `packet`.
-- Response rules can use `$path` only with JSON response frames.
-- A missing path in `when.path` means the rule does not match.
-- A missing path in `emit` or `send.body` is an error.
-
 ## Runtime behavior
 
-- The connection URL is built from `baseUrl` and `speak.ws.query_params`.
-- A connection is opened per active message or context. A new context closes the previous connection.
+- Rapida builds the final WebSocket URL from `baseUrl` and `speak.query_params`.
+- Rapida sends static `headers` from the credential during the WebSocket handshake.
+- Rapida opens a connection per active message or context. A new context closes the previous connection.
 - `text` packets open the WebSocket connection if needed.
-- `done` and `interrupt` rules are optional. If no rule exists for that packet, nothing is sent.
-- On interruption, Rapida sends the optional `interrupt` rule first, then closes the connection.
-- Audio returned by the provider is interpreted as `speak.audio.encoding` and `speak.audio.sample_rate`, then resampled internally when needed.
-- If no response rule matches an inbound frame, the frame is ignored.
-- If a response emits `error`, Rapida emits a TTS error packet.
-- If a response emits `done`, Rapida closes the connection and emits a TTS end packet.
+- `done` and `interrupt` request rules are optional. If no rule exists for that packet, nothing is sent.
+- On interruption, Rapida sends the optional `interrupt` rule first, then closes the WebSocket connection.
+- Provider audio is interpreted as `speak.audio.encoding` and `speak.audio.sample_rate`, then resampled internally when needed.
+- If no response rule matches a provider response, the response is ignored.
+- If a response emits non-empty `error`, Rapida emits a TTS error.
+- If a response emits audio, Rapida emits a TTS audio packet.
+- If a response emits `done: true`, Rapida closes the connection and emits a TTS end packet.
+- If the provider closes the WebSocket normally after synthesis has started, Rapida treats that as completion.
 
-## Current limits
+## Validation checklist
 
-- No regex, contains, starts-with, greater-than, or compound match conditions.
-- No string interpolation or concatenation.
-- No fallback values inside expressions.
-- No dynamic headers or dynamic URL path segments.
-- No text response handling for TTS.
-- No `$frame: "json"` selector in emit rules.
-- `$decode` supports only base64.
+Before saving or testing, confirm the following:
+
+- `apiCompatibility` is `websocket_v1` or omitted.
+- `baseUrl` is present and points to the correct WebSocket endpoint.
+- `headers` include required provider authentication.
+- `speak.audio.encoding` matches the provider response audio.
+- `speak.audio.sample_rate` matches the provider response audio.
+- `speak.request_rules` is valid JSON and contains at least one `text` rule.
+- `speak.response_rules` is valid JSON and contains at least one matching audio, done, or error rule.
+- Binary audio providers use `{ "$frame": "binary" }`.
+- JSON base64 audio providers use `{ "$decode": "base64", "value": ... }`.
+- Providers that require finalization have a `done` request rule.
+- Providers that require cancellation have an `interrupt` request rule.
 
 ## Troubleshooting
 
 | Symptom | Likely cause | What to check |
 |---------|--------------|---------------|
-| WebSocket does not connect | Bad `baseUrl`, headers, or compatibility value | Confirm `apiCompatibility`, `baseUrl`, and auth headers. |
-| Provider receives no text | Missing `text` request rule | Add a `when.packet = text` rule. |
-| Audio never plays | Response rule does not emit `audio` | Check binary frames or base64 `$decode` mapping. |
-| Audio sounds distorted | Encoding or sample rate mismatch | Confirm `speak.audio.encoding` and `speak.audio.sample_rate`. |
-| Audio keeps playing after interruption | Missing provider cancel message | Add an `interrupt` request rule. |
-| Session never ends cleanly | Missing done handling | Emit `done: true` from the provider's done frame. |
+| WebSocket does not connect | Incorrect URL, unsupported compatibility, or authentication failure | Confirm `apiCompatibility`, `baseUrl`, and `headers`. |
+| Provider receives no text | Missing or non-matching `text` request rule | Add a rule with `when.packet: "text"`. |
+| Provider receives JSON but expected plain text | Wrong request frame | Use `send.frame: "text"` with `{ "$path": "packet.text" }`. |
+| Audio never plays | Response rule does not emit audio | Check `when.frame`, `when.path`, `$frame`, `$decode`, and the actual provider response shape. |
+| Audio sounds distorted | Encoding or sample rate mismatch | Confirm `speak.audio.encoding` and `speak.audio.sample_rate` match the provider audio. |
+| Audio keeps playing after interruption | Missing provider cancel message | Add an `interrupt` request rule that sends the provider's cancel or clear message. |
+| Session never ends cleanly | Missing done handling | Emit `done: true` from the provider's done frame, or rely only on normal WebSocket close if your provider closes after completion. |
+| Base64 audio fails | Wrong `$decode` source | Confirm the `$path` points to a base64 string and not a nested object. |
 
 ## Related
 
@@ -371,13 +754,13 @@ Limits:
   <Card title="Text-to-Speech" icon="volume-2" href="/assistants/text-to-speech">
     Configure standard TTS providers and speech delivery.
   </Card>
+  <Card title="Speak configuration" icon="volume-2" href="/assistants/configuration/speak">
+    See how TTS fits into assistant voice output settings.
+  </Card>
   <Card title="Custom STT" icon="mic" href="/integrations/stt/custom">
-    Configure a custom WebSocket STT provider.
+    Configure a custom speech-to-text provider with the related DSL pattern.
   </Card>
-  <Card title="Speak" icon="volume-2" href="/assistants/configuration/speak">
-    See how TTS fits into spoken output configuration.
-  </Card>
-  <Card title="Open-source runtime reference" icon="code" href="/opensource/services/assistant-api/tts/custom">
-    Review the assistant-api implementation reference.
+  <Card title="Assistant API Custom TTS" icon="code" href="/opensource/services/assistant-api/tts/custom">
+    Review runtime behavior for self-hosted assistant-api deployments.
   </Card>
 </CardGroup>
