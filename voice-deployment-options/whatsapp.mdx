@@ -50,6 +50,18 @@ You will need these credentials from your Meta developer portal:
     - **Webhook Verify Token** — A secret string you define (you'll use this same string in the Meta webhook configuration)
   </Step>
 
+  <Step title="Configure the conversation experience">
+    Define how the assistant starts and handles the session.
+
+    **Experience settings:**
+    - **Greeting** — Opening message sent when a WhatsApp session starts
+    - **Error Message** — Fallback message sent when an unexpected error occurs
+    - **Unclear Input Timeout** — Seconds to wait after unclear input before asking the user to repeat (0.5-5 seconds, default: 0.5s)
+    - **Unclear Input Message** — Message sent when the assistant could not understand the user's input (default: `I didn't catch that. Could you repeat that?`)
+    - **Idle Silence Timeout** — Duration of user silence before Rapida sends a prompt (5-120 seconds, default: 30s)
+    - **Idle Message** — Message sent when the user hasn't responded (default: "Are you there?")
+  </Step>
+
   <Step title="Configure the Meta webhook">
     In the Meta developer portal, set your webhook URL to:
     ```

@@ -198,6 +198,8 @@ paths:
                   greeting: "Hi, how can I help you today?"
                   greetingInterruptible: false
                   mistake: "Sorry, I did not understand that."
+                  unclearInputTimeout: 0.5
+                  unclearInputMessage: "I didn't catch that. Could you repeat that?"
                   idealTimeout: 30
                   idealTimeoutBackoff: 2
                   idealTimeoutMessage: "Are you still there?"
@@ -233,6 +235,8 @@ paths:
                       greeting: "Hi, how can I help you today?"
                       greetingInterruptible: false
                       mistake: "Sorry, I did not understand that."
+                      unclearInputTimeout: 0.5
+                      unclearInputMessage: "I didn't catch that. Could you repeat that?"
                       idealTimeout: 30
                       idealTimeoutBackoff: 2
                       idealTimeoutMessage: "Are you still there?"
@@ -279,7 +283,7 @@ paths:
                     error:
                       errorCode: "1004007"
                       errorMessage: "invalid ideal_timeout parameter"
-                      humanMessage: "Please provide idealTimeout between 15 and 120 seconds."
+                      humanMessage: "Please provide idealTimeout between 5 and 120 seconds."
                 invalidTimeoutBackoff:
                   summary: Invalid timeout backoff
                   value:
@@ -370,6 +374,8 @@ paths:
                   greeting: "Hi, how can I help you today?"
                   greetingInterruptible: false
                   mistake: "Sorry, I did not understand that."
+                  unclearInputTimeout: 0.5
+                  unclearInputMessage: "I didn't catch that. Could you repeat that?"
                   idealTimeout: 30
                   idealTimeoutBackoff: 2
                   idealTimeoutMessage: "Are you still there?"
@@ -409,6 +415,8 @@ paths:
                       greeting: "Hi, how can I help you today?"
                       greetingInterruptible: false
                       mistake: "Sorry, I did not understand that."
+                      unclearInputTimeout: 0.5
+                      unclearInputMessage: "I didn't catch that. Could you repeat that?"
                       idealTimeout: 30
                       idealTimeoutBackoff: 2
                       idealTimeoutMessage: "Are you still there?"
@@ -532,6 +540,8 @@ paths:
                   greeting: "Hi, how can I help you today?"
                   greetingInterruptible: false
                   mistake: "Sorry, I did not understand that."
+                  unclearInputTimeout: 0.5
+                  unclearInputMessage: "I didn't catch that. Could you repeat that?"
                   idealTimeout: 30
                   idealTimeoutBackoff: 2
                   idealTimeoutMessage: "Are you still there?"
@@ -567,6 +577,8 @@ paths:
                       greeting: "Hi, how can I help you today?"
                       greetingInterruptible: false
                       mistake: "Sorry, I did not understand that."
+                      unclearInputTimeout: 0.5
+                      unclearInputMessage: "I didn't catch that. Could you repeat that?"
                       idealTimeout: 30
                       idealTimeoutBackoff: 2
                       idealTimeoutMessage: "Are you still there?"
@@ -677,6 +689,8 @@ paths:
                   greeting: "Hi, how can I help you today?"
                   greetingInterruptible: false
                   mistake: "Sorry, I did not understand that."
+                  unclearInputTimeout: 0.5
+                  unclearInputMessage: "I didn't catch that. Could you repeat that?"
                   idealTimeout: 30
                   idealTimeoutBackoff: 2
                   idealTimeoutMessage: "Are you still there?"
@@ -715,6 +729,8 @@ paths:
                       greeting: "Hi, how can I help you today?"
                       greetingInterruptible: false
                       mistake: "Sorry, I did not understand that."
+                      unclearInputTimeout: 0.5
+                      unclearInputMessage: "I didn't catch that. Could you repeat that?"
                       idealTimeout: 30
                       idealTimeoutBackoff: 2
                       idealTimeoutMessage: "Are you still there?"
@@ -828,6 +844,8 @@ paths:
                   greeting: "Hi, how can I help you today?"
                   greetingInterruptible: false
                   mistake: "Sorry, I did not understand that."
+                  unclearInputTimeout: 0.5
+                  unclearInputMessage: "I didn't catch that. Could you repeat that?"
                   idealTimeout: 30
                   idealTimeoutBackoff: 2
                   idealTimeoutMessage: "Are you still there?"
@@ -855,6 +873,8 @@ paths:
                       greeting: "Hi, how can I help you today?"
                       greetingInterruptible: false
                       mistake: "Sorry, I did not understand that."
+                      unclearInputTimeout: 0.5
+                      unclearInputMessage: "I didn't catch that. Could you repeat that?"
                       idealTimeout: 30
                       idealTimeoutBackoff: 2
                       idealTimeoutMessage: "Are you still there?"
@@ -2449,7 +2469,7 @@ components:
         - `1004004`: invalid assistant_id parameter - Please provide a valid assistantId parameter.
         - `1004005`: unable to create assistant debugger deployment - Unable to create assistant debugger deployment, please try again later.
         - `1004006`: invalid audio provider parameter - Please provide a valid audioProvider parameter.
-        - `1004007`: invalid ideal_timeout parameter - Please provide idealTimeout between 15 and 120 seconds.
+        - `1004007`: invalid ideal_timeout parameter - Please provide idealTimeout between 5 and 120 seconds.
         - `1004008`: invalid ideal_timeout_backoff parameter - Please provide idealTimeoutBackoff between 0 and 5 times.
         - `1004009`: invalid max_session_duration parameter - Please provide maxSessionDuration between 180 and 600 seconds.
 
@@ -2460,7 +2480,7 @@ components:
         - `1005004`: invalid assistant_id parameter - Please provide a valid assistantId parameter.
         - `1005005`: unable to create assistant phone deployment - Unable to create assistant phone deployment, please try again later.
         - `1005006`: invalid audio provider parameter - Please provide a valid audioProvider parameter.
-        - `1005007`: invalid ideal_timeout parameter - Please provide idealTimeout between 15 and 120 seconds.
+        - `1005007`: invalid ideal_timeout parameter - Please provide idealTimeout between 5 and 120 seconds.
         - `1005008`: invalid ideal_timeout_backoff parameter - Please provide idealTimeoutBackoff between 0 and 5 times.
         - `1005009`: invalid max_session_duration parameter - Please provide maxSessionDuration between 180 and 600 seconds.
         - `1005010`: missing phone_provider_name parameter - Please provide the required phoneProviderName parameter.
@@ -2472,7 +2492,7 @@ components:
         - `1006004`: invalid assistant_id parameter - Please provide a valid assistantId parameter.
         - `1006005`: unable to create assistant api deployment - Unable to create assistant api deployment, please try again later.
         - `1006006`: invalid audio provider parameter - Please provide a valid audioProvider parameter.
-        - `1006007`: invalid ideal_timeout parameter - Please provide idealTimeout between 15 and 120 seconds.
+        - `1006007`: invalid ideal_timeout parameter - Please provide idealTimeout between 5 and 120 seconds.
         - `1006008`: invalid ideal_timeout_backoff parameter - Please provide idealTimeoutBackoff between 0 and 5 times.
         - `1006009`: invalid max_session_duration parameter - Please provide maxSessionDuration between 180 and 600 seconds.
 
@@ -2483,7 +2503,7 @@ components:
         - `1007004`: invalid assistant_id parameter - Please provide a valid assistantId parameter.
         - `1007005`: unable to create assistant web plugin deployment - Unable to create assistant web plugin deployment, please try again later.
         - `1007006`: invalid audio provider parameter - Please provide a valid audioProvider parameter.
-        - `1007007`: invalid ideal_timeout parameter - Please provide idealTimeout between 15 and 120 seconds.
+        - `1007007`: invalid ideal_timeout parameter - Please provide idealTimeout between 5 and 120 seconds.
         - `1007008`: invalid ideal_timeout_backoff parameter - Please provide idealTimeoutBackoff between 0 and 5 times.
         - `1007009`: invalid max_session_duration parameter - Please provide maxSessionDuration between 180 and 600 seconds.
 
@@ -2493,7 +2513,7 @@ components:
         - `1008003`: missing authentication scope - Unauthenticated request, please try again with valid authentication.
         - `1008004`: invalid assistant_id parameter - Please provide a valid assistantId parameter.
         - `1008005`: unable to create assistant whatsapp deployment - Unable to create assistant whatsapp deployment, please try again later.
-        - `1008006`: invalid ideal_timeout parameter - Please provide idealTimeout between 15 and 120 seconds.
+        - `1008006`: invalid ideal_timeout parameter - Please provide idealTimeout between 5 and 120 seconds.
         - `1008007`: invalid ideal_timeout_backoff parameter - Please provide idealTimeoutBackoff between 0 and 5 times.
         - `1008008`: invalid max_session_duration parameter - Please provide maxSessionDuration between 180 and 600 seconds.
         - `1008009`: missing whatsapp_provider_name parameter - Please provide the required whatsappProviderName parameter.
@@ -2640,10 +2660,22 @@ components:
           type: string
           description: Message to use when the assistant cannot understand or handle the input.
           example: "Sorry, I did not understand that."
+        unclearInputTimeout:
+          type: number
+          format: double
+          minimum: 0.5
+          maximum: 5
+          description: Seconds to wait after interrupted or unclear input before asking the user to repeat.
+          example: 0.5
+        unclearInputMessage:
+          type: string
+          maxLength: 250
+          description: Message sent when the assistant could not understand the user input.
+          example: "I didn't catch that. Could you repeat that?"
         idealTimeout:
           type: integer
           format: uint64
-          minimum: 15
+          minimum: 5
           maximum: 120
           description: Idle timeout in seconds before the assistant sends the timeout message.
           example: 30
@@ -2690,10 +2722,22 @@ components:
           type: string
           description: Message to use when the assistant cannot understand or handle the input.
           example: "Sorry, I did not understand that."
+        unclearInputTimeout:
+          type: number
+          format: double
+          minimum: 0.5
+          maximum: 5
+          description: Seconds to wait after interrupted or unclear input before asking the user to repeat.
+          example: 0.5
+        unclearInputMessage:
+          type: string
+          maxLength: 250
+          description: Message sent when the assistant could not understand the user input.
+          example: "I didn't catch that. Could you repeat that?"
         idealTimeout:
           type: integer
           format: uint64
-          minimum: 15
+          minimum: 5
           maximum: 120
           description: Idle timeout in seconds before the assistant sends the timeout message.
           example: 30
@@ -2748,10 +2792,22 @@ components:
           type: string
           description: Message to use when the assistant cannot understand or handle the input.
           example: "Sorry, I did not understand that."
+        unclearInputTimeout:
+          type: number
+          format: double
+          minimum: 0.5
+          maximum: 5
+          description: Seconds to wait after interrupted or unclear input before asking the user to repeat.
+          example: 0.5
+        unclearInputMessage:
+          type: string
+          maxLength: 250
+          description: Message sent when the assistant could not understand the user input.
+          example: "I didn't catch that. Could you repeat that?"
         idealTimeout:
           type: integer
           format: uint64
-          minimum: 15
+          minimum: 5
           maximum: 120
           description: Idle timeout in seconds before the assistant sends the timeout message.
           example: 30
@@ -2797,10 +2853,22 @@ components:
           type: string
           description: Message to use when the assistant cannot understand or handle the input.
           example: "Sorry, I did not understand that."
+        unclearInputTimeout:
+          type: number
+          format: double
+          minimum: 0.5
+          maximum: 5
+          description: Seconds to wait after interrupted or unclear input before asking the user to repeat.
+          example: 0.5
+        unclearInputMessage:
+          type: string
+          maxLength: 250
+          description: Message sent when the assistant could not understand the user input.
+          example: "I didn't catch that. Could you repeat that?"
         idealTimeout:
           type: integer
           format: uint64
-          minimum: 15
+          minimum: 5
           maximum: 120
           description: Idle timeout in seconds before the assistant sends the timeout message.
           example: 30
@@ -2855,10 +2923,22 @@ components:
           type: string
           description: Message to use when the assistant cannot understand or handle the input.
           example: "Sorry, I did not understand that."
+        unclearInputTimeout:
+          type: number
+          format: double
+          minimum: 0.5
+          maximum: 5
+          description: Seconds to wait after interrupted or unclear input before asking the user to repeat.
+          example: 0.5
+        unclearInputMessage:
+          type: string
+          maxLength: 250
+          description: Message sent when the assistant could not understand the user input.
+          example: "I didn't catch that. Could you repeat that?"
         idealTimeout:
           type: integer
           format: uint64
-          minimum: 15
+          minimum: 5
           maximum: 120
           description: Idle timeout in seconds before the assistant sends the timeout message.
           example: 30
@@ -3294,6 +3374,14 @@ components:
           type: boolean
         mistake:
           type: string
+        unclearInputTimeout:
+          type: number
+          format: double
+          minimum: 0.5
+          maximum: 5
+        unclearInputMessage:
+          type: string
+          maxLength: 250
         inputAudio:
           $ref: "#/components/schemas/DeploymentAudioProvider"
         outputAudio:
@@ -3308,7 +3396,7 @@ components:
         idealTimeout:
           type: integer
           format: uint64
-          minimum: 15
+          minimum: 5
           maximum: 120
         idealTimeoutBackoff:
           type: integer
@@ -3330,6 +3418,14 @@ components:
           type: boolean
         mistake:
           type: string
+        unclearInputTimeout:
+          type: number
+          format: double
+          minimum: 0.5
+          maximum: 5
+        unclearInputMessage:
+          type: string
+          maxLength: 250
         inputAudio:
           $ref: "#/components/schemas/DeploymentAudioProvider"
         outputAudio:
@@ -3350,7 +3446,7 @@ components:
         idealTimeout:
           type: integer
           format: uint64
-          minimum: 15
+          minimum: 5
           maximum: 120
         idealTimeoutBackoff:
           type: integer
@@ -3372,6 +3468,14 @@ components:
           type: boolean
         mistake:
           type: string
+        unclearInputTimeout:
+          type: number
+          format: double
+          minimum: 0.5
+          maximum: 5
+        unclearInputMessage:
+          type: string
+          maxLength: 250
         inputAudio:
           $ref: "#/components/schemas/DeploymentAudioProvider"
         outputAudio:
@@ -3386,7 +3490,7 @@ components:
         idealTimeout:
           type: integer
           format: uint64
-          minimum: 15
+          minimum: 5
           maximum: 120
         idealTimeoutBackoff:
           type: integer
@@ -3408,6 +3512,14 @@ components:
           type: boolean
         mistake:
           type: string
+        unclearInputTimeout:
+          type: number
+          format: double
+          minimum: 0.5
+          maximum: 5
+        unclearInputMessage:
+          type: string
+          maxLength: 250
         inputAudio:
           $ref: "#/components/schemas/DeploymentAudioProvider"
         outputAudio:
@@ -3426,7 +3538,7 @@ components:
         idealTimeout:
           type: integer
           format: uint64
-          minimum: 15
+          minimum: 5
           maximum: 120
         idealTimeoutBackoff:
           type: integer
@@ -3448,6 +3560,14 @@ components:
           type: boolean
         mistake:
           type: string
+        unclearInputTimeout:
+          type: number
+          format: double
+          minimum: 0.5
+          maximum: 5
+        unclearInputMessage:
+          type: string
+          maxLength: 250
         whatsappProviderName:
           type: string
         whatsappOptions:
@@ -3464,7 +3584,7 @@ components:
         idealTimeout:
           type: integer
           format: uint64
-          minimum: 15
+          minimum: 5
           maximum: 120
         idealTimeoutBackoff:
           type: integer

@@ -52,7 +52,9 @@ The phone deployment wizard walks you through four steps:
 
     **Advanced settings** (expand to configure):
     - **Error Message** — Fallback message spoken when an unexpected error occurs mid-call
-    - **Idle Silence Timeout** — Duration of caller silence before Rapida prompts them (15-120 seconds, default: 30s)
+    - **Unclear Speech Wait** — Seconds to wait after interrupted or unclear caller speech before asking the caller to repeat (0.5-5 seconds, default: 0.5s)
+    - **Unclear Speech Message** — Message spoken when the caller interrupted but did not continue, or speech was not recognized confidently (default: `I didn't catch that. Could you repeat that?`)
+    - **Idle Silence Timeout** — Duration of caller silence before Rapida prompts them (5-60 seconds, default: 30s)
     - **Idle Timeout Backoff** — How many times the idle timeout multiplies before ending the session (0-5, default: 2)
     - **Idle Message** — Message spoken when the caller hasn't responded (default: "Are you there?")
     - **Maximum Session Duration** — Hard limit before the call is automatically ended (180-600 seconds, default: 300s)

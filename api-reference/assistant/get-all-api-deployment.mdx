@@ -177,6 +177,12 @@ func main() {
 <ParamField body="mistake" type="string">
   Message used when the assistant cannot understand or handle input.
 </ParamField>
+<ParamField body="unclearInputTimeout" type="double">
+  Seconds to wait after interrupted or unclear input before asking the user to repeat.
+</ParamField>
+<ParamField body="unclearInputMessage" type="string">
+  Message sent when the assistant could not understand the user input.
+</ParamField>
 <ParamField body="inputAudio" type="DeploymentAudioProvider">
   Speech-to-text provider configuration.
 </ParamField>

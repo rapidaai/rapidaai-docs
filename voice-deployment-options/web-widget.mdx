@@ -32,7 +32,9 @@ The web widget wizard walks you through four steps:
 
     **Advanced settings** (expand to configure):
     - **Error Message** — Message shown when an unexpected error occurs
-    - **Idle Silence Timeout** — Duration of silence before Rapida prompts the user (3000-10000ms, default: 30000ms)
+    - **Unclear Speech Wait** — Seconds to wait after interrupted or unclear speech before asking the user to repeat (0.5-5 seconds, default: 0.5s)
+    - **Unclear Speech Message** — Message shown/spoken when the user interrupted but did not continue, or speech was not recognized confidently (default: `I didn't catch that. Could you repeat that?`)
+    - **Idle Silence Timeout** — Duration of silence before Rapida prompts the user (5-60 seconds, default: 30s)
     - **Idle Timeout Backoff** — How many times the idle timeout multiplies before ending the session (0-5, default: 2)
     - **Idle Message** — Message spoken/shown when the user hasn't responded (default: "Are you there?")
     - **Maximum Session Duration** — Hard limit before the session is automatically ended (3-15 minutes, default: 5 min)

@@ -29,7 +29,9 @@ The SDK deployment wizard walks you through three steps:
 
     **Advanced settings** (expand to configure):
     - **Error Message** — Fallback message sent when an unexpected error occurs
-    - **Idle Silence Timeout** — Duration of user silence before Rapida sends a prompt (15-120 seconds, default: 30s)
+    - **Unclear Speech Wait** — Seconds to wait after interrupted or unclear speech before asking the user to repeat (0.5-5 seconds, default: 0.5s)
+    - **Unclear Speech Message** — Message sent when the user interrupted but did not continue, or speech was not recognized confidently (default: `I didn't catch that. Could you repeat that?`)
+    - **Idle Silence Timeout** — Duration of user silence before Rapida sends a prompt (5-60 seconds, default: 30s)
     - **Idle Timeout Backoff** — How many times the idle timeout multiplies before ending the session (0-5, default: 2)
     - **Idle Message** — Message sent when the user hasn't responded (default: "Are you there?")
     - **Maximum Session Duration** — Hard limit before the session is automatically ended (180-600 seconds, default: 300s)

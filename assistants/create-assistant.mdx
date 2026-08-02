@@ -294,8 +294,10 @@ These settings control the runtime behaviour of a live session — what happens 
 | Setting | Default | Range | Notes |
 |---------|---------|-------|-------|
 | Greeting message | — | — | Spoken immediately when a call connects. Supports `{{variable}}` for personalisation |
+| Unclear input timeout | `0.5 s` | 0.5–5 s | Wait before asking the user to repeat unclear or interrupted input |
+| Unclear input message | `I didn't catch that. Could you repeat that?` | Up to 250 characters | Spoken or shown when the assistant could not understand the user |
 | Idle message | `Are you there?` | — | Spoken after the idle timeout expires without user input |
-| Idle silence timeout | `30 s` | 15–120 s (phone) | Time before the idle message triggers |
+| Idle silence timeout | `30 s` | 5–120 s | Time before the idle message triggers |
 | Idle backoff | `2` | 0–5 | How many times the idle message repeats before ending the session |
 | Max session duration | `300 s` | 180–600 s (phone) | Hard cap on session length — protects against runaway calls |
 | Error message | — | — | Spoken when the assistant encounters an unrecoverable error |

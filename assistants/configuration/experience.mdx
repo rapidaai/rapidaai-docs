@@ -19,7 +19,9 @@ Experience settings are separate from [Listen](/assistants/configuration/listen)
 | Greeting | `greeting` | `string` | None | Any text | First message sent when a session starts. In voice deployments, this is spoken. In text deployments, this is shown as the first assistant message. |
 | Greeting interruptible | `greetingInterruptible` | `boolean` | `true` | `true` / `false` | Controls whether users can interrupt the opening greeting in audio sessions. Set to `false` when the full greeting must be heard before the user can speak. |
 | Error message | `mistake` | `string` | None | Any text | Fallback message used when the assistant cannot understand the user input, cannot handle the request, or hits an unrecoverable runtime error. |
-| Idle silence timeout | `idealTimeout` | `uint64` seconds | `30` | `15`-`120` | Time to wait for user input before sending the idle message. |
+| Unclear input timeout | `unclearInputTimeout` | `double` seconds | `0.5` | `0.5`-`5` | Time to wait after interrupted or unclear input before asking the user to repeat. |
+| Unclear input message | `unclearInputMessage` | `string` | `I didn't catch that. Could you repeat that?` | Up to 250 characters | Message sent when the assistant could not understand the user input. |
+| Idle silence timeout | `idealTimeout` | `uint64` seconds | `30` | `5`-`120` | Time to wait for user input before sending the idle message. |
 | Idle timeout backoff | `idealTimeoutBackoff` | `uint64` | `2` | `0`-`5` | Number of idle-timeout retries before the inactive session is allowed to end. |
 | Idle message | `idealTimeoutMessage` | `string` | `Are you there?` | Any text | Message sent when the idle silence timeout expires without user input. |
 | Maximum session duration | `maxSessionDuration` | `uint64` seconds | `300` | `180`-`600` | Hard cap on session length. The session ends when this limit is reached, even if the user is active. |
@@ -50,6 +52,8 @@ Use the `options` map on `CreatePhoneCallRequest` with `experience.*` keys:
     "experience.greeting": "Hi {{name}}, this is Rapida calling about your appointment.",
     "experience.greeting_interruptible": false,
     "experience.mistake": "Sorry, I did not understand that.",
+    "experience.unclear_input_timeout": 0.5,
+    "experience.unclear_input_message": "I didn't catch that. Could you repeat that?",
     "experience.ideal_timeout": 30,
     "experience.ideal_timeout_backoff": 2,
     "experience.ideal_timeout_message": "Are you still there?",
@@ -65,6 +69,8 @@ For bulk outbound calls, pass the same `options` object on each `CreatePhoneCall
 | `experience.greeting` | `string` | `greeting` | Opening message for this call. Supports the same `{{variable}}` syntax as the saved deployment greeting. |
 | `experience.greeting_interruptible` | `boolean` | `greetingInterruptible` | Controls whether the caller can interrupt the opening greeting. |
 | `experience.mistake` | `string` | `mistake` | Error or fallback message for this call. |
+| `experience.unclear_input_timeout` | `number` seconds | `unclearInputTimeout` | Time to wait after interrupted or unclear input before asking the caller to repeat. |
+| `experience.unclear_input_message` | `string` | `unclearInputMessage` | Message sent when the assistant could not understand the caller input. |
 | `experience.ideal_timeout` | `number` seconds | `idealTimeout` | Idle silence timeout for this call. |
 | `experience.ideal_timeout_backoff` | `number` | `idealTimeoutBackoff` | Number of idle prompts before the inactive call can end. |
 | `experience.ideal_timeout_message` | `string` | `idealTimeoutMessage` | Message sent when the idle timeout expires. |
@@ -82,6 +88,9 @@ Use `args` for values you want to interpolate into prompts, such as `{{name}}`. 
   </Step>
   <Step title="User becomes inactive">
     If no user input arrives within `idealTimeout`, Rapida sends `idealTimeoutMessage`.
+  </Step>
+  <Step title="Input is unclear">
+    If the user interrupts but does not continue, or speech is not recognized confidently, Rapida waits for `unclearInputTimeout` and then sends `unclearInputMessage`.
   </Step>
   <Step title="Idle retries are exhausted">
     `idealTimeoutBackoff` controls how many idle prompts can be sent before the inactive session is allowed to end.
@@ -128,6 +137,8 @@ Use these defaults for most deployments unless the channel needs different behav
 | Greeting | A short channel-specific opener | Voice greetings should be speakable in one sentence. |
 | Greeting interruptible | `true` | Set to `false` only when callers must hear the full greeting before speaking. |
 | Error message | `Sorry, I did not understand that.` | Keep it short and avoid exposing internal errors. |
+| Unclear input timeout | `0.5` | Increase only when users often pause after an interruption. |
+| Unclear input message | `I didn't catch that. Could you repeat that?` | Keep it short and ask for a repeat. |
 | Idle silence timeout | `30` | Lower values feel faster; higher values give users more time to respond. |
 | Idle timeout backoff | `2` | Gives the user two chances before ending an inactive session. |
 | Idle message | `Are you still there?` | Use a neutral prompt that works across channels. |
@@ -142,6 +153,8 @@ The same experience fields appear across deployment variants:
   "greeting": "Hi {{name}}, how can I help you today?",
   "greetingInterruptible": true,
   "mistake": "Sorry, I did not understand that.",
+  "unclearInputTimeout": 0.5,
+  "unclearInputMessage": "I didn't catch that. Could you repeat that?",
   "idealTimeout": 30,
   "idealTimeoutBackoff": 2,
   "idealTimeoutMessage": "Are you still there?",

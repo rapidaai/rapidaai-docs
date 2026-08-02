@@ -58,7 +58,7 @@ sidebarTitle: "Twilio Integration"
     3. Provide the associated phone number from which outbound calls will be made
        ![Configure Telephony Settings](/images/configure_twilio_6_4.png)
 
-For detailed instructions on how to obtain and configure provider credentials, please refer to the [Telephony Credentials Guide](/assistants/telephony-credentials).
+For detailed instructions on how to obtain and configure provider credentials, please refer to the [Twilio Credentials Guide](/assistants/twilio-credentials).
 
   </Step>
 
@@ -82,7 +82,7 @@ For detailed instructions on how to obtain and configure provider credentials, p
     1. Rapida to finalize the end of speech. Disable this if you do not want automatic end of speech detection.
     2. Select correct values for Segmentation Silence Timeout. This is the duration of silence after which Rapida starts finalizing a message EOS: Based on silence and max time (1000-4000ms).
     3. Background Denoising Enabled. Default active. Disabling this will affect performance of Speech to Text transcription.
-    4. User Idle Silence Timeout. After this Duration of silence, Rapida finalizes a phrase (3000-10000ms) and sends it back as audio response.
+    4. User Idle Silence Timeout. After this duration of silence, Rapida sends the idle message (5-60 seconds in the UI).
     5. Idle Message: Message that the assistant will speak when the user hasn't responded until the Idle Silence Timeout.
 
     ![Configure Twilio Step 8](/images/configure_twilio_8.png)

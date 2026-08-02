@@ -39,8 +39,14 @@ Creates a phone deployment for an assistant. Use user-scoped authentication beca
         <ParamField body="mistake" type="string">
           Message to use when the assistant cannot understand or handle the input.
         </ParamField>
+        <ParamField body="unclearInputTimeout" type="double">
+          Seconds to wait after interrupted or unclear input before asking the user to repeat. Must be between `0.5` and `5`.
+        </ParamField>
+        <ParamField body="unclearInputMessage" type="string">
+          Message sent when the assistant could not understand the user input. Maximum length is `250` characters.
+        </ParamField>
         <ParamField body="idealTimeout" type="uint64">
-          Idle timeout in seconds. Must be between `15` and `120`.
+          Idle timeout in seconds. Must be between `5` and `120`.
         </ParamField>
         <ParamField body="idealTimeoutBackoff" type="uint64">
           Number of idle-timeout retries. Must be between `0` and `5`.
@@ -106,6 +112,8 @@ deployment.setAssistantid("ASSISTANT_ID_PLACEHOLDER");
 deployment.setGreeting("Hi, how can I help you today?");
 deployment.setGreetinginterruptible(false);
 deployment.setMistake("Sorry, I did not understand that.");
+deployment.setUnclearinputtimeout(0.5);
+deployment.setUnclearinputmessage("I didn't catch that. Could you repeat that?");
 deployment.setIdealtimeout("30");
 deployment.setIdealtimeoutbackoff("2");
 deployment.setIdealtimeoutmessage("Are you still there?");
@@ -165,6 +173,8 @@ deployment.setAssistantid(process.env.RAPIDA_ASSISTANT_ID);
 deployment.setGreeting("Hi, how can I help you today?");
 deployment.setGreetinginterruptible(false);
 deployment.setMistake("Sorry, I did not understand that.");
+deployment.setUnclearinputtimeout(0.5);
+deployment.setUnclearinputmessage("I didn't catch that. Could you repeat that?");
 deployment.setIdealtimeout("30");
 deployment.setIdealtimeoutbackoff("2");
 deployment.setIdealtimeoutmessage("Are you still there?");
@@ -210,6 +220,8 @@ deployment = AssistantPhoneDeployment(
     greeting="Hi, how can I help you today?",
     greetingInterruptible=False,
     mistake="Sorry, I did not understand that.",
+    unclearInputTimeout=0.5,
+    unclearInputMessage="I didn't catch that. Could you repeat that?",
     idealTimeout=30,
     idealTimeoutBackoff=2,
     idealTimeoutMessage="Are you still there?",
@@ -269,6 +281,8 @@ func main() {
 					Greeting:            proto.String("Hi, how can I help you today?"),
 					GreetingInterruptible: proto.Bool(false),
 					Mistake:             proto.String("Sorry, I did not understand that."),
+					UnclearInputTimeout: proto.Float64(0.5),
+					UnclearInputMessage: proto.String("I didn't catch that. Could you repeat that?"),
 					IdealTimeout:        30,
 					IdealTimeoutBackoff: 2,
 					IdealTimeoutMessage: "Are you still there?",
@@ -391,7 +405,7 @@ func main() {
 | `1005004` | Invalid `assistantId`. |
 | `1005005` | Unable to create assistant phone deployment. |
 | `1005006` | Invalid `audioProvider`. |
-| `1005007` | `idealTimeout` must be between `15` and `120` seconds. |
+| `1005007` | `idealTimeout` must be between `5` and `120` seconds. |
 | `1005008` | `idealTimeoutBackoff` must be between `0` and `5` times. |
 | `1005009` | `maxSessionDuration` must be between `180` and `600` seconds. |
 | `1005010` | Missing `phoneProviderName`. |
